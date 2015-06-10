@@ -1,16 +1,12 @@
 
 function out = makeDftMatrix( M, N )
 
-  if nargin < 2
-    out = fft(eye(M));
-    return;
-  end
+  if nargin<2, N=M; end;
 
-  out = zeros( M, N );
-  j = 0:M-1;
-  for i=0:N-1
-    out(:,i+1) = exp( -1i * 2*pi * i * j ./ M );
-  end
+  maxSize = max( M, N );
+  fftIn = eye(maxSize);
+  fftIn = fftIn(:,1:N);
 
+  out = fft( fftIn );
 end
 

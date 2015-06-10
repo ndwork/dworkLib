@@ -3,11 +3,11 @@ function testDworkLib
 
   %% makeDftMatrix
   M = 100;
-  out1 = makeDftMatrix( M );
-  out2 = makeDftMatrix( M, M );
-  diff = out2 - out1;
+  standard = fft( eye(M) );
+  out = makeDftMatrix( M, M );
+  diff = out - standard;
   err = max( abs( diff(:) ) );
-  if err > 1d-12
+  if err > 1d-14
     error(['makeDftMatrix failed with error ', num2str(err)]);
   else
     disp('makeDftMatrix passed');
