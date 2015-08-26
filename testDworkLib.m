@@ -2,6 +2,7 @@
 function testDworkLib
 
   %% makeDftMatrix
+  fprintf( '\nTesting makeDftMatrix: \n');
   M = 100;
   standard = fft( eye(M) );
   out = makeDftMatrix( M, M );
@@ -12,4 +13,12 @@ function testDworkLib
   else
     disp('makeDftMatrix passed');
 
+  %% showLibs
+  fprintf( '\nTesting showLibs: \n');
+  showLibs();
+
+  %% showLibFiles
+  fprintf('\nTesting showLibFiles: \n');
+  showLibFiles( 'dworkLib' );
+    
 end
