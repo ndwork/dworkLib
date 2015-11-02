@@ -21,8 +21,8 @@ function makeAGif( varargin )
   defaultDelayTime = 0.3;
 
   p = inputParser;
-  p.addOptional('inDir',defaultInDir);
-  p.addOptional('outFile',defaultOutFile);
+  p.addOptional('inDir',defaultInDir,@(x) true);
+  p.addOptional('outFile',defaultOutFile,@(x) true);
   p.addOptional('delayTime',defaultDelayTime,@isnumeric);
   p.parse( varargin{:} );
   inDir = p.Results.inDir;
