@@ -13,7 +13,7 @@ function Qout = epgGrad( Qin, n )
   if n>0
     Qout(1,2:end) = Qin(1,1:end-1);
     Qout(1,1) = conj( Qin(2,2) );
-    Qout(2,1:end-1) = Qout(2,2:end);
+    Qout(2,1:end-1) = Qin(2,2:end);
 
   else
     Qout(2,2:end) = Qin(2,1:end-1);
