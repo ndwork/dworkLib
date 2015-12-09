@@ -1,26 +1,31 @@
 
 function stats( data )
 
-  function arrayStats( data )
+  function arrayStats( data, preText )
+    if nargin < 2, preText = ''; end;
+
     minImg = min( data(:) );
-    disp(['Min Image: ', num2str(minImg)]);
+    disp([preText, 'Min Image: ', num2str(minImg)]);
 
     maxImg = max( data(:) );
-    disp(['Max Image: ', num2str(maxImg)]);
+    disp([preText, 'Max Image: ', num2str(maxImg)]);
 
     meanImg = mean( data(:) );
-    disp(['Mean Image: ', num2str(meanImg)]);
+    disp([preText, 'Mean Image: ', num2str(meanImg)]);
 
     stdDevImg = std( data(:) );
-    disp(['Std Dev Image: ', num2str(stdDevImg)]);
+    disp([preText, 'Std Dev Image: ', num2str(stdDevImg)]);
+    
+    l2norm = norm( data(:), 2 );
+    disp([preText, 'L2 Norm: ', num2str(l2norm)]);
   end
 
   imagData = imag(data);
   if max( abs(imagData(:)) ~= 0 )
     disp('Real: ');
-    arrayStats( real(data) );
+    arrayStats( real(data), '  ' );
     disp('Imag: ');
-    arrayStats( imag(data) );
+    arrayStats( imag(data), '  ' );
   else
     arrayStats( data );
   end
