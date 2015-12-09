@@ -7,9 +7,8 @@ function out = isOdd( img, varargin )
   %
   % Inputs:
   % img is a 2D array that is the image
-  % threshold is an optional input.  Max magnitude of difference between 
-  %   img(x,y) and -img(-x,-y) must be less than threshold to be considered
-  %   even.
+  % threshold is an optional input.  Relative difference between img(x,y)
+  %   and -img(-x,-y) must be less than threshold to be considered even.
 
   defaultThresh = 0;
   p = inputParser;
@@ -26,7 +25,6 @@ function out = isOdd( img, varargin )
     mirrorImg = circshift( mirrorImg, +[nyEven nxEven] );
   end
 
-  absDiff = abs( mirrorImg + img );
-  maxDiff = max( absDiff(:) );
-  if maxDiff > thresh, out = false; else out = true; end;
+  error = norm( mirrorImg(:) + img(:), 2 ) / norm(img(:),2);
+  if error > thresh, out = false; else out = true; end;
 end

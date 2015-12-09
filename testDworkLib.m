@@ -1,5 +1,16 @@
 
 function testDworkLib
+  clear; close all; rng(1);
+
+  %% isEven
+  fprintf( '\nTesting isEven: \n');
+  A1 = rand(5,5);
+  A1even = 0.5 * ( A1 + rot90(A1,2) );
+  if ~isEven( A1even )
+    error('isEven failed');
+  else
+    disp('isEven passed');
+  end
 
   %% makeDftMatrix
   fprintf( '\nTesting makeDftMatrix: \n');
@@ -12,6 +23,7 @@ function testDworkLib
     error(['makeDftMatrix failed with error ', num2str(err)]);
   else
     disp('makeDftMatrix passed');
+  end
 
   %% showLibs
   fprintf( '\nTesting showLibs: \n');
@@ -20,5 +32,5 @@ function testDworkLib
   %% showLibFiles
   fprintf('\nTesting showLibFiles: \n');
   showLibFiles( 'dworkLib' );
-    
+
 end
