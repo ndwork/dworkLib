@@ -35,6 +35,16 @@ function testDworkLib
     disp('makeDftMatrix passed');
   end
 
+  %% nonlocal mean
+  fprintf('\nTesting nonlocal means: \n');
+  img = phantom();  sImg = size(img);
+  noiseSig = 0.1;
+  noise = normrnd( 0, noiseSig, sImg(1), sImg(2) );
+  noisyImg = img + noise;
+  denoisedImg = nonlocalMeans( img, 'sigmaS', 0.02 );
+  figure; imshow( [noisyImg, denoisedImg], [] );
+  title('Nonlocal Means Result');
+  
   %% showLibs
   fprintf( '\nTesting showLibs: \n');
   showLibs();
