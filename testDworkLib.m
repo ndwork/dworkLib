@@ -2,6 +2,16 @@
 function testDworkLib
   clear; close all; rng(1);
 
+  %% bilateralFilter
+  fprintf('\nTesting bilateralFilter: \n');
+  img = phantom();  sImg = size(img);
+  noiseSig = 0.1;
+  noise = normrnd( 0, noiseSig, sImg(1), sImg(2) );
+  noisyImg = img + noise;
+  denoisedImg = bilateralFilter( img, 'sigmaR', 0.1 );
+  figure; imshow( [noisyImg, denoisedImg], [] );
+  title('Bilateral Filter Result');
+
   %% isEven
   fprintf( '\nTesting isEven: \n');
   A1 = rand(5,5);
