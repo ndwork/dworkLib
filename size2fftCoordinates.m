@@ -1,6 +1,6 @@
 
-function k = size2fftCoordinates( N )
-  % k = size2fftCoordinates( N )
+function ks = size2fftCoordinates( N )
+  % ks = size2fftCoordinates( N )
   %
   % Inputs:
   %   N is an an array specifying the number of elements in each dimension.
@@ -23,15 +23,12 @@ function k = size2fftCoordinates( N )
     N = N(2:end);
   end
   numN = numel(N);
-  
-  firstK = size2fftCoordinates_1D( N(1) );
-  k = zeros( numel(firstK), numN );
-  k(:,1) = firstK;
-  
-  for i=2:numN
-    k(:,i) = size2fftCoordinates_1D( N(i) );
+
+  ks = cell( numN, 1 );
+  for i=1:numN
+    ks{i} = size2fftCoordinates_1D( N(i) );
   end
-  
+
 end
 
 

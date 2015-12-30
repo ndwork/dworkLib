@@ -12,24 +12,24 @@ function out = cropData( data, N )
   %   If N is an array of size equal to the number of dimensions of data, 
   %     then the final size is [N(1) N(2) .. N(D)]
 
+  nD = ndims( data );
   if numel(N) == 1
     N = N * ones(nD,1);
   end
 
   sData = size(data);
-  nD = ndims( data );
   subIndxs = cell(nD,1);
   for i=1:nD
+    if sData(i) == 1
+      subIndxs{i} = 1;
+      continue;
+    end
+
     if N(i) > sData(i),
       errorMsg = ['Cropping size ', num2str(N(i)), ' for dimension ', ...
         num2str(i), ' is too large'];
       error(errorMsg);
     end;
-
-    if sData(i) == 1
-      subIndxs{i} = 1;
-      continue;
-    end
 
     halfS = sData(i)/2;
     if mod(sData(i),2)==0
