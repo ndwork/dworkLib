@@ -10,7 +10,7 @@ function [y,x] = size2imgCoordinates( N )
   %
   % Outputs:
   %   y is a vector representing the y locations of each row of the image
-  %   x is a vector representing the x locaitons of each row of the image
+  %   x is a vector representing the x locations of each row of the image
 
 
   Ny = N(1);
