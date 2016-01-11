@@ -12,14 +12,24 @@ function testDworkLib
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Bilateral Filter Result');
 
-  %% isEven
-  fprintf( '\nTesting isEven: \n');
+  %% isEven - 1D data
+  fprintf( '\nTesting isEven (1D): \n');
+  A1 = rand(5,1);
+  A1even = 0.5 * ( A1 + flipud(A1) );
+  if ~isEven( A1even )
+    error('isEven (1D) failed');
+  else
+    disp('isEven (1D) passed');
+  end
+  
+  %% isEven - 2D data
+  fprintf( '\nTesting isEven (2D): \n');
   A1 = rand(5,5);
   A1even = 0.5 * ( A1 + rot90(A1,2) );
   if ~isEven( A1even )
-    error('isEven failed');
+    error('isEven (2D) failed');
   else
-    disp('isEven passed');
+    disp('isEven (2D) passed');
   end
 
   %% makeDftMatrix

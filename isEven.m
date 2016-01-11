@@ -1,5 +1,5 @@
 
-function [out,error] = isEven( img, varargin )
+function [out,error] = isEven( data, varargin )
   % out = isEven( data, [ threshold ] )
   % Determines whether or not data is even (with circular boundary
   %   conditions)
@@ -7,7 +7,7 @@ function [out,error] = isEven( img, varargin )
   %
   % Inputs:
   % data is a 1D or 2D array
-  % threshold is an optional input.  Relative difference between data(x)
+  % threshold is an optional input.  The relative error between data(x)
   %   and data(-x) must be less than threshold to be considered even.
 
   defaultThresh = 0;
@@ -16,13 +16,13 @@ function [out,error] = isEven( img, varargin )
   p.parse( varargin{:} );
   thresh = p.Results.thresh;
 
-  numDims = ndims( img );
+  numDims = ndims( data );
   
   switch numDims
     case 1
-      [out,error] = isEven1D( img, thresh );
+      [out,error] = isEven1D( data, thresh );
     case 2
-      [out,error] = isEven2D( img, thresh );
+      [out,error] = isEven2D( data, thresh );
   end
 
 end
@@ -32,7 +32,6 @@ function [out,error] = isEven1D( data, thresh )
   mirrorData = flipud( data(:) );
 
   nData = numel( data );
-
   nEven = -mod( nData, 2 );
   if nEven
     mirrorData = circshift( mirrorData, nEven );

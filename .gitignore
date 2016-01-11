@@ -1,6 +1,7 @@
 
 *.bmp
 *.jpg
+*.m~
 *.mat
 *.png
 *.tif

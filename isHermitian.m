@@ -1,14 +1,14 @@
 
-function out = isHermitian( img, varargin )
-  % out = isHermitian( img, [ threshold ] )
-  % Determines whether or not the real part of img is even and the
+function [out,error] = isHermitian( data, varargin )
+  % [out,error] = isHermitian( data, [ threshold ] )
+  % Determines whether or not the real part of data is even and the
   %   imaginary part is odd (with circular boundary conditions)
   % Indexes are defined according to fftshift
   %
   % Inputs:
-  % img is a 2D array that is the image
-  % threshold is an optional input.  Max magnitude of difference must be 
-  %   less than threshold to be considered even.
+  % data is a 1D or 2D array
+  % threshold is an optional input.  The relative error
+  %   must be less than threshold to be considered Hermitian.
 
   defaultThresh = 0;
   p = inputParser;
@@ -16,6 +16,34 @@ function out = isHermitian( img, varargin )
   p.parse( varargin{:} );
   thresh = p.Results.thresh;
 
+  numDims = ndims( data );
+
+  switch numDims
+    case 1
+      [out,error] = isHermitian1D( data, thresh );
+    case 2
+      [out,error] = isHermitian2D( data, thresh );
+  end
+end
+
+
+function [out,error] = isHermitian1D( data, thresh )
+  mirrorData = flipud( data(:) );
+
+  nData = numel( data );
+
+  nEven = ~mod(nData,2);
+  if nEven
+    mirrorData = circshift( mirrorData, nyEven );
+  end
+
+  diff = data - conj(mirrorData);
+  error = norm(diff(:),2) / norm(data(:),2);
+  if error > thresh, out = false; else out = true; end;
+end
+
+
+function [out,error] = isHermitian2D( img, thresh )
   mirrorImg = rot90( img, 2 );
 
   [ny,nx] = size(img);
@@ -29,3 +57,4 @@ function out = isHermitian( img, varargin )
   error = norm(diff(:),2) / norm(img(:),2);
   if error > thresh, out = false; else out = true; end;
 end
+

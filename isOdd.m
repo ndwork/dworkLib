@@ -1,14 +1,14 @@
 
-function out = isOdd( img, varargin )
-  % out = isOdd( img, [ threshold ] )
-  % Determines whether or not img is odd (with circular boundary
+function [out,error] = isOdd( data, varargin )
+  % [out,error] = isOdd( data, [ threshold ] )
+  % Determines whether or not data is odd (with circular boundary
   %   conditions)
   % Indexes are defined according to fftshift
   %
   % Inputs:
-  % img is a 2D array that is the image
-  % threshold is an optional input.  Relative difference between img(x,y)
-  %   and -img(-x,-y) must be less than threshold to be considered odd.
+  % data is a 1D or 2D array
+  % threshold is an optional input.  The relative error between data(x)
+  %   and -data(-x) must be less than threshold to be considered odd.
 
   defaultThresh = 0;
   p = inputParser;
@@ -16,6 +16,34 @@ function out = isOdd( img, varargin )
   p.parse( varargin{:} );
   thresh = p.Results.thresh;
 
+  numDims = ndims( data );
+  
+  switch numDims
+    case 1
+      [out,error] = isOdd1D( data, thresh );
+    case 2
+      [out,error] = isOdd2D( data, thresh );
+  end
+
+end
+
+
+function [out,error] = isOdd1D( data, thresh )
+  mirrorData = flipud( data(:) );
+
+  nData = numel( data );
+  nEven = ~mod(nData,2);
+  if nEven
+    mirrorData = circshift( mirrorData, nyEven);
+  end
+
+  error = norm( mirrorData(:) + data(:), 2 ) / norm(data(:),2);
+  if error > thresh, out = false; else out = true; end;
+end
+
+
+
+function [out,error] = isOdd2D( img, thresh )
   mirrorImg = rot90( img, 2 );
 
   [ny,nx] = size(img);
@@ -28,3 +56,5 @@ function out = isOdd( img, varargin )
   error = norm( mirrorImg(:) + img(:), 2 ) / norm(img(:),2);
   if error > thresh, out = false; else out = true; end;
 end
+
+
