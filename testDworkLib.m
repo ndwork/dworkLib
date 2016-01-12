@@ -15,8 +15,8 @@ function testDworkLib
   %% isEven - 1D data
   fprintf( '\nTesting isEven (1D): \n');
   A1 = rand(5,1);
-  A1even = 0.5 * ( A1 + flipud(A1) );
-  if ~isEven( A1even )
+  A1odd = 0.5 * ( A1 + flipud(A1) );
+  if ~isEven( A1odd )
     error('isEven (1D) failed');
   else
     disp('isEven (1D) passed');
@@ -25,11 +25,55 @@ function testDworkLib
   %% isEven - 2D data
   fprintf( '\nTesting isEven (2D): \n');
   A1 = rand(5,5);
-  A1even = 0.5 * ( A1 + rot90(A1,2) );
-  if ~isEven( A1even )
+  A1odd = 0.5 * ( A1 + rot90(A1,2) );
+  if ~isEven( A1odd )
     error('isEven (2D) failed');
   else
     disp('isEven (2D) passed');
+  end
+  
+  %% isHermitian - 1D data
+  fprintf( '\nTesting isHermitian (1D): \n');
+  A1 = rand(5,1);
+  A1even = 0.5 * ( A1 + flipud(A1) );
+  A1odd = 0.5 * ( A1 - flipud(A1) );
+  A1hermitian = A1even + 1i * A1odd;
+  if ~isHermitian( A1hermitian )
+    error('isEven (1D) failed');
+  else
+    disp('isEven (1D) passed');
+  end
+
+  %% isHermitian - 2D data
+  fprintf( '\nTesting isHermitian (2D): \n');
+  A1 = rand(5,1);
+  A1even = 0.5 * ( A1 + rot90(A1,2) );
+  A1odd = 0.5 * ( A1 - rot90(A1,2) );
+  A1hermitian = A1even + 1i * A1odd;
+  if ~isHermitian( A1hermitian )
+    error('isEven (2D) failed');
+  else
+    disp('isEven (2D) passed');
+  end
+
+  %% isOdd - 1D data
+  fprintf( '\nTesting isOdd (1D): \n');
+  A1 = rand(5,1);
+  A1odd = 0.5 * ( A1 - flipud(A1) );
+  if ~isOdd( A1odd )
+    error('isOdd (1D) failed');
+  else
+    disp('isOdd (1D) passed');
+  end
+
+  %% isOdd - 2D data
+  fprintf( '\nTesting isOdd (2D): \n');
+  A1 = rand(5,5);
+  A1odd = 0.5 * ( A1 - rot90(A1,2) );
+  if ~isOdd( A1odd )
+    error('isOdd (2D) failed');
+  else
+    disp('isOdd (2D) passed');
   end
 
   %% makeDftMatrix

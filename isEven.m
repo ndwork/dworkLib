@@ -17,12 +17,13 @@ function [out,error] = isEven( data, varargin )
   thresh = p.Results.thresh;
 
   numDims = ndims( data );
-  
-  switch numDims
-    case 1
-      [out,error] = isEven1D( data, thresh );
-    case 2
-      [out,error] = isEven2D( data, thresh );
+
+  if isrow(data) || iscolumn(data)
+    [out,error] = isEven1D( data, thresh );
+
+  elseif numDims == 2
+    [out,error] = isEven2D( data, thresh );
+
   end
 
 end
@@ -32,9 +33,9 @@ function [out,error] = isEven1D( data, thresh )
   mirrorData = flipud( data(:) );
 
   nData = numel( data );
-  nEven = -mod( nData, 2 );
+  nEven = ~mod( nData, 2 );
   if nEven
-    mirrorData = circshift( mirrorData, nEven );
+    mirrorData = circshift( mirrorData, [nEven 1] );
   end
 
   error = norm( mirrorData(:) - data(:), 2 ) / norm( data(:), 2 );
@@ -50,7 +51,7 @@ function [out,error] = isEven2D( img, thresh )
   mirrorImg = rot90( img, 2 );
 
   if nyEven || nxEven
-    mirrorImg = circshift( mirrorImg, [nyEven nxEven] );
+    mirrorImg = circshift( mirrorImg, +[nyEven nxEven] );
   end
 
   error = norm( mirrorImg(:) - img(:), 2 ) / norm( img(:), 2 );

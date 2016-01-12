@@ -18,12 +18,14 @@ function [out,error] = isHermitian( data, varargin )
 
   numDims = ndims( data );
 
-  switch numDims
-    case 1
-      [out,error] = isHermitian1D( data, thresh );
-    case 2
-      [out,error] = isHermitian2D( data, thresh );
+  if isrow(data) || iscolumn(data)
+    [out,error] = isHermitian1D( data, thresh );
+
+  elseif numDims == 2
+    [out,error] = isHermitian2D( data, thresh );
+
   end
+
 end
 
 
@@ -34,7 +36,7 @@ function [out,error] = isHermitian1D( data, thresh )
 
   nEven = ~mod(nData,2);
   if nEven
-    mirrorData = circshift( mirrorData, nyEven );
+    mirrorData = circshift( mirrorData, [nEven 1] );
   end
 
   diff = data - conj(mirrorData);

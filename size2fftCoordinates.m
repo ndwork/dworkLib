@@ -8,8 +8,10 @@ function ks = size2fftCoordinates( N )
   %     number of row and columns of the Fourier Transformed image.
   %
   % Outputs:
-  %   k(i,:) is a vector with k-space locations for each dimension in
-  %     the Fourier domain.
+  %   If N is a scalar, then ks is a vector with the k-space locations
+  %     for each bin in the Fourier domain.
+  %   If N is an array, then ks is a cell array where ks{i} is a vector
+  %     with k-space locations for each bin of the i^th dimension.
   %
   %   For our 2D example, 
   %     let fftImg = fftshift( fft2( ifftshift( img ) ) );
@@ -29,6 +31,7 @@ function ks = size2fftCoordinates( N )
     ks{i} = size2fftCoordinates_1D( N(i) );
   end
 
+  if numel( ks ) == 1, ks=ks{1}; end;
 end
 
 

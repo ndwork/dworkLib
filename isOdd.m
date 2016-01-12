@@ -17,12 +17,13 @@ function [out,error] = isOdd( data, varargin )
   thresh = p.Results.thresh;
 
   numDims = ndims( data );
-  
-  switch numDims
-    case 1
-      [out,error] = isOdd1D( data, thresh );
-    case 2
-      [out,error] = isOdd2D( data, thresh );
+
+  if isrow(data) || iscolumn(data)
+    [out,error] = isOdd1D( data, thresh );
+
+  elseif numDims == 2
+    [out,error] = isOdd2D( data, thresh );
+
   end
 
 end
@@ -34,7 +35,7 @@ function [out,error] = isOdd1D( data, thresh )
   nData = numel( data );
   nEven = ~mod(nData,2);
   if nEven
-    mirrorData = circshift( mirrorData, nyEven);
+    mirrorData = circshift( mirrorData, [nEven 1] );
   end
 
   error = norm( mirrorData(:) + data(:), 2 ) / norm(data(:),2);
