@@ -36,6 +36,7 @@ function [out,error] = isOdd1D( data, thresh )
   nEven = ~mod(nData,2);
   if nEven
     mirrorData = circshift( mirrorData, [nEven 1] );
+    mirrorData(1) = mirrorData(1) * -1;
   end
 
   error = norm( mirrorData(:) + data(:), 2 ) / norm(data(:),2);

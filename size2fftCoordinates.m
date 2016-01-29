@@ -38,9 +38,9 @@ end
 function k = size2fftCoordinates_1D( N )
   dk = 1 / N;
   if mod( N, 2 ) == 0
-    k = linspace(-0.5,0.5-dk,N);
+    k = transpose( linspace(-0.5,0.5-dk,N) );
   else
-    k = linspace(-0.5+dk/2,0.5-dk/2,N);
+    k = transpose( linspace(-0.5+dk/2,0.5-dk/2,N) );
   end
 end
 
