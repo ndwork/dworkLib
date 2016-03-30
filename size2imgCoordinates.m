@@ -1,30 +1,31 @@
 
 function coords = size2imgCoordinates( N )
   % coords = size2imgCoordinates( N )
-  % Determine the image coordinates where (0,0) is at the "center"
-  %   (center is defined in the same way as fftshift)
   %
   % Inputs:
-  %   N is an array where the number of elements equal the number of
-  %     dimensions of the image.  The value of each element is the size
-  %     of the data in that dimension
+  %   N is an an array specifying the number of elements in each dimension.
+  %   For example, N can be a two element array [Ny Nx] specifying the
+  %     number of row and columns of the data.
   %
   % Outputs:
-  %   if N is a single element, coords is a 1D array with data coordinates
-  %   if N has more than one elements, coords is a cell array where each
-  %     element is a 1D array with data coordinates
+  %   If N is a scalar, then coords is a vector with the coordinates
+  %     for each bin of the data.
+  %   If N is an array, then coords is a cell array where coords{i} is a
+  %     vector with locations for each bin of the i^th dimension.
 
+  if N(1)==1 && numel(N) > 1
+    N = N(2:end);
+  end
   numN = numel(N);
-  coords = cell(numN,1);
+
+  coords = cell( numN, 1 );
   for i=1:numN
     coords{i} = size2imgCoordinates_1D( N(i) );
   end
 
-  if numel(coords)==1, coords=coords{1}; end;
+  if numel( coords ) == 1, coords=coords{1}; end;
 end
 
-
-function coords = size2imgCoordinates_1D( N )
+function coords = size2imgCoordinates_1D( N )  
   coords = (0:N-1) - floor(0.5*N);
 end
-
