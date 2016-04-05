@@ -23,11 +23,11 @@ function stats( data )
   imagData = imag(data);
   if max( abs(imagData(:)) ~= 0 )
     disp('Real: ');
-    arrayStats( real(data), '  ' );
+    arrayStats( real(double(data)), '  ' );
     disp('Imag: ');
-    arrayStats( imag(data), '  ' );
+    arrayStats( imag(double(data)), '  ' );
   else
-    arrayStats( data );
+    arrayStats( double(data) );
   end
 
 end

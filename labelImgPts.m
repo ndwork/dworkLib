@@ -21,9 +21,12 @@ function labelImgPts( pts, varargin )
 
   [nPts,~] = size(scaledPts);
   for i=1:nPts
-    th = text( scaledPts(i,1), scaledPts(i,2), num2str(i), ...
-      'FontSize', 30);
+    y = scaledPts(i,1);
+    x = scaledPts(i,2);
+
+    text( x-2, y-2, num2str(i), 'color', 'blue', 'FontSize', 20 );
+    text( x, y, num2str(i), 'color', 'yellow', 'FontSize', 20 );
   end
 
+  drawnow;
 end
-
