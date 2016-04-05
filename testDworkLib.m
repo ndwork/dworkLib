@@ -19,12 +19,28 @@ function testDworkLib
   figure;
   showFeaturesOnImg( features, img );
 
+  %% findRotAndTrans
+  nPts = 5;
+  theta = pi/4;
+  pts1 = 10*rand(nPts,2) - 5;
+  R = [ cos(theta) -sin(theta); sin(theta) cos(theta) ];
+  t = [ 5.2; -4.1 ];
+  pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);;
+  [R2,t2] = findRotAndTrans( pts1, pts2 );
+  error1 = norm( R2(:) - R(:), 2 );
+  error2 = norm( t - t2, 2 );
+  if error1 + error2 < 1d-7
+    disp('findRotAndTrans passed');
+  else
+    error('findRotAndTrans failed');
+  end
+
   %% isEven - 1D data
   fprintf( '\nTesting isEven (1D): \n');
   A1 = rand(5,1);
   A1odd = 0.5 * ( A1 + flipud(A1) );
   if ~isEven( A1odd )
-    err('isEven (1D) failed');
+    error('isEven (1D) failed');
   else
     disp('isEven (1D) passed');
   end
