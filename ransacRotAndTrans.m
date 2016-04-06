@@ -1,6 +1,6 @@
 
 function [R,t] = ransacRotAndTrans( pts1, pts2, thresh )
-  % [R,t] = ransacRotAndTrans( pts1, pts2 )
+  % [R,t] = ransacRotAndTrans( pts1, pts2, thresh )
   % This function finds the rotation matrix R and the translation matrix t
   %   such that pt2 = R * pt1 + t;
   % It implements RANSAC with the Kabsch algorithm
