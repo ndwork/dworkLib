@@ -12,6 +12,38 @@ function testDworkLib
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Bilateral Filter Result');
 
+  %% dltHomographyFromPts2D
+  pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
+  H = rand(3,3);
+  pts1_h = euc2Hom( pts1' );
+  pts2_h = H * pts1_h;
+  pts2 = hom2Euc( pts2_h )';
+  dltH = dltHomographyFromPts2D( pts1, pts2 );
+  H = H ./ H(3,3);
+  dltH = dltH ./ dltH(3,3);
+  error = norm( H - dltH, 'fro' );
+  if error < 1d-10
+    disp('dltHomographFromPts2D passed');
+  else
+    error('dltHomographFromPts2D failed');
+  end
+  
+  %% dltHomographFromPts3D
+  pts1 = [ [0 0 0]; [0 0 1]; [0 1 0]; [0 1 1]; [1 0 0]; [1 0 1]; ];
+  H = rand(4,4);
+  pts1_h = euc2Hom( pts1' );
+  pts2_h = H * pts1_h;
+  pts2 = hom2Euc( pts2_h )';
+  dltH = dltHomographyFromPts3D( pts1, pts2 );
+  H = H ./ H(4,4);
+  dltH = dltH ./ dltH(4,4);
+  error = norm( H - dltH, 'fro' );
+  if error < 1d-10
+    disp('dltHomographFromPts3D passed');
+  else
+    error('dltHomographFromPts3D failed');
+  end
+  
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
   img = double( imread( imgFile ) );
