@@ -21,13 +21,13 @@ function testDworkLib
   dltH = dltHomographyFromPts2D( pts1, pts2 );
   H = H ./ H(3,3);
   dltH = dltH ./ dltH(3,3);
-  error = norm( H - dltH, 'fro' );
-  if error < 1d-10
+  err = norm( H - dltH, 'fro' );
+  if err < 1d-10
     disp('dltHomographFromPts2D passed');
   else
     error('dltHomographFromPts2D failed');
   end
-  
+
   %% dltHomographFromPts3D
   pts1 = [ [0 0 0]; [0 0 1]; [0 1 0]; [0 1 1]; [1 0 0]; [1 0 1]; ];
   H = rand(4,4);
@@ -43,7 +43,7 @@ function testDworkLib
   else
     error('dltHomographFromPts3D failed');
   end
-  
+
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
   img = double( imread( imgFile ) );
@@ -169,6 +169,40 @@ function testDworkLib
   err = norm( padded - [0 0 1 2 0] );
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
+
+  %% ransacDltHomographyFromPts2D
+  pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
+  pts1 = [ pts1; rand(5,2); ];
+  H = rand(3,3);
+  pts1_h = euc2Hom( pts1' );
+  pts2_h = H * pts1_h;
+  pts2 = hom2Euc( pts2_h )';
+  dltH = ransacDltHomographyFromPts2D( pts1, pts2, 1 );
+  H = H ./ H(3,3);
+  dltH = dltH ./ dltH(3,3);
+  err = norm( H - dltH, 'fro' );
+  if err < 1d-8
+    disp('ransacDltHomographyFromPts2D passed');
+  else
+    error('ransacDltHomographyFromPts2D failed');
+  end
+
+  %% ransacDltHomographyFromPts3D
+  pts1 = [ [0 0 0]; [0 0 1]; [0 1 0]; [0 1 1]; [1 0 0]; [1 0 1]; ];
+  pts1 = [ pts1; rand(5,3); ];
+  H = rand(4,4);
+  pts1_h = euc2Hom( pts1' );
+  pts2_h = H * pts1_h;
+  pts2 = hom2Euc( pts2_h )';
+  dltH = ransacDltHomographyFromPts3D( pts1, pts2, 1 );
+  H = H ./ H(4,4);
+  dltH = dltH ./ dltH(4,4);
+  err = norm( H - dltH, 'fro' );
+  if err < 1d-8
+    disp('ransacDltHomographyFromPts3D passed');
+  else
+    error('ransacDltHomographyFromPts3D failed');
+  end
 
   %% ransacRotAndTrans
   nPts = 5;
