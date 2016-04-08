@@ -17,7 +17,7 @@ function [pts1,pts2] = findAndTrackCorners( img1, img2, varargin )
   % offset - 2 element array; the [y x] shift to center the search area
   %   (default is [0 0])
   %
-  % Written by Nicholas Dwork 2016
+  % Written by Nicholas Dwork - Copyright 2016
 
   sImg = size(img1);
 

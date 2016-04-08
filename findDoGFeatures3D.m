@@ -1,19 +1,19 @@
 
 function features = findDoGFeatures3D( vol, varargin )
   % features = findDifferenceOfGaussianFeatures3D( vol, ...
-  %   [ 'nFeatures', nFeatures, 'dThresh', dThresh ] )
+  %   [ 'nFeatures', nFeatures, 'buffer', buffer ] )
   % nFeatures is the desired number of features.  May return fewer than
   %   nFeatures if image is to small.
-  % dThresh is the minimum distance two features can be within each other
+  % buffer is the minimum distance two features can be within each other
 
-  defaultNFeatures = 100;
-  defaultDThresh = 10;
+  defaultNFeatures = 50;
+  defaultBuffer = 10;
   p = inputParser;
   p.addParamValue( 'nFeatures', defaultNFeatures );
-  p.addParamValue( 'dThresh', defaultDThresh );
+  p.addParamValue( 'buffer', defaultBuffer );
   p.parse( varargin{:} );
   nFeatures = p.Results.nFeatures;
-  dThresh = p.Results.dThresh;
+  buffer = p.Results.buffer;
 
   fBig = makeGaussFilter3D( 9, 5 );
   fSmall = makeGaussFilter3D( 9, 3 );
@@ -27,7 +27,7 @@ function features = findDoGFeatures3D( vol, varargin )
   xIndxs = reshape(x, sVol );
   zIndxs = reshape(z, sVol );
 
-  dThreshSq = dThresh * dThresh;
+  dThreshSq = buffer * buffer;
   features = zeros(nFeatures,3);
   for i=1:nFeatures
     [~,maxIndx]= max( DoG(:) );
