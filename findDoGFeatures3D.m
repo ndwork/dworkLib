@@ -34,7 +34,7 @@ function features = findDoGFeatures3D( vol, varargin )
     [y,x,z] = ind2sub( sVol, maxIndx );
     features(i,1) = y;
     features(i,2) = x;
-    features(i,3) = x;
+    features(i,3) = z;
     
     xDist = abs( xIndxs - x );
     yDist = abs( yIndxs - y );
