@@ -12,10 +12,13 @@ function labelImgPts( pts, varargin )
   % Written by Nicholas Dwork (c) 2015
 
   defaultScale = 1.0;
+  defaultInlierIndxs = [];
   p = inputParser;
-  p.addOptional('scale',defaultScale);
+  p.addParamValue('scale',defaultScale);
+  p.addParamValue('inlierIndxs',defaultInlierIndxs);
   p.parse( varargin{:} );
   scale = p.Results.scale;
+  inlierIndxs = p.Results.inlierIndxs;
 
   scaledPts = round( pts * scale );
 
@@ -25,7 +28,16 @@ function labelImgPts( pts, varargin )
     x = scaledPts(i,2);
 
     text( x-2, y-2, num2str(i), 'color', 'blue', 'FontSize', 20 );
-    text( x, y, num2str(i), 'color', 'yellow', 'FontSize', 20 );
+
+    if numel(inlierIndxs) > 0
+      if find( inlierIndxs == i, 1, 'first' )
+        text( x, y, num2str(i), 'color', 'yellow', 'FontSize', 20 );
+      else
+        text( x, y, num2str(i), 'color', 'red', 'FontSize', 20 );
+      end
+    else
+      text( x, y, num2str(i), 'color', 'yellow', 'FontSize', 20 );
+    end
   end
 
   drawnow;

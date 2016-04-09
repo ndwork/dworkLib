@@ -2,7 +2,7 @@
 function [pts1, pts2] = findAndTrackFeatures3D( vol1, vol2, varargin )
   % corners = findAndTrackCorners( vol1, vol2 ...
   %   [, 'N', N, 'buffer', buffer, 'w', w, ...
-  %   'searchWith', searchWidth, 'offset', offset ] )
+  %   'searchWidth', searchWidth, 'offset', offset ] )
   %
   % Inputs:
   % vol1/vol2 - 2D arrays; find features in img1 and track into img2
