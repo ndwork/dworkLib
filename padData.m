@@ -38,7 +38,8 @@ function padded = padData( data, N, varargin )
     sData = size( data );
     minY = ceil( N(1)/2 - sData(1)/2 + 1 );
     minX = ceil( N(2)/2 - sData(2)/2 + 1 );
-    padded( minY : minY+sData(1)-1, minX:minX:sData(2)-1 ) = data;
+    padded( minY : minY+sData(1)-1, ...
+            minX : minX+sData(2)-1 ) = data;
 
   elseif nDimData == 3
     padded = zeros( N );
