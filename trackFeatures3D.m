@@ -23,8 +23,8 @@ function pts2 = trackFeatures3D( pts1, vol1, vol2, varargin )
   %   search area (default is [0 0])
   %
   % Output:
-  % pts2 - an Nx3 array specifying the y/x/z location of each feature in 
-  %   vol2.
+  % pts2 - an Nx3 array specifying the y/x/z location of each feature
+  %   in vol2.
 
   sVol = size( vol1 );
   nPts = size( pts1, 1 );
@@ -61,7 +61,7 @@ function pts2 = trackFeatures3D( pts1, vol1, vol2, varargin )
     sT = min( y+hsw(1)+offset(1), sVol(1) );  % search top
     sL = max( x-hsw(2)+offset(2), 1 );  % search left
     sR = min( x+hsw(2)+offset(2), sVol(2) );  % search right
-    sA = min( z-hsw(3)+offset(3), 1 );  % search anterior
+    sA = max( z-hsw(3)+offset(3), 1 );  % search anterior
     sP = min( z+hsw(3)+offset(3), sVol(3) );  %search posterior
     search = vol2(sB:sT,sL:sR,sA:sP);
     if numel(search) == 0, continue; end;
