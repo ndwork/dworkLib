@@ -31,9 +31,9 @@ function out = rotateAndTranslateImg( R, t, img, varargin )
   coords = [ xs(:)'; ys(:)' ];
 
   tCoords = zeros( size(coords) );
-  tCoords(1,:) = coords(1,:) + t(1);
-  tCoords(2,:) = coords(2,:) + t(2);
-  RCoords = R * tCoords;
+  tCoords(1,:) = coords(1,:) - t(1);
+  tCoords(2,:) = coords(2,:) - t(2);
+  RCoords = inv(R) * tCoords;
   interped = interp2( img, RCoords(1,:), RCoords(2,:), ...
     'linear', extrapVal );
   out = reshape( interped, sImg );
