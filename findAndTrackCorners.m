@@ -2,14 +2,15 @@
 function [pts1,pts2] = findAndTrackCorners( img1, img2, varargin )
   % corners = findAndTrackCorners( img1, img2 ...
   %   [, 'N', N, 'buffer', buffer, 'w', w, 'k', k, ...
-  %   'searchWith', searchWidth, 'offset', offset ] )
+  %   'searchWidth', searchWidth, 'offset', offset ] )
   %
   % Inputs:
   % img1/img2 - 2D arrays; find features in img1 and track into img2
   % N - the maximum number of features to find in img1
   % buffer - the spacing between features in img1
   % w - the feature width
-  % k - Harris corner parameter
+  % k - Harris corner parameter (default is 0.04, set for images nominally
+  %   scaled between 0 and 1)
   %
   % Optional Inputs:
   % searchWidth - the size of the search area to consider when tracking

@@ -54,8 +54,8 @@ function corners = findHarrisCorners( img, varargin )
   minScore = min( score(:) );
   score(1:buffer,:) = minScore;
   score(:,1:buffer) = minScore;
-  score(end-buffer,:) = minScore;
-  score(:,end-buffer) = minScore;
+  score(end-buffer:end,:) = minScore;
+  score(:,end-buffer:end) = minScore;
 
   corners = zeros(N,2);
   for i=1:N

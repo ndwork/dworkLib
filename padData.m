@@ -1,8 +1,18 @@
 
 function padded = padData( data, N, varargin )
   % padded = padData( data, N [, padValue ] )
+  %
+  % Inputs:
   % data - an array to be padded
   % N - specifies the final size of the padded data
+  %
+  % Optional Inputs:
+  % padValue - the value of the new data elements
+  %
+  % Outputs:
+  % padded - the padded array
+  %
+  % Written by Nicholas Dwork - Copyright 2016
 
   defaultPadValue = 0;
   p = inputParser;

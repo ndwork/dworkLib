@@ -12,6 +12,16 @@ function testDworkLib
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Bilateral Filter Result');
 
+  %% cropData
+  fprintf('\nTesting cropData: \n');
+  cropped = cropData( 1:10, 5 );
+  err = norm( cropped - [4 5 6 7 8], 2 );
+  if err ~= 0
+    disp('cropData failed');
+  else
+    disp('cropData passed');
+  end
+
   %% dltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
   H = rand(3,3);
@@ -168,6 +178,14 @@ function testDworkLib
   padded = padData( [1 2], 5 );
   err = norm( padded - [0 0 1 2 0] );
   if err>0, error(['padData failed with error ', num2str(err)]); end;
+
+  % test is cropData and padData are adjoints of each other
+  x = rand(5,1);  y = rand(3,1);
+  err = dotP( cropData(x,3), y ) - dotP( x, padData(y,5) );
+  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  x = rand(6,1); y = rand(4,1);
+  err = dotP( cropData(x,4), y ) - dotP( x, padData(y,6) );
+  if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
 
   %% ransacDltHomographyFromPts2D
@@ -220,6 +238,17 @@ function testDworkLib
   else
     error('ransacRotAndTrans failed');
   end
+
+  %% shearImg
+  %imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
+  %img = double( imread( imgFile ) );
+  img = zeros(500,500);
+  img(100:200,100:200) = 1;
+  ySheared = shearImg( img, pi/8 );
+  figure; imshow( [ img ySheared ], [] );  title('ySheared');
+  xSheared = shearImg( img, pi/8, 2 );
+  figure; imshow( [ img xSheared ], [] );  title('xSheared');
+  
 
   %% showLibs
   fprintf( '\nTesting showLibs: \n');
