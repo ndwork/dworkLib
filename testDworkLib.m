@@ -240,10 +240,8 @@ function testDworkLib
   end
 
   %% shearImg
-  %imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
-  %img = double( imread( imgFile ) );
-  img = zeros(500,500);
-  img(100:200,100:200) = 1;
+  imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
+  img = double( imread( imgFile ) );
   ySheared = shearImg( img, pi/8 );
   figure; imshow( [ img ySheared ], [] );  title('ySheared');
   xSheared = shearImg( img, pi/8, 2 );
