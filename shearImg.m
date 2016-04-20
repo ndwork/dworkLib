@@ -1,6 +1,6 @@
 
 function out = shearImg( in, theta, dim )
-  % out = shearImg( in, theta, dim )
+  % out = shearImg( in, theta [, dim] )
   %
   % shears the image along dimension dim
   %
@@ -25,11 +25,11 @@ function out = shearImg( in, theta, dim )
   xs = ones(sIn(1),1) * xs;
 
   if dim == 1
-    newYs = xs * tan(theta) + ys;
-    out = interp2( xs, ys, in, xs, newYs );
+    newYs = xs * tan(-theta) + ys;
+    out = interp2( xs, ys, in, xs, newYs, 'linear', 0 );
   else
-    newXs = -ys * tan(theta) + xs;
-    out = interp2( xs, ys, in, newXs, ys );
+    newXs = -ys * tan(-theta) + xs;
+    out = interp2( xs, ys, in, newXs, ys, 'linear', 0 );
   end
 
 end
