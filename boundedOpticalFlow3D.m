@@ -62,7 +62,7 @@ function [du,dv,dw] = boundedOpticalFlow3D( data1, data2, varargin )
     dv = dv + newDv;
     dw = dw + newDw;
 
-    showDiagnostics = 1;
+    showDiagnostics = 0;
     if showDiagnostics==1
       close all;
       [nRows,nCols,nPages] = size(tmp1);
@@ -195,7 +195,7 @@ function [du,dv,dw] = boundedOfADMM3D( data1, data2, eta, rho, bound )
 
   objectives = zeros(nIter,1);
   for i=1:nIter
-    if mod(i,100)==0
+    if mod(i,5)==0
       disp([ 'Working on iteration ', num2str(i), ' of ', num2str(nIter) ]);
     end
 
