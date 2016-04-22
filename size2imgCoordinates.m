@@ -27,5 +27,5 @@ function coords = size2imgCoordinates( N )
 end
 
 function coords = size2imgCoordinates_1D( N )  
-  coords = (0:N-1) - floor(0.5*N);
+  coords = (0:N-1)' - floor(0.5*N);
 end
