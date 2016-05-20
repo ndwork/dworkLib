@@ -47,8 +47,8 @@ function testDworkLib
   dltH = dltHomographyFromPts3D( pts1, pts2 );
   H = H ./ H(4,4);
   dltH = dltH ./ dltH(4,4);
-  error = norm( H - dltH, 'fro' );
-  if error < 1d-10
+  err = norm( H - dltH, 'fro' );
+  if err < 1d-10
     disp('dltHomographFromPts3D passed');
   else
     error('dltHomographFromPts3D failed');
@@ -141,6 +141,21 @@ function testDworkLib
     disp('isOdd (2D) passed');
   end
 
+  %% lsqrFISTA
+  fprintf( '\nTesting lsqrFISTA: \n');
+  A = rand(3,2);
+  b = rand(3,1);
+  tolerance = 1d-8;
+  maxIter = 500;
+  x1 = lsqrFISTA( A, b, tolerance, maxIter );
+  x = lsqr( A, b, tolerance, maxIter );
+  err = norm( x1 - x, 2 ) / norm(x,2);
+  if err > 1d-8
+    error(['lsqrFISTA failed with error ', num2str(err)]);
+  else
+    disp('lsqrFISTA passed');
+  end
+
   %% makeDftMatrix
   fprintf( '\nTesting makeDftMatrix: \n');
   M = 100;
@@ -187,6 +202,7 @@ function testDworkLib
   err = dotP( cropData(x,4), y ) - dotP( x, padData(y,6) );
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
+
 
   %% ransacDltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];

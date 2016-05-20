@@ -2,7 +2,7 @@
 function [nrm,lambdaVals,flag] = powerIteration( M, varargin )
   % Determines an approximation for the norm of the matrix M
   %
-  % [nrm,lambdaVals,flag] = powerIteration( M [, maxIters, tolerance, x0 ])
+  % [nrm,lambdaVals,flag] = powerIteration( M [, x0, maxIters, tolerance ])
   %
   % Inputs:
   % M is either a matrix or a function handle.  M( in )
@@ -13,29 +13,29 @@ function [nrm,lambdaVals,flag] = powerIteration( M, varargin )
   % lambdaVals - 
   % flag - 0 if converged; 1 if maximum iterations reached
 
+  defaultX0 = [];
   defaultMaxIters = 500;
   defaultTolerance = 1d-4;
-  defaultX0 = [];
   p = inputParser;
+  p.addOptional( 'x0', defaultX0 );
   p.addOptional( 'maxIters', defaultMaxIters, @isnumeric );
   p.addOptional( 'tolerance', defaultTolerance, @isnumeric );
-  p.addOptional( 'x0', defaultX0 );
   p.parse( varargin{:} );
+  x0 = p.Results.x0;
   maxIters = p.Results.maxIters;
   tolerance = p.Results.tolerance;
-  x0 = p.Results.x0;
 
   if isa( M, 'function_handle' )
-    [nrm,lambdaVals,flag] = powerIteration_fh( M, maxIters, tolerance, x0 );
+    [nrm,lambdaVals,flag] = powerIteration_fh( M, x0, maxIters, tolerance );
   else
-    [nrm,lambdaVals,flag] = powerIteration_mat( M, maxIters, tolerance, x0 );
+    [nrm,lambdaVals,flag] = powerIteration_mat( M, x0, maxIters, tolerance );
   end
 end
 
 function [nrm,lambdaVals,flag] = powerIteration_fh( ...
-  applyM, maxIters, tolerance, x )
+  applyM, x, maxIters, tolerance )
 
-  if numel(x0)==0,
+  if numel(x)==0,
     error('Must supply an initial x0 vector if M is a file handle.');
   end
 
@@ -63,8 +63,8 @@ function [nrm,lambdaVals,flag] = powerIteration_fh( ...
 end
 
 
-function [nrm,lambdaVals,flag] = powerIteration_mat( M, ...
-  maxIters, tolerance, x )
+function [nrm,lambdaVals,flag] = powerIteration_mat( M, x, ...
+  maxIters, tolerance )
 
   if numel(x) == 0
     sM = size(M);
