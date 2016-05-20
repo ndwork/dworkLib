@@ -1,6 +1,6 @@
 
 function features = findDoGFeatures2D( img, varargin )
-  % features = findDifferenceOfGaussianFeatures3D( vol, ...
+  % features = findDoGFeatures2D( vol, ...
   %   [ 'nFeatures', nFeatures, 'dThresh', dThresh ] )
 
   defaultNFeatures = 100;
