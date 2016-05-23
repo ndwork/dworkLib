@@ -30,7 +30,7 @@ function padded = padData( data, N, varargin )
   end
 
   if numel(N) ~= nDimData
-    error('Incorrect size of padded data specified');
+    N = N * ones( numel(size(data)), 1 );
   end
 
   if nDimData == 1
@@ -44,7 +44,7 @@ function padded = padData( data, N, varargin )
     padded( minY : minY+nData-1 ) = data;
 
   elseif nDimData == 2
-    padded = zeros( N );
+    padded = zeros( N(:)' );
     sData = size( data );
     minY = ceil( N(1)/2 - sData(1)/2 + 1 );
     minX = ceil( N(2)/2 - sData(2)/2 + 1 );
@@ -52,7 +52,7 @@ function padded = padData( data, N, varargin )
             minX : minX+sData(2)-1 ) = data;
 
   elseif nDimData == 3
-    padded = zeros( N );
+    padded = zeros( N(:)' );
     sData = size( data );
     minY = ceil( N(1)/2 - sData(1)/2 + 1 );
     minX = ceil( N(2)/2 - sData(2)/2 + 1 );

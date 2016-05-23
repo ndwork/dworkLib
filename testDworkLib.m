@@ -16,11 +16,36 @@ function testDworkLib
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
   err = norm( cropped - [4 5 6 7 8], 2 );
-  if err ~= 0
-    disp('cropData failed');
+  if err == 0
+    disp( 'cropData test 1 passed' );
   else
-    disp('cropData passed');
+    error( 'cropData test 1 failed' );
   end
+
+  cropped = cropData( 1:5, 4 );
+  err = norm( cropped - [2 3 4 5], 2 );
+  if err == 0
+    disp( 'cropData test 2 passed' );
+  else
+    error( 'cropData test 2 failed' );
+  end
+  
+  cropped = cropData( 1:6, 4 );
+  err = norm( cropped - [2 3 4 5] );
+  if err == 0
+    disp( 'cropData test 3 passed' );
+  else
+    error( 'cropData test 3 failed' );
+  end
+  
+  cropped = cropData( 1:5, 3 );
+  err = norm( cropped - [2 3 4] );
+  if err == 0
+    disp( 'cropData test 4 passed' );
+  else
+    error( 'cropData test 4 failed' );
+  end
+  
 
   %% dltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
