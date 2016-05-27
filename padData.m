@@ -40,14 +40,15 @@ function padded = padData( data, N, varargin )
       padded = ones( N, 1 ) * padValue;
     end
     nData = numel( data );
-    minY = ceil( N/2 - nData/2 + 1 );
+
+    minY = pdFindMinIndx( N, nData );
     padded( minY : minY+nData-1 ) = data;
 
   elseif nDimData == 2
     padded = zeros( N(:)' );
     sData = size( data );
-    minY = ceil( N(1)/2 - sData(1)/2 + 1 );
-    minX = ceil( N(2)/2 - sData(2)/2 + 1 );
+    minY = pdFindMinInd( N(1), sData(1) );
+    minX = pdFindMinInd( N(2), sData(2) );
     padded( minY : minY+sData(1)-1, ...
             minX : minX+sData(2)-1 ) = data;
 
@@ -56,11 +57,31 @@ function padded = padData( data, N, varargin )
     sData = size( data );
     minY = ceil( N(1)/2 - sData(1)/2 + 1 );
     minX = ceil( N(2)/2 - sData(2)/2 + 1 );
-    minZ = ceil( N(3)/2 - sData(3)/2 + 1 );
+    minY = pdFindMinInd( N(1), sData(1) );
+    minX = pdFindMinInd( N(2), sData(2) );
+    minZ = pdFindMinInd( N(3), sData(3) );
     padded ( minY : minY + sData(1)-1, ...
              minX : minX + sData(2)-1, ...
              minZ : minZ + sData(3)-1  ) = data;
   end
 
-
 end
+
+
+
+function minIndx = pdFindMinIndx( N, nData )
+  if mod(nData,2)==0
+    if mod(N,2)==0
+      minIndx = (N-nData)/2 + 1;
+    else
+      minIndx = ceil( N/2 - nData/2 );
+    end
+  else
+    if mod(N,2)==0
+      minIndx = ceil( N/2 - nData/2 + 1 );
+    else
+      minIndx = (N-nData)/2 + 1;
+    end
+  end
+end
+

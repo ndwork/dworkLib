@@ -47,8 +47,8 @@ function out = cropData( data, N )
       cy = ceil(halfS);
       if mod(N(i),2)==0
         halfN = N(i)/2;
-        minIndx = cy - halfN + 1;
-        maxIndx = cy + halfN;
+        minIndx = cy - halfN;
+        maxIndx = cy + halfN - 1;
       else
         halfN = floor(N(i)/2);
         minIndx = cy - halfN;

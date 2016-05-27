@@ -1,6 +1,6 @@
 
 function testDworkLib
-  clear; close all; rng(1);
+  clear; close all; rng(2);
 
   %% bilateralFilter
   fprintf('\nTesting bilateralFilter: \n');
@@ -16,36 +16,17 @@ function testDworkLib
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
   err = norm( cropped - [4 5 6 7 8], 2 );
-  if err == 0
-    disp( 'cropData test 1 passed' );
-  else
-    error( 'cropData test 1 failed' );
-  end
-
+  if err > 0, error( 'cropData test failed' ); end;
   cropped = cropData( 1:5, 4 );
-  err = norm( cropped - [2 3 4 5], 2 );
-  if err == 0
-    disp( 'cropData test 2 passed' );
-  else
-    error( 'cropData test 2 failed' );
-  end
-  
+  err = norm( cropped - [1 2 3 4], 2 );
+  if err > 0, error( 'cropData test failed' ); end;
   cropped = cropData( 1:6, 4 );
   err = norm( cropped - [2 3 4 5] );
-  if err == 0
-    disp( 'cropData test 3 passed' );
-  else
-    error( 'cropData test 3 failed' );
-  end
-  
+  if err > 0, error( 'cropData test failed' ); end;
   cropped = cropData( 1:5, 3 );
   err = norm( cropped - [2 3 4] );
-  if err == 0
-    disp( 'cropData test 4 passed' );
-  else
-    error( 'cropData test 4 failed' );
-  end
-  
+  if err > 0, error( 'cropData test failed' ); end;
+  disp('cropData test passed');
 
   %% dltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
@@ -215,8 +196,8 @@ function testDworkLib
   padded = padData( [1 2], 4 );
   err = norm( padded - [0 1 2 0] );
   if err>0, error(['padData failed with error ', num2str(err)]); end;
-  padded = padData( [1 2], 5 );
-  err = norm( padded - [0 0 1 2 0] );
+  padded = padData( [1 2], 3 );
+  err = norm( padded - [1 2 0] );
   if err>0, error(['padData failed with error ', num2str(err)]); end;
 
   % test is cropData and padData are adjoints of each other
@@ -225,6 +206,12 @@ function testDworkLib
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   x = rand(6,1); y = rand(4,1);
   err = dotP( cropData(x,4), y ) - dotP( x, padData(y,6) );
+  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  x = rand(5,1); y = rand(4,1);
+  err = dotP( cropData(x,4), y ) - dotP( x, padData(y,5) );
+  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  x = rand(6,1); y = rand(5,1);
+  err = dotP( cropData(x,5), y ) - dotP( x, padData(y,6) );
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
 
