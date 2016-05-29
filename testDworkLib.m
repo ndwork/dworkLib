@@ -152,12 +152,12 @@ function testDworkLib
   A = rand(9,8);
   b = rand(9,1);
   tolerance = 1d-8;
-  maxIter = 500;
+  x = A \ b;
+  maxIter = 10000;
   x0 = rand( 8, 1 );
   x1 = lsqrFISTA( A, b, tolerance, maxIter, x0 );
-  x = lsqr( A, b, tolerance, maxIter );
   err1 = norm( x1 - x, 2 ) / norm(x,2);
-  if ~isfinite(err1) || err1 > 1d-8
+  if ~isfinite(err1) || err1 > 1d-4
     error(['lsqrFISTA with matrix failed with error ', num2str(err1)]);
   else
     disp('lsqrFISTA with matrix passed');
@@ -170,10 +170,9 @@ function testDworkLib
       out = A*in;
     end
   end
-  
   x2 = lsqrFISTA( @applyA, b, tolerance, maxIter, x0 );
   err2 = norm( x2 - x, 2 ) / norm(x,2);
-  if ~isfinite(err2) || err2 > 1d-8
+  if ~isfinite(err2) || err2 > 1d-4
     error(['lsqrFISTA with file handle failed with error ', num2str(err2)]);
   else
     disp('lsqrFISTA with file handle passed');
@@ -235,7 +234,6 @@ function testDworkLib
   %% powerIteration
   fprintf('\nTesting powerIteration: \n');
   M = rand(3);
-  
   x0 = rand(3,1);
   est1 = powerIteration( M, x0 );
   normM = norm( M );
