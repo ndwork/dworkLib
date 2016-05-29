@@ -47,8 +47,8 @@ function padded = padData( data, N, varargin )
   elseif nDimData == 2
     padded = zeros( N(:)' );
     sData = size( data );
-    minY = pdFindMinInd( N(1), sData(1) );
-    minX = pdFindMinInd( N(2), sData(2) );
+    minY = pdFindMinIndx( N(1), sData(1) );
+    minX = pdFindMinIndx( N(2), sData(2) );
     padded( minY : minY+sData(1)-1, ...
             minX : minX+sData(2)-1 ) = data;
 
@@ -57,9 +57,9 @@ function padded = padData( data, N, varargin )
     sData = size( data );
     minY = ceil( N(1)/2 - sData(1)/2 + 1 );
     minX = ceil( N(2)/2 - sData(2)/2 + 1 );
-    minY = pdFindMinInd( N(1), sData(1) );
-    minX = pdFindMinInd( N(2), sData(2) );
-    minZ = pdFindMinInd( N(3), sData(3) );
+    minY = pdFindMinIndx( N(1), sData(1) );
+    minX = pdFindMinIndx( N(2), sData(2) );
+    minZ = pdFindMinIndx( N(3), sData(3) );
     padded ( minY : minY + sData(1)-1, ...
              minX : minX + sData(2)-1, ...
              minZ : minZ + sData(3)-1  ) = data;
