@@ -51,7 +51,7 @@ function [out,flag,residual] = lsqrFISTA_fh( applyA, b, tolerance, ...
 
   if numel(t) == 0
     applyM = @(x) applyA( applyA( x ), 'transp' );
-    normAtA = powerIteration( applyM, x0 );
+    normAtA = powerIteration( applyM, applyM, x0 );
     t = 1 / normAtA * 0.95;
   end
 
