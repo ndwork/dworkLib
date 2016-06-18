@@ -1,3 +1,7 @@
+% This software is offered under the GNU General Public License 3.0.  It 
+% is offered without any warranty expressed or implied, including the 
+% implied warranties of merchantability or fitness for a particular 
+% purpose.
 
 function [nrm,flag] = powerIteration( M, varargin )
   % Determines an approximation for the norm of the matrix M
@@ -16,6 +20,8 @@ function [nrm,flag] = powerIteration( M, varargin )
   % Outputs:
   % nrm - approximation of norm of M
   % flag - 0 if converged; 1 if maximum iterations reached
+  %
+  % Written by Nicholas Dwork - Copyright 2016
 
   defaultX0 = [];
   defaultMaxIters = 500;

@@ -1,16 +1,43 @@
+% This software is offered under the GNU General Public License 3.0.  It 
+% is offered without any warranty expressed or implied, including the 
+% implied warranties of merchantability or fitness for a particular 
+% purpose.
 
-function out = makeDftMatrix( M, N )
-  % out = makeDftMatrix( M [, N] )
+function out = makeDftMatrix( M, varargin )
+  % Make the (potentially non-square) DFT matrix of size M x N
   %
-  % Make the (potentially non-square) DFT matrix for a vector
-  % in \mathbb{R}^N
+  % out = makeDftMatrix( M [, N, 'direction', direction] )
+  %
+  % Inputs:
+  % M - number of rows
+  % N - number of columns; if not specified then N=M
+  %
+  % Optional Inputs:
+  % direction - if direction == 1, then returns the fft matrix
+  %   otherwise, it returns the ifft matrix
+  % 
+  % Outputs:
+  % out - DFT matrix
+  %
+  % Written by Nicholas Dwork - Copyright 2016
+  
 
-  if nargin<2, N=M; end;
+  defaultDir = '1';
+  p=inputParser;
+  p.addOptional( 'N', M );
+  p.addParamValue( 'direction', defaultDir );
+  p.parse( varargin{:} );
+  N = p.Results.N;
+  direction = p.Results.direction;
 
   maxSize = max( M, N );
   fftIn = eye(maxSize);
   fftIn = fftIn(:,1:N);
 
-  out = fft( fftIn );   % fft of each column
+  if direction > 0
+    out = fft( fftIn );   % fft of each column
+  else
+    out = ifft( fftIn );   % fft of each column
+  end
 end
 
