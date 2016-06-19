@@ -37,4 +37,5 @@ function out = scaleImg( img, varargin )
 
   tmp = (img - inMin) / ( inMax - inMin );
   out = tmp * (outMax - outMin) + outMin;
+  out = min( max( out, outMin ), outMax );
 end
