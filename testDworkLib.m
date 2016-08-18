@@ -287,7 +287,7 @@ function testDworkLib
   pts1 = 10*rand(nPts,2) - 5;
   R = [ cos(theta) -sin(theta); sin(theta) cos(theta) ];
   t = [ 5.2; -4.1 ];
-  pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);;
+  pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);
   [R2,t2] = ransacRotAndTrans( pts1, pts2, distThresh );
   error1 = norm( R2(:) - R(:), 2 );
   error2 = norm( t - t2, 2 );

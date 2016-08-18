@@ -1,6 +1,6 @@
 
-function [R,t] = ransacRotAndTrans( pts1, pts2, thresh )
-  % [R,t] = ransacRotAndTrans( pts1, pts2, thresh )
+function [R,t,inlierIndxs] = ransacRotAndTrans( pts1, pts2, thresh )
+  % [R,t,inlierIndxs] = ransacRotAndTrans( pts1, pts2, thresh )
   % This function finds the rotation matrix R and the translation matrix t
   %   such that pt2 = R * pt1 + t;
   % It implements RANSAC with the Kabsch algorithm
@@ -15,10 +15,17 @@ function [R,t] = ransacRotAndTrans( pts1, pts2, thresh )
   % Outputs:
   % R - the NxN rotation matrix
   % t - the N element translation vector
+  % inlierIndxs - vector indicating which points were used in final
+  %   determination of transformation
   %
   % Algorithm 4.5 of Multiple View Geometry, 2nd ed by Hartley and
   %   Zisserman
   % Written by Nicholas Dwork
+  %
+  % This software is offered under the GNU General Public License 3.0.  It 
+  % is offered without any warranty expressed or implied, including the 
+  % implied warranties of merchantability or fitness for a particular 
+  % purpose.
 
   [M, N] = size( pts1 );
   p = 0.99;
@@ -27,7 +34,7 @@ function [R,t] = ransacRotAndTrans( pts1, pts2, thresh )
   bestNInliers = 0;
   nRansac = 1500;
   while nRansac > sample_count
-    disp(['Working on ', num2str(sample_count), ' of ', num2str(nRansac)]);
+    %disp(['Working on ', num2str(sample_count), ' of ', num2str(nRansac)]);
     indxs = randsample(M,N);  % N points determine R,t
     subset1 = pts1(indxs,:);
     subset2 = pts2(indxs,:);

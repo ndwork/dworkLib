@@ -11,13 +11,17 @@ function corners = findHarrisCorners( img, varargin )
   % k - Harris corner detector parameter
   %
   % Outputs:
-  % corners - an Nx2 array.  The first/second column is the y/x coordinate
+  % corners - an Nx2 array.  The first/second column is the x/y coordinate
   %   of each feature.
   %
   % Written by Nicholas Dwork 2016
+  % This software is offered under the GNU General Public License 3.0.  It 
+  % is offered without any warranty expressed or implied, including the 
+  % implied warranties of merchantability or fitness for a particular 
+  % purpose.
 
   defaultN = 50;
-  defaultW = 7;
+  defaultW = 3;
   defaultBuffer = 20;
   defaultK = 0.04;
   p = inputParser;
@@ -61,8 +65,8 @@ function corners = findHarrisCorners( img, varargin )
   for i=1:N
     [~,maxIndx] = max( score(:) );
     [y,x] = ind2sub( sImg, maxIndx );
-    corners(i,1) = y;
-    corners(i,2) = x;
+    corners(i,1) = x;
+    corners(i,2) = y;
 
     bIndx = max( y-buffer, 1 );
     uIndx = min( y+buffer, sImg(1) );

@@ -18,7 +18,18 @@ function [pts1,pts2] = findAndTrackCorners( img1, img2, varargin )
   % offset - 2 element array; the [y x] shift to center the search area
   %   (default is [0 0])
   %
+  % Outputs:
+  % pts1 - an Nx2 array.  The first/second column is the x/y coordinate
+  %   of each feature in img1.
+  % pts2 - an Nx2 array.  The first/second column is the x/y coordinate
+  %   of each feature in img2.
+  %
   % Written by Nicholas Dwork - Copyright 2016
+  %
+  % This software is offered under the GNU General Public License 3.0.  It 
+  % is offered without any warranty expressed or implied, including the 
+  % implied warranties of merchantability or fitness for a particular 
+  % purpose.
 
   sImg = size(img1);
 

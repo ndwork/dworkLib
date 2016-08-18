@@ -20,6 +20,6 @@ function showFeaturesOnImg( features, img, varargin )
   figure;
   imshow(img, scale);
   hold on
-  plot( features(:,1), features(:,2), 'r*');
+  plot( features(:,1), features(:,2), 'k*');
   drawnow;
 end

@@ -1,6 +1,6 @@
 
 function labelImgPts( pts, varargin )
-  % labelImgFeatures( pts [, scale] )
+  % labelImgPts( pts [, 'scale', scale, 'inlierIndxs', inlierIndxs] )
   % This function puts the index of the point onto the image
   % It assumes that the image is already displayed and the figure
   %   is set to the current figure.
@@ -24,8 +24,8 @@ function labelImgPts( pts, varargin )
 
   [nPts,~] = size(scaledPts);
   for i=1:nPts
-    y = scaledPts(i,1);
-    x = scaledPts(i,2);
+    x = scaledPts(i,1);
+    y = scaledPts(i,2);
 
     text( x-2, y-2, num2str(i), 'color', 'blue', 'FontSize', 20 );
 

@@ -31,9 +31,14 @@ function out = makeDftMatrix( M, varargin )
   direction = p.Results.direction;
 
   maxSize = max( M, N );
+  
   fftIn = eye(maxSize);
   fftIn = fftIn(:,1:N);
 
+%for i=1:N
+% fftIn(:,i) = ifftshift( fftIn(:,i) );
+%end
+  
   if direction > 0
     out = fft( fftIn );   % fft of each column
   else

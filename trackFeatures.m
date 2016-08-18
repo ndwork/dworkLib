@@ -1,7 +1,3 @@
-% This software is offered under the GNU General Public License 3.0.  It 
-% is offered without any warranty expressed or implied, including the 
-% implied warranties of merchantability or fitness for a particular 
-% purpose.
 
 function pts2 = trackFeatures( pts1, img1, img2, varargin )
   % pts2 = trackFeatures( pts1, img1, img2 [, 'searchWidth', searchWidth, ...
@@ -11,7 +7,7 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
   % correlation according to "Fast Normalized Cross Correlation" by Lewis.
   %
   % Inputs:
-  % pts1 - an Nx2 array specifying the y/x location of each feature in img1
+  % pts1 - an Nx2 array specifying the x/y location of each feature in img1
   %   It has size Nx2 where N is the number of features
   % img1 - a 2D array representing the first image
   % img2 - a 2D array representing the second image
@@ -25,7 +21,12 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
   %   search area (default is [0 0])
   %
   % Output:
-  % pts2 - an Nx2 array specifying the y/x location of each feature in img2
+  % pts2 - an Nx2 array specifying the x/y location of each feature in img2
+  %
+  % This software is offered under the GNU General Public License 3.0.  It 
+  % is offered without any warranty expressed or implied, including the 
+  % implied warranties of merchantability or fitness for a particular 
+  % purpose.
 
   sImg = size( img1 );
   nPts = size( pts1, 1 );
@@ -48,8 +49,8 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
 
   pts2 = zeros(nPts,2);
   for i=1:nPts
-    y = pts1(i,1);
-    x = pts1(i,2);
+    x = pts1(i,1);
+    y = pts1(i,2);
     if y-hkw(1) < 1 || y+hkw(1) > sImg(1) || ...
        x-hkw(2) < 1 || x+hkw(2) > sImg(2), ...
       continue; end;
@@ -65,11 +66,11 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
 
     ncc = normxcorr2(template, search);
     sSearch = size(search);
-    ncc = cropImg( ncc, sSearch );
+    ncc = cropData( ncc, sSearch );
     [maxNCC,maxNccIndx] = max( ncc(:) );  %#ok<ASGLU>
     [nccY,nccX] = ind2sub( sSearch, maxNccIndx );
-    pts2(i,1) = nccY + sB - 1;
-    pts2(i,2) = nccX + sL - 1;
+    pts2(i,1) = nccX + sL - 1;
+    pts2(i,2) = nccY + sB - 1;
   end
 
 end

@@ -1,5 +1,4 @@
 
-
 function out = cropData( data, N )
   % out = cropData( data, N )
   % Crops out the center region of the data.
@@ -11,6 +10,11 @@ function out = cropData( data, N )
   %   If N is a scalar, then a cube is extracted
   %   If N is an array of size equal to the number of dimensions of data, 
   %     then the final size is [N(1) N(2) .. N(D)]
+  %
+  % This software is offered under the GNU General Public License 3.0.  It 
+  % is offered without any warranty expressed or implied, including the 
+  % implied warranties of merchantability or fitness for a particular 
+  % purpose.
 
   nD = ndims( data );
   if numel(N) == 1
