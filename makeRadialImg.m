@@ -15,8 +15,8 @@ function out = makeRadialImg( sImg )
   y = 1:sImg(1);
   x = 1:sImg(2);
 
+  x = x - ceil( (sImg(2)+1)/2 );
   y = y - ceil( (sImg(1)+1)/2 );
-  x = x - ceil( (sImg(1)+1)/2 );
 
   [x,y] = meshgrid(x,y);
 
