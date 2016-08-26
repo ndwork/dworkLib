@@ -1,7 +1,3 @@
-% This software is offered under the GNU General Public License 3.0.  It 
-% is offered without any warranty expressed or implied, including the 
-% implied warranties of merchantability or fitness for a particular 
-% purpose.
 
 function out = shearImg( in, theta, dim )
   % out = shearImg( in, theta [, dim] )
@@ -16,6 +12,11 @@ function out = shearImg( in, theta, dim )
   % dim - index of dimension to shear
   %
   % Written by Nicholas Dwork - Copyright 2016
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   if nargin < 3, dim = 1; end;
 
