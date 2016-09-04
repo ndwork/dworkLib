@@ -83,6 +83,29 @@ function testDworkLib
     error('findRotAndTrans failed');
   end
 
+  %% haar
+  sig = rand(1,8);
+  split = [1 0];
+  wt = wtHaar( sig, split );
+  sigHat = iwtHaar( wt, split );
+  err = norm( sig - sigHat, 2 );
+  if err > 1d-12
+    error( ['wtHaar error: ', num2str(err,2)] );
+  else
+    disp('wtHaar test passed');
+  end
+
+  %% haar2
+  im = phantom(); 
+  wIm = wtHaar2( im );
+  imHat = iwtHaar2( wIm );
+  err = norm( im(:) - imHat(:), 2 );
+  if err > 1d-12
+    error(['wtHaar2 error: ', num2str(err)]);
+  else
+    disp('wtHaar2 passed');
+  end
+  
   %% isEven - 1D data
   fprintf( '\nTesting isEven (1D): \n');
   A1 = rand(5,1);

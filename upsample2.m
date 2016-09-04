@@ -18,7 +18,7 @@ function out = upsample2( img, n )
   % purpose.
 
   if numel(n)==1
-    n = n * ones(ndims(img));
+    n = n * ones(ndims(img),1);
   end
 
   tmp = upsample( img, n(1) );
