@@ -1,6 +1,24 @@
 
 function wt = wtHaar2( img, varargin )
-  % wt = wtHaar2( img [, split ] )
+  % wt = wtHaar2( sig [, split] );
+  % Performs a Haar wavelet transform of an image
+  %
+  % Inputs:
+  % img - 2D array representing the image to be transformed
+  %
+  % Optional Inputs:
+  % split - array specifying the number of levels of the wavelet transform.
+  %   by default, split is 1 (indicating only one level).
+  %   Example: [1 1; 1 0] will have 2 levels.  The size of the highest frequency
+  %   portion in the final level will be double that of the other portions since
+  %   it wasn't split.
+  %
+  % Written by Nicholas - Copyright 2016
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   defaultSplit = 1;
   p = inputParser;
