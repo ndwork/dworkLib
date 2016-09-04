@@ -45,16 +45,16 @@ function img = iwtHaar2( wt, varargin )
     s22 = split(sSplit(2)/2+1:end,sSplit(2)/2+1:end);
 
     if sum(s11)>0
-      wt11 = iwtHaar( wt11, s11 );
+      wt11 = iwtHaar2( wt11, s11 );
     end
     if sum(s12)>0
-      wt12 = iwtHaar( wt12, s12 );
+      wt12 = iwtHaar2( wt12, s12 );
     end
     if sum(s21)>0
-      wt21 = iwtHaar( wt21, s21 );
+      wt21 = iwtHaar2( wt21, s21 );
     end
     if sum(s22)>0
-      wt22 = iwtHaar( wt22, s22 );
+      wt22 = iwtHaar2( wt22, s22 );
     end
   end
   
