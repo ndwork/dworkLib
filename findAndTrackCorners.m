@@ -40,12 +40,12 @@ function [pts1,pts2] = findAndTrackCorners( img1, img2, varargin )
   defaultSearch = ceil(0.2*sImg);
   defaultOffset = [0 0];
   p = inputParser;
-  p.addParamValue( 'N', defaultN );
-  p.addParamValue( 'buffer', defaultBuffer );
-  p.addParamValue( 'w', defaultW );
-  p.addParamValue( 'k', defaultK );
-  p.addParamValue( 'searchWidth', defaultSearch );
-  p.addParamValue( 'offset', defaultOffset );
+  p.addParameter( 'N', defaultN );
+  p.addParameter( 'buffer', defaultBuffer );
+  p.addParameter( 'w', defaultW );
+  p.addParameter( 'k', defaultK );
+  p.addParameter( 'searchWidth', defaultSearch );
+  p.addParameter( 'offset', defaultOffset );
   p.parse( varargin{:} );
   N = p.Results.N;
   buffer = p.Results.buffer;

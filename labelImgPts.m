@@ -14,8 +14,8 @@ function labelImgPts( pts, varargin )
   defaultScale = 1.0;
   defaultInlierIndxs = [];
   p = inputParser;
-  p.addParamValue('scale',defaultScale);
-  p.addParamValue('inlierIndxs',defaultInlierIndxs);
+  p.addParameter('scale',defaultScale);
+  p.addParameter('inlierIndxs',defaultInlierIndxs);
   p.parse( varargin{:} );
   scale = p.Results.scale;
   inlierIndxs = p.Results.inlierIndxs;

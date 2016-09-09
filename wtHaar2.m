@@ -37,14 +37,6 @@ function wt = wtHaar2( img, varargin )
   wt21 = wt2(:,1:2:end-1) + wt2(:,2:2:end);
   wt22 = wt2(:,1:2:end-1) - wt2(:,2:2:end);
 
-%   Lh = img(:,1:2:end-1) + img(:,2:2:end);
-%   wt11 = Lh(1:2:end-1,:) + Lh(2:2:end,:);
-%   wt21 = Lh(1:2:end-1,:) - Lh(2:2:end,:);
-% 
-%   Hh = img(:,1:2:end-1) - img(:,2:2:end);
-%   wt12 = Hh(1:2:end-1,:) + Hh(2:2:end,:);
-%   wt22 = Hh(1:2:end-1,:) - Hh(2:2:end,:);
-
   nSplit = numel(split);
   if nSplit > 1
     sSplit = size(split);
@@ -68,5 +60,4 @@ function wt = wtHaar2( img, varargin )
   end
 
   wt = 0.5 * [ wt11 wt12; wt21 wt22 ];
-
 end

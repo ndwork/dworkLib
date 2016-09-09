@@ -3,7 +3,8 @@ function out = projectImage( img, H, varargin )
   % out = projectImageWithHomography( img, H, [ range ] )
   %
   % Inputs:
-  % img - a 2D array of data to project
+  % img - a 2D array (or a 3D array where the third dimension is color) of
+  %   data to project
   % H - the 3x3 homography
   % range - An optional 4D array specifying the range to project to
   %   [xmin xmax ymin ymax]
@@ -18,7 +19,7 @@ function out = projectImage( img, H, varargin )
   p.parse( varargin{:} );
   range = p.Results.range;
 
-  N = numel( img );
+  N = (range(2)-range(1)+1) * (range(4)-range(3)+1);
   xs = range(1):range(2);
   ys = range(3):range(4);
   [xs, ys] = meshgrid( xs, ys );
@@ -26,8 +27,18 @@ function out = projectImage( img, H, varargin )
 
   projCoords_h = inv(H) * coords;
   projCoords = hom2Euc( projCoords_h );
-  interped = interp2( xs, ys, img, projCoords(1,:), projCoords(2,:), ...
-    'linear', 0);
-  out = reshape( interped, sImg );
+  
+  imgXs = 1:sImg(2);
+  imgYs = 1:sImg(1);
+  [imgXs,imgYs] = meshgrid( imgXs, imgYs );
+  
+  dimOut = [range(4)-range(3)+1 range(2)-range(1)+1];
+  nColors = size( img, 3 );
+  out = zeros( [dimOut, nColors]  );
+  for i=1:nColors
+    interped = interp2( imgXs, imgYs, img, projCoords(1,:), projCoords(2,:), ...
+      'linear', 0);
+    out(:,:,i) = reshape( interped, dimOut );
+  end
 
 end

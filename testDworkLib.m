@@ -95,6 +95,19 @@ function testDworkLib
     disp('wtHaar test passed');
   end
 
+  %% haar adjoint
+  x = rand(1,8);
+  y = rand(1,8);
+  split = [ 1 0 ];
+  wtx = wtHaar( x, split );
+  iwty = iwtHaar( y, split );
+  err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
+  if err > 1d-12
+    error( 'wtHaar is not orthogonal' );
+  else
+    disp('wtHaar is orthogonal');
+  end
+
   %% haar2
   im = phantom(); 
   wIm = wtHaar2( im );
@@ -105,7 +118,20 @@ function testDworkLib
   else
     disp('wtHaar2 passed');
   end
-  
+
+  %% haar2 adjoint
+  x = rand(8);
+  y = rand(8);
+  split = [ 1 0; 0 0; ];
+  wtx = wtHaar2( x, split );
+  iwty = iwtHaar2( y, split );
+  err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
+  if err > 1d-12
+    error( 'wtHaar2 is not orthogonal' );
+  else
+    disp('wtHaar2 is orthogonal');
+  end
+
   %% isEven - 1D data
   fprintf( '\nTesting isEven (1D): \n');
   A1 = rand(5,1);

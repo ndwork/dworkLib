@@ -1,6 +1,6 @@
 
 function showFeaturesOnImg( features, img, varargin )
-  % showFeaturesOnImg( features, img [, scale] )
+  % showFeaturesOnImg( features, img [, range, 'scale', scale] )
   %
   % Inputs:
   % features - 2D array of size Nx2
@@ -8,18 +8,28 @@ function showFeaturesOnImg( features, img, varargin )
   %   The first/second column is the x/y location
   %
   % Optional Inputs:
-  %   scale - 2 element array specifying image scale
+  %   range - 2 element array specifying image display range
+  %     ( default is [0 1] )
+  %   scale - magnify image by this scale
   %
   % Written by Nicholas Dwork - Copyright 2016
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   p = inputParser;
-  p.addOptional( 'scale', [] );
+  p.addOptional( 'range', [0 1] );
+  p.addParameter( 'scale', 1 );
   p.parse( varargin{:} );
   scale = p.Results.scale;
-  
+  range = p.Results.range;
+
   figure;
-  imshow(img, scale);
+  imshow( imresize(img, scale, 'nearest'), range );
   hold on
-  plot( features(:,1), features(:,2), 'k*');
+  rFeatures = round( scale * features );
+  plot( rFeatures(:,1), rFeatures(:,2), 'k*');
   drawnow;
 end
