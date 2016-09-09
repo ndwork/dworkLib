@@ -1,6 +1,6 @@
 
 function showFeaturesOnImg( features, img, varargin )
-  % showFeaturesOnImg( features, img [, range, 'scale', scale] )
+  % showFeaturesOnImg( features, img [, range, 'scale', scale, 'color', color] )
   %
   % Inputs:
   % features - 2D array of size Nx2
@@ -22,14 +22,16 @@ function showFeaturesOnImg( features, img, varargin )
   p = inputParser;
   p.addOptional( 'range', [0 1] );
   p.addParameter( 'scale', 1 );
+  p.addParameter( 'color', 'k' );
   p.parse( varargin{:} );
   scale = p.Results.scale;
   range = p.Results.range;
+  color = p.Results.color;
 
   figure;
   imshow( imresize(img, scale, 'nearest'), range );
   hold on
   rFeatures = round( scale * features );
-  plot( rFeatures(:,1), rFeatures(:,2), 'k*');
+  plot( rFeatures(:,1), rFeatures(:,2), [color,'*']);
   drawnow;
 end
