@@ -45,16 +45,16 @@ function wt = wtHaar2( img, varargin )
     s21 = split(sSplit(2)/2+1:end,1:sSplit(1)/2);
     s22 = split(sSplit(2)/2+1:end,sSplit(2)/2+1:end);
 
-    if sum(s11)>0
+    if sum(s11(:))>0
       wt11 = wtHaar2( wt11, s11 );
     end
-    if sum(s12)>0
+    if sum(s12(:))>0
       wt12 = wtHaar2( wt12, s12 );
     end
-    if sum(s21)>0
+    if sum(s21(:))>0
       wt21 = wtHaar2( wt21, s21 );
     end
-    if sum(s22)>0
+    if sum(s22(:))>0
       wt22 = wtHaar2( wt22, s22 );
     end
   end

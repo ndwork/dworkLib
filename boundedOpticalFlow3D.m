@@ -21,9 +21,9 @@ function [du,dv,dw] = boundedOpticalFlow3D( data1, data2, varargin )
   p = inputParser;
   p.addRequired( 'data1' );
   p.addRequired( 'data2' );
-  p.addParamValue( 'bound', defaultBound, @isnumeric );
-  p.addParamValue( 'eta', defaultEta, @isnumeric );
-  p.addParamValue( 'rho', defaultRho, @isnumeric );
+  p.addParameter( 'bound', defaultBound, @isnumeric );
+  p.addParameter( 'eta', defaultEta, @isnumeric );
+  p.addParameter( 'rho', defaultRho, @isnumeric );
   p.parse( data1, data2, varargin{:} );
   bound = p.Results.bound;
   eta = p.Results.eta;
