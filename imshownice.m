@@ -35,6 +35,18 @@ function imshownice( img, varargin )
   meanImg = mean( img(:) );
   sdevImg = std( img(:) );
 
-  tmp = imresize( img, scale, method );
-  imshow( tmp, [ meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg ] );
+  if ismatrix( img )
+    % Grayscale image
+    tmp = imresize( img, scale, method );
+    imshow( tmp, [ meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg ] );
+  else
+    % Color image
+    for i=1:size(img,3)
+      tmp(:,:,i) = imresize( img(:,:,i), scale, method );
+    end
+    inMin = meanImg - sdevScale*sdevImg;
+    inMax = meanImg + sdevScale*sdevImg;
+    scaled = scaleImg( tmp, [inMin inMax], [0 1] );
+    imshow( scaled );
+  end
 end
