@@ -34,9 +34,9 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
   defaultSearch = ceil( 0.2 * sImg );
   defaultKernel = 11;
   p = inputParser;
-  p.addParamValue( 'searchWidth', defaultSearch );
-  p.addParamValue( 'kernelWidth', defaultKernel );
-  p.addParamValue( 'offset', [0 0] );
+  p.addParameter( 'searchWidth', defaultSearch );
+  p.addParameter( 'kernelWidth', defaultKernel );
+  p.addParameter( 'offset', [0 0] );
   p.parse( varargin{:} );
   offset = p.Results.offset;
   kw = p.Results.kernelWidth;
@@ -54,7 +54,7 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
     if y-hkw(1) < 1 || y+hkw(1) > sImg(1) || ...
        x-hkw(2) < 1 || x+hkw(2) > sImg(2), ...
       continue; end;
-    template = img1(y-hkw:y+hkw,x-hkw:x+hkw);
+    template = img1(y-hkw(1):y+hkw(1),x-hkw(2):x+hkw(2));
 
     sB = max( y-hsw(1)+offset(1), 1 );  % search bottom
     sT = min( y+hsw(1)+offset(1), sImg(1) );  % search top

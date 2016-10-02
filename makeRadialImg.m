@@ -1,11 +1,12 @@
 
-function out = makeRadialImg( sImg )
+function out = makeRadialImg( sImg, center )
   % makes an image where each point represents the distance from the center
   %
-  % out = makeRadialImg( sImg )
+  % out = makeRadialImg( sImg [, center] )
   %
   % Inputs:
-  % sImg - 2 element array specifying the size of the image
+  % sImg - 2 element array specifying the (y,x) size of the image
+  % center - 2 element array specifying the (y,x) coordinate of the center
   % 
   % Outputs:
   % out - output image
@@ -15,8 +16,15 @@ function out = makeRadialImg( sImg )
   y = 1:sImg(1);
   x = 1:sImg(2);
 
-  x = x - ceil( (sImg(2)+1)/2 );
-  y = y - ceil( (sImg(1)+1)/2 );
+  if nargin < 2
+    yCenter = ceil( (sImg(1)+1)/2 );
+    xCenter = ceil( (sImg(2)+1)/2 );
+  else
+    yCenter = center(1);
+    xCenter = center(2);
+  end
+  x = x - xCenter;
+  y = y - yCenter;
 
   [x,y] = meshgrid(x,y);
 

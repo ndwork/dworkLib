@@ -12,6 +12,7 @@ function imshownice( img, varargin )
   % method - when scaling method, interpolation method to use
   %   default is 'nearest'
   %   any method accepted by imresize is accepted for this parameter
+  % sdevScale - default is 2.5
   %
   % Written by Nicholas - Copyright 2016
   %

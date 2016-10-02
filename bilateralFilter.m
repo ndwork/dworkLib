@@ -5,9 +5,11 @@ function out = bilateralFilter( img, varargin )
   % Inputs
   %   img: the input image to be denoised
   %     either a MxN 2D grayscale image or a MxNx3 color image
-  %   S: (optional) the length of each side of the kernel (must be odd)
-  %   sigmaD: (optional) euclidean distance spread parameter
-  %   sigmaR: (optional) photometric distance spread parameter
+  %
+  % Optional Inputs:
+  %   S: the length of each side of the kernel (must be odd)
+  %   sigmaD: euclidean distance spread parameter
+  %   sigmaR: photometric distance spread parameter
   %
   % Outputs
   %   out: the denoised image
@@ -42,9 +44,9 @@ function out = bilateralFilter_3D( img, varargin )
   defaultSigmaR = 0.3;
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParamValue( 'S', defaultS, isIntAndPositiveAndOdd );
-  p.addParamValue( 'sigmaD', defaultSigmaD, isNumericAndPositive );
-  p.addParamValue( 'sigmaR', defaultSigmaR, isNumericAndPositive );
+  p.addParameter( 'S', defaultS, isIntAndPositiveAndOdd );
+  p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
+  p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
   p.parse( img, varargin{:} );
   s = p.Results.S;
   sigmaD = p.Results.sigmaD;
@@ -79,15 +81,17 @@ function out = bilateralFilter_2D( img, varargin )
   %
   % Inputs
   %   img: the input image to be denoised (a 2D array)
-  %   S: (optional) the length of each side of the kernel (must be odd)
-  %   sigmaD: (optional) euclidean distance spread parameter
-  %   sigmaR: (optional) photometric distance spread parameter
+  %
+  % Optional Inputs:
+  %   S: the length of each side of the kernel (must be odd)
+  %   sigmaD: euclidean distance spread parameter
+  %   sigmaR: photometric distance spread parameter
   %
   % Outputs
   %   out: the denoised image
 
 
-  isIntAndPositive = @(x) isInteger(x) && (x>0);
+  isIntAndPositive = @(x) mod(x,1)==0 && (x>0);
   isIntAndPositiveAndOdd = @(x) isIntAndPositive(x) && (mod(x,2)~=0);
   isNumericAndPositive = @(x) isnumeric(x) && (x>0);
 
@@ -96,9 +100,9 @@ function out = bilateralFilter_2D( img, varargin )
   defaultSigmaR = 0.3;
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParamValue( 'S', defaultS, isIntAndPositiveAndOdd );
-  p.addParamValue( 'sigmaD', defaultSigmaD, isNumericAndPositive );
-  p.addParamValue( 'sigmaR', defaultSigmaR, isNumericAndPositive );
+  p.addParameter( 'S', defaultS, isIntAndPositiveAndOdd );
+  p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
+  p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
   p.parse( img, varargin{:} );
   s = p.Results.S;
   sigmaD = p.Results.sigmaD;

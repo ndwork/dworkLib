@@ -46,15 +46,27 @@ function wt = wtHaar2( img, varargin )
     s22 = split(sSplit(2)/2+1:end,sSplit(2)/2+1:end);
 
     if sum(s11(:))>0
+      if max( mod(size(wt11),2) ) > 0
+        error('wtHaar2: improper dimensions of image');
+      end
       wt11 = wtHaar2( wt11, s11 );
     end
     if sum(s12(:))>0
+      if max( mod(size(wt12),2) ) > 0
+        error('wtHaar2: improper dimensions of image');
+      end
       wt12 = wtHaar2( wt12, s12 );
     end
     if sum(s21(:))>0
+      if max( mod(size(wt21),2) ) > 0
+        error('wtHaar2: improper dimensions of image');
+      end
       wt21 = wtHaar2( wt21, s21 );
     end
     if sum(s22(:))>0
+      if max( mod(size(wt22),2) ) > 0
+        error('wtHaar2: improper dimensions of image');
+      end
       wt22 = wtHaar2( wt22, s22 );
     end
   end
