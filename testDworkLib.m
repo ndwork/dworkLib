@@ -61,7 +61,7 @@ function testDworkLib
   end
 
   %% findDoGFeatures2D
-  imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
+  imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );
   features = findDoGFeatures2D( img, 'nFeatures', 10 );
   figure;
@@ -196,36 +196,36 @@ function testDworkLib
     disp('isOdd (2D) passed');
   end
 
-  %% lsqrFISTA
-  fprintf( '\nTesting lsqrFISTA: \n');
-  A = rand(9,8);
-  b = rand(9,1);
-  tolerance = 1d-8;
-  x = A \ b;
-  maxIter = 10000;
-  x0 = rand( 8, 1 );
-  x1 = lsqrFISTA( A, b, tolerance, maxIter, x0 );
-  err1 = norm( x1 - x, 2 ) / norm(x,2);
-  if ~isfinite(err1) || err1 > 1d-4
-    error(['lsqrFISTA with matrix failed with error ', num2str(err1)]);
-  else
-    disp('lsqrFISTA with matrix passed');
-  end
-
-  function out = applyA( in, type )
-    if nargin>1 && strcmp(type,'transp')
-      out = A'*in;
-    else
-      out = A*in;
-    end
-  end
-  x2 = lsqrFISTA( @applyA, b, tolerance, maxIter, x0 );
-  err2 = norm( x2 - x, 2 ) / norm(x,2);
-  if ~isfinite(err2) || err2 > 1d-4
-    error(['lsqrFISTA with file handle failed with error ', num2str(err2)]);
-  else
-    disp('lsqrFISTA with file handle passed');
-  end
+  %%% lsqrFISTA
+  %fprintf( '\nTesting lsqrFISTA: \n');
+  %A = rand(9,8);
+  %b = rand(9,1);
+  %tolerance = 1d-8;
+  %x = A \ b;
+  %maxIter = 10000;
+  %x0 = rand( 8, 1 );
+  %x1 = lsqrFISTA( A, b, tolerance, maxIter, x0 );
+  %err1 = norm( x1 - x, 2 ) / norm(x,2);
+  %if ~isfinite(err1) || err1 > 1d-4
+  %  error(['lsqrFISTA with matrix failed with error ', num2str(err1)]);
+  %else
+  %  disp('lsqrFISTA with matrix passed');
+  %end
+  %
+  %function out = applyA( in, type )
+  %  if nargin>1 && strcmp(type,'transp')
+  %    out = A'*in;
+  %  else
+  %    out = A*in;
+  %  end
+  %end
+  %x2 = lsqrFISTA( @applyA, b, tolerance, maxIter, x0 );
+  %err2 = norm( x2 - x, 2 ) / norm(x,2);
+  %if ~isfinite(err2) || err2 > 1d-4
+  %  error(['lsqrFISTA with file handle failed with error ', num2str(err2)]);
+  %else
+  %  disp('lsqrFISTA with file handle passed');
+  %end
 
   %% makeDftMatrix
   fprintf( '\nTesting makeDftMatrix: \n');
@@ -280,20 +280,20 @@ function testDworkLib
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
 
-  %% powerIteration
-  fprintf('\nTesting powerIteration: \n');
-  M = rand(3);
-  x0 = rand(3,1);
-  est1 = powerIteration( M, x0 );
-  normM = norm( M );
-  err1 = abs( est1 - normM ) / normM;
-  if err1 > 1d-6, error('Power Iteration failed'); end;
-  applyM = @(x) M*x;
-  applyMT = @(x) M'*x;
-  est2 = powerIteration( applyM, applyMT, x0 );
-  err2 = abs( est2 - normM ) / normM;
-  if err2 > 1d-6, error('Power Iteration failed'); end;
-  disp('powerIteration passed');
+  %%% powerIteration
+  %fprintf('\nTesting powerIteration: \n');
+  %M = rand(3);
+  %x0 = rand(3,1);
+  %est1 = powerIteration( M, x0 );
+  %normM = norm( M );
+  %err1 = abs( est1 - normM ) / normM;
+  %if err1 > 1d-6, error('Power Iteration failed'); end;
+  %applyM = @(x) M*x;
+  %applyMT = @(x) M'*x;
+  %est2 = powerIteration( applyM, applyMT, x0 );
+  %err2 = abs( est2 - normM ) / normM;
+  %if err2 > 1d-6, error('Power Iteration failed'); end;
+  %disp('powerIteration passed');
 
   %% ransacDltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
@@ -347,12 +347,12 @@ function testDworkLib
   end
 
   %% shearImg
-  imgFile = '/Applications/MATLAB_R2013a_Student.app/toolbox/images/imdemos/moon.tif';
+  imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );
   ySheared = shearImg( img, pi/8 );
-  figure; imshow( [ img ySheared ], [] );  title('ySheared');
   xSheared = shearImg( img, pi/8, 2 );
-  figure; imshow( [ img xSheared ], [] );  title('xSheared');
+  figure; imshow( [ img xSheared ySheared ], [] );
+  title('original / xSheared / ySheared');
   
 
   %% showLibs
