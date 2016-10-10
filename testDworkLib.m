@@ -280,6 +280,14 @@ function testDworkLib
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
 
+  %% plotnice
+  x = 1:10; y = 2*x;
+  figure; subplot(4,1,1); plotnice(x);
+  subplot(4,1,2); plotnice(x,y);
+  subplot(4,1,3); plotnice(x, y, 'ro');
+  subplot(4,1,4); plotnice( x, y, 'g+', 'MarkerSize', 20 );
+  disp('Plotnice passed');
+
   %%% powerIteration
   %fprintf('\nTesting powerIteration: \n');
   %M = rand(3);

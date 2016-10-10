@@ -15,16 +15,35 @@ function plotnice( in1, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultIn2 = [];
-  p = inputParser;
-  p.addOptional( 'in2', defaultIn2 );
-  p.parse( varargin{:} );
-  in2 = p.Results.in2;
+  if nargin > 2
 
-  if numel(in2)>0
-    plot( in1, in2, 'LineWidth', 2, varargin{2:end} );
+    if isnumeric( varargin{1} )
+
+      if mod( numel(varargin)-1, 2 ) == 0
+        plot( in1, varargin{1}, 'LineWidth', 2, varargin{2:end} );
+      else
+        plot( in1, varargin{1}, varargin{2}, 'LineWidth', 2, varargin{3:end} );
+      end
+
+    else
+
+      if mod( numel(varargin), 2 ) == 0
+        plot( in1, 'LineWidth', 2, varargin{:} );
+      else
+        plot( in1, varargin{1}, 'LineWidth', 2, varargin{2:end} );
+      end
+
+    end
+
+  elseif nargin > 1
+
+    plot( in1, varargin{1}, 'LineWidth', 2 );
+
   else
-    plot( in1, 'LineWidth', 2, varargin{:} );
+    
+    plot( in1, 'LineWidth', 2 );
+
   end
-  set( gca, 'fontsize', 18, 'LineWidth', 1.5 );
+
+  set( gca, 'fontsize', 16, 'LineWidth', 1.5 );
 end
