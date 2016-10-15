@@ -13,7 +13,7 @@ function wt = wtHaar2( img, varargin )
   %   portion in the final level will be double that of the other portions since
   %   it wasn't split.
   %
-  % Written by Nicholas - Copyright 2016
+  % Written by Nicholas Dwork - Copyright 2016
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the

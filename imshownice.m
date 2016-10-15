@@ -14,7 +14,7 @@ function imshownice( img, varargin )
   %   any method accepted by imresize is accepted for this parameter
   % sdevScale - default is 2.5
   %
-  % Written by Nicholas - Copyright 2016
+  % Written by Nicholas Dwork - Copyright 2016
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
