@@ -1,5 +1,6 @@
 
 function out = epgMakeR( alpha, phi )
+  % out = epgMakeR( alpha, phi )
   % alpha is the tip angle (in radians);
   % phi is the phase of the axis at which the RF pulse
   %   is applied (in radians)
@@ -16,10 +17,10 @@ function out = epgMakeR( alpha, phi )
 
   out(1,1) = cosHalfAlphaSq;
   out(2,1) = exp(-1i*2*phi) * sinHalfAlphaSq;
-  out(3,1) = -1i/2 * exp(-1i*phi) * sinAlpha;
-  out(1,2) = exp(1i*2*phi) * sinHalfAlphaSq;
+  out(3,1) = -0.5i * exp(-1i*phi) * sinAlpha;
+  out(1,2) = conj( out(2,1) );
   out(2,2) = cosHalfAlphaSq;
-  out(3,2) = 1i/2 * exp(1i*phi) * sinAlpha;
+  out(3,2) = 0.5i * exp(1i*phi) * sinAlpha;
   out(1,3) = -1i * exp(1i*phi) * sinAlpha;
   out(2,3) = 1i * exp(-1i*phi) * sinAlpha;
   out(3,3) = cos(alpha);

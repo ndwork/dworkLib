@@ -47,9 +47,10 @@ function corners = findHarrisCorners( img, varargin )
   IySq = Iy .* Iy;
   IxIy = Ix .* Iy;
 
-  G11 = smooth( IxSq, w );
-  G22 = smooth( IySq, w );
-  G12 = smooth( IxIy, w );
+  smoothFilter = fspecial( 'average', w );
+  G11 = imfilter( IxSq, smoothFilter );
+  G22 = imfilter( IySq, smoothFilter );
+  G12 = imfilter( IxIy, smoothFilter );
 
   trG = G11 .* G22;
   detG = trG - G12 .* G12;

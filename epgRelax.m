@@ -5,10 +5,8 @@ function Qout = epgRelax( Qin, t, T1, T2, M0 )
   %   N is the number of Fourier coefficients to store
   if nargin < 5, M0=1; end;
 
-  Qout = zeros( size(Qin) );
-  Qout(1:2,:) = exp(-t/T2) * Qin(1:2,:);
   E1 = exp(-t/T1);
-  Qout(3,:) = E1 * Qin(3,:);
+  Qout = [ exp(-t/T2) * Qin(1:2,:); ...
+           E1 * Qin(3,:); ];
   Qout(3,1) = Qout(3,1) + M0*(1-E1);
-
 end

@@ -6,6 +6,6 @@ function [gammaBar, gamma] = getGammaH()
   %   gamma is in kRad / Gauss
 
   gammaBar = 4.257;         % kHz / Gauss
-  gamma = 2*pi*gammaBar;    % kRad / Gauss  
+  gamma = 2*pi*gammaBar;    % kRad / Gauss / s 
 
 end
