@@ -20,30 +20,30 @@ function plotnice( in1, varargin )
     if isnumeric( varargin{1} )
 
       if mod( numel(varargin)-1, 2 ) == 0
-        plot( in1, varargin{1}, 'LineWidth', 2, varargin{2:end} );
+        plot( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
       else
-        plot( in1, varargin{1}, varargin{2}, 'LineWidth', 2, varargin{3:end} );
+        plot( in1, varargin{1}, varargin{2}, 'LineWidth', 1.5, varargin{3:end} );
       end
 
     else
 
       if mod( numel(varargin), 2 ) == 0
-        plot( in1, 'LineWidth', 2, varargin{:} );
+        plot( in1, 'LineWidth', 1.5, varargin{:} );
       else
-        plot( in1, varargin{1}, 'LineWidth', 2, varargin{2:end} );
+        plot( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
       end
 
     end
 
   elseif nargin > 1
 
-    plot( in1, varargin{1}, 'LineWidth', 2 );
+    plot( in1, varargin{1}, 'LineWidth', 1.5 );
 
   else
     
-    plot( in1, 'LineWidth', 2 );
+    plot( in1, 'LineWidth', 1.5 );
 
   end
 
-  set( gca, 'fontsize', 16, 'LineWidth', 1.5 );
+  set( gca, 'fontsize', 14, 'LineWidth', 1.5 );
 end
