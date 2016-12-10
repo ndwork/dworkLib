@@ -26,7 +26,10 @@ function stats( data )
     
     stdDevData = std( data(:) );
     disp([ preText, 'Std Dev: ', num2str(stdDevData) ]);
-    
+
+    varData = var( data(:) );
+    disp([ preText, 'Var: ', num2str(varData) ]);
+
     l2norm = norm( data(:), 2 );
     disp([ preText, 'L2 Norm: ', num2str(l2norm)]);
     disp([ preText, 'Mean L2 Norm: ', num2str(l2norm/numel(data)) ]);
