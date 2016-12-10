@@ -12,6 +12,27 @@ function testDworkLib
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Bilateral Filter Result');
 
+  %% cplsLasso
+  M = 100;
+  N = M;
+  K = rand( M, N );
+  x = zeros(N,1);
+  x(2) = 1;
+  x(3) = pi;
+  x(20) = 10;
+  x(N) = 8;
+  b = K*x;
+  gamma = 1;
+  nIter = 1000;
+  [xHat,residuals] = cpLasso( K, b, gamma, 'nIter', nIter );
+  [xHatLS,residualsLS] = cplsLasso( K, b, gamma, 'nIter', nIter );
+  err = norm(xHat-xHatLS,2);
+  if err > 1d-4, error( 'cplsLasso failed'); end;
+  disp('cplsLasso passed');
+  %semilogy( residuals, 'b', 'LineWidth', 2 );
+  %hold on; semilogy( residualsLS, 'r', 'LineWidth', 2 );
+  %legend( 'cp', 'cpls' );
+  
   %% cropData
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
@@ -288,20 +309,42 @@ function testDworkLib
   subplot(4,1,4); plotnice( x, y, 'g+', 'MarkerSize', 20 );
   disp('Plotnice passed');
 
-  %%% powerIteration
-  %fprintf('\nTesting powerIteration: \n');
-  %M = rand(3);
-  %x0 = rand(3,1);
-  %est1 = powerIteration( M, x0 );
-  %normM = norm( M );
-  %err1 = abs( est1 - normM ) / normM;
-  %if err1 > 1d-6, error('Power Iteration failed'); end;
-  %applyM = @(x) M*x;
-  %applyMT = @(x) M'*x;
-  %est2 = powerIteration( applyM, applyMT, x0 );
-  %err2 = abs( est2 - normM ) / normM;
-  %if err2 > 1d-6, error('Power Iteration failed'); end;
-  %disp('powerIteration passed');
+  %% powerIteration
+  fprintf('\nTesting powerIteration: \n');
+  M = rand(3);
+  est = powerIteration( M, false );
+  normM = norm( M );
+  err = abs( est - normM ) / normM;
+  if err > 1d-5, error('Power Iteration failed'); end;
+
+  symmM = M + M';
+  [est,flag] = powerIteration( symmM, true );
+  normSymmM = norm( symmM );
+  err = abs( est - normSymmM ) / normM;
+  if err > 1d-5, error('Power Iteration failed'); end;
+
+  function out = applyM( x, type )
+    if (nargin>1) && strcmp( type, 'transp')
+      out = M'*x;
+    else
+      out = M*x;
+    end
+  end
+  x0 = rand( size(M,2), 1 );
+  est = powerIteration( @applyM, false, x0 );
+  err = abs( est - normM ) / normM;
+  if err > 1d-5, error('Power Iteration failed'); end;
+  disp('powerIteration passed');
+
+  function out = applyMsymm( x )
+    out = symmM * x;
+  end
+  x0 = rand( size(symmM,2), 1 );
+  est = powerIteration( @applyMsymm, true, x0 );
+  err = abs( est - normSymmM ) / normSymmM;
+  if err > 1d-5, error('Power Iteration failed'); end;
+
+  disp('powerIteration passed');
 
   %% ransacDltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
