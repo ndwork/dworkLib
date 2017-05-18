@@ -47,8 +47,9 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
   hkw = floor( kw/2 );  % half kernel width
   hsw = floor( sw/2 );  % half search width
 
-  pts2 = zeros(nPts,2);
-  for i=1:nPts
+  pts2x = zeros(nPts,1);
+  pts2y = zeros(nPts,1);
+  parfor i=1:nPts
     x = pts1(i,1);
     y = pts1(i,2);
     if y-hkw(1) < 1 || y+hkw(1) > sImg(1) || ...
@@ -69,8 +70,9 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
     ncc = cropData( ncc, sSearch );
     [maxNCC,maxNccIndx] = max( ncc(:) );  %#ok<ASGLU>
     [nccY,nccX] = ind2sub( sSearch, maxNccIndx );
-    pts2(i,1) = nccX + sL - 1;
-    pts2(i,2) = nccY + sB - 1;
+    pts2x(i) = nccX + sL - 1;
+    pts2y(i) = nccY + sB - 1;
   end
+  pts2 = [ pts2x pts2y ];
 
 end

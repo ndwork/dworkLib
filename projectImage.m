@@ -6,6 +6,8 @@ function out = projectImage( img, H, varargin )
   % img - a 2D array (or a 3D array where the third dimension is color) of
   %   data to project
   % H - the 3x3 homography
+  %
+  % Optional Inputs:
   % range - An optional 4D array specifying the range to project to
   %   [xmin xmax ymin ymax]
   %
@@ -25,7 +27,8 @@ function out = projectImage( img, H, varargin )
   [xs, ys] = meshgrid( xs, ys );
   coords = [ xs(:)'; ys(:)'; ones(1,N) ];
 
-  projCoords_h = inv(H) * coords;
+  %projCoords_h = inv(H) * coords;
+  projCoords_h = H \ double( coords );
   projCoords = hom2Euc( projCoords_h );
   
   imgXs = 1:sImg(2);
@@ -36,8 +39,8 @@ function out = projectImage( img, H, varargin )
   nColors = size( img, 3 );
   out = zeros( [dimOut, nColors]  );
   for i=1:nColors
-    interped = interp2( imgXs, imgYs, img, projCoords(1,:), projCoords(2,:), ...
-      'linear', 0);
+    interped = interp2( imgXs, imgYs, double(img), ...
+      projCoords(1,:), projCoords(2,:), 'linear', 0);
     out(:,:,i) = reshape( interped, dimOut );
   end
 

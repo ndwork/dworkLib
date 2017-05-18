@@ -9,7 +9,7 @@ function [H,inlierIndxs,outlierIndxs] = ransacDltHomographyFromPts2D( ...
   % Inputs:
   % pts1/pts2 - 2D arrays of size Mx2
   %    M is the number of points
-  % thresh - points within this distance are considered inliers
+  % thresh - points within this distance (in pixels) are considered inliers
   %
   % Outputs:
   % H - the 3x3 Homography

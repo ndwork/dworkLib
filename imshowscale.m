@@ -13,7 +13,9 @@ function imshowscale( img, scale, varargin )
   %   default is 'nearest'
   %   any method accepted by imresize is accepted for this parameter
   % range - two element array specifying the display range of intensities
-  %   if range is [], sets equal to [min(img(:)) max(img(:))]
+  %   If range is [], sets equal to [min(img(:)) max(img(:))]
+  %     This is the default.
+  %   If range is 'nice', uses imshownice to display image
   %
   % Written by Nicholas - Copyright 2016
   %
@@ -23,7 +25,7 @@ function imshowscale( img, scale, varargin )
   % purpose.
 
   defaultMethod = 'nearest';
-  defaultRange = 0;
+  defaultRange = [];
   p = inputParser;
   p.addOptional( 'method', defaultMethod );
   p.addParameter( 'range', defaultRange );
@@ -31,11 +33,13 @@ function imshowscale( img, scale, varargin )
   method = p.Results.method;
   range = p.Results.range;
 
-  if range == 0
+  if strcmp( 'nice', range )
+    imshownice( img, scale, method );
+  elseif range == 0
     if ismatrix( img )
-      imshow( imresize( img, scale, method ) );
+      imshow( imresize( img, scale, method ), range );
     elseif ndims(img) == 3
-      imshow( imColorResize( img, scale, method ) );
+      imshow( imColorResize( img, scale, method ), range );
     else
       error('wrong number of dimensions');
     end

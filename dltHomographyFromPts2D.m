@@ -33,5 +33,5 @@ function H = dltHomographyFromPts2D( pts1, pts2 )
   h = v(:,end);
   H = reshape( h, [3 3] )';
 
-  H = inv(T2) * H * T1;   % denormalize
+  H = T2 \ H * T1;   % denormalize
 end
