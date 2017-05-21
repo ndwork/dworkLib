@@ -24,7 +24,7 @@ function probeImg( varargin )
 
   for i=1:n
     [x,y] = ginput(1);
-    v = img(y,x);
+    v = img(int64(y),int64(x));
     disp([ '(y,x) v:   (', num2str(y), ', ', num2str(x) ')  ', num2str(v) ]);
   end
 

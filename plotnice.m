@@ -17,7 +17,7 @@ function plotnice( in1, varargin )
 
   if nargin > 2
 
-    if isnumeric( varargin{1} )
+    if isnumeric( varargin{1} ) || islogical( varargin{1} );
 
       if mod( numel(varargin)-1, 2 ) == 0
         plot( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
