@@ -1,11 +1,11 @@
 
-function [x,residuals] = cpLasso( K, b, gamma, varargin )
-  % x = cpLasso( K, b, gamma [, sigma, tau, theta, 'nIter', nIter ] );
+function [x,residuals] = lassoCP( K, b, gamma, varargin )
+  % x = lassoCP( K, b, gamma [, sigma, tau, theta, 'nIter', nIter ] );
   %
   % Minimizes the Lasso problem:
   %   minimize (1/2)|| K x - b ||_2 + gamma || x ||_1
   % Uses Chambolle-Pock (Primal-Dual Algorithm) based on A First-Order
-  %   Primal-Dual Algorithm with Linesearch by Malitsky and Pock
+  %   Primal-Dual Algorithm by Malitsky and Pock
   %
   % Inputs:
   % sigma, tau - Chambolle-Pock step sizes

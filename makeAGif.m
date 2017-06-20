@@ -44,15 +44,19 @@ function makeAGif( varargin )
   imgs = imgs(3:end);
   if numel(imgs)<1, disp('No images found'); end;
 
+  first = 1;
   for i=1:numel(imgs)
+    if regexp( imgs(i).name, '^\.' ), continue; end;
+
     img = imread( [inDir,'/',imgs(i).name] );
     if ismatrix(img)
       img = repmat(img,[1,1,3]);
     end
     [A,map] = rgb2ind(img,256);
 
-    if i == 1;
+    if first == 1;
       imwrite(A,map,outFile,'gif','LoopCount',loopCount,'DelayTime',delayTime);
+      first = 0;
     else
       imwrite(A,map,outFile,'gif','WriteMode','append','DelayTime',delayTime);
     end
