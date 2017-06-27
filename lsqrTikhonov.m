@@ -5,6 +5,12 @@ function out = lsqrTikhonov( A, b, gamma, varargin )
   % Uses lsqr to solve the following optimization problem:
   % minimize || A x - b ||_2^2 + gamma || x ||_2^2
   %
+  % Inputs:
+  % A - matrix
+  % b - vector
+  % gamma - scalar regularization paramter
+  % All inputs accepted by lsqr are accepted as optional inputs
+  %
   % Written by Nicholas Dwork - Copyright 2017
   %
   % This software is offered under the GNU General Public License 3.0.  It
