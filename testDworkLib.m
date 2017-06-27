@@ -248,6 +248,19 @@ function testDworkLib
   %  disp('lsqrFISTA with file handle passed');
   %end
 
+  %% lsqrTikhonov
+  damping = 0;
+  A = rand(20,5);
+  x = rand(5,1);
+  b = A*x;
+  xHat = lsqrTikhonov( A, b, damping );
+  err = norm( x - xHat, 2 ) / norm(x,2);
+  if err > 1d-10
+    error(['lsqrTikhonov failed with error ', num2str(err)]);
+  else
+    disp('lsqrTikhonov passed');
+  end
+  
   %% makeDftMatrix
   fprintf( '\nTesting makeDftMatrix: \n');
   M = 100;

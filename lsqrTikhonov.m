@@ -5,19 +5,21 @@ function out = lsqrTikhonov( A, b, gamma, varargin )
   % Uses lsqr to solve the following optimization problem:
   % minimize || A x - b ||_2^2 + gamma || x ||_2^2
   %
-  % Written by Nicholas Dwork - Copyright 2016
+  % Written by Nicholas Dwork - Copyright 2017
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if gamma<0, error('lsqrTikhonov: gamma must be non-negative'); end;
+
   % M = ( A, I )
+  nb = numel(b);
   function out = applyM( in, type )
     if strcmp( type, 'transp' )
-      nIn = numel(in);
-      in1 = in(1:nIn/2);
-      in2 = in(nIn/2+1:end);
+      in1 = in(1:nb);
+      in2 = in(nb+1:end);
       if isa( A, 'function_handle' )
         ATin1 = A( in1, type );
       else
