@@ -8,8 +8,8 @@ function [nrm,flag] = powerIteration( M, varargin )
   %
   % Inputs:
   % M is either a matrix or a function handle.
-  %   If M is a file handle, then x0 must be supplied
-  %   If M is a file handle, then 
+  %   If M is a function handle, then x0 must be supplied
+  %   If M is a function handle, then 
   %     If M is not symmetric, it is assumed it accepts two arguments
   %       The first is the vector apply M to.
   %       The second is a string argument.  If 'transp' is supplied then the

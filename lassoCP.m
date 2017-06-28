@@ -1,8 +1,9 @@
 
 function [x,residuals] = lassoCP( K, b, gamma, varargin )
-  % x = lassoCP( K, b, gamma [, sigma, tau, theta, 'nIter', nIter ] );
+  % [x,residuals] = lassoCP( K, b, gamma [, sigma, tau, ...
+  %   theta, 'nIter', nIter ] );
   %
-  % Minimizes the Lasso problem:
+  % Solves the Lasso problem:
   %   minimize (1/2)|| K x - b ||_2 + gamma || x ||_1
   % Uses Chambolle-Pock (Primal-Dual Algorithm) based on A First-Order
   %   Primal-Dual Algorithm by Malitsky and Pock
@@ -14,7 +15,7 @@ function [x,residuals] = lassoCP( K, b, gamma, varargin )
   %
   % Outputs:
   % x - the optimal x
-  % res - optionally store the residual values
+  % residuals - optionally store the residual values
   %
   % Written by Nicholas Dwork - Copyright 2016  
   %
@@ -35,17 +36,17 @@ function [x,residuals] = lassoCP( K, b, gamma, varargin )
   theta = p.Results.theta;
   nIter = p.Results.nIter;
 
-  % requirement: sigma * tau * norm(A)^2 <= 1
+  % requirement: sigma * tau * norm(K)^2 <= 1
   if isempty(sigma) && isempty(tau)
-    nA = norm(K);
-    sigma = 1/nA;
-    tau = 1/nA;
+    nK = powerIteration(K);
+    sigma = 1/nK;
+    tau = 1/nK;
   elseif isempty(sigma)
-    nA = norm(K);
-    tau = 1 / ( sigma * nA*nA );
+    nK = powerIteration(K);
+    tau = 1 / ( sigma * nK*nK );
   elseif isempty(tau)
-    nA = norm(K);
-    sigma = 1 / ( tau * nA*nA );
+    nK = norm(K);
+    sigma = 1 / ( tau * nK*nK );
   end
 
   x = rand( size(K,2), 1 );

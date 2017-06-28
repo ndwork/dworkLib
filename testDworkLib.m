@@ -260,7 +260,20 @@ function testDworkLib
   else
     disp('lsqrTikhonov passed');
   end
-  
+
+  %% lsqrTV
+  gamma = 0.0;
+  A = rand(20,5);
+  x = rand(5,1);
+  b = A*x;
+  xHat = lsqrTV( A, b, gamma );
+  err = norm( x - xHat, 2 ) / norm(x,2);
+  if err > 1d-11
+    error(['lsqrTV failed with error ', num2str(err)]);
+  else
+    disp('lsqrTV passed');
+  end
+
   %% makeDftMatrix
   fprintf( '\nTesting makeDftMatrix: \n');
   M = 100;
