@@ -11,27 +11,6 @@ function testDworkLib
   denoisedImg = bilateralFilter( img, 'sigmaR', 0.1 );
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Bilateral Filter Result');
-
-  %% cplsLasso
-  M = 100;
-  N = M;
-  K = rand( M, N );
-  x = zeros(N,1);
-  x(2) = 1;
-  x(3) = pi;
-  x(20) = 10;
-  x(N) = 8;
-  b = K*x;
-  gamma = 1;
-  nIter = 1000;
-  [xHat,residuals] = cpLasso( K, b, gamma, 'nIter', nIter );
-  [xHatLS,residualsLS] = cplsLasso( K, b, gamma, 'nIter', nIter );
-  err = norm(xHat-xHatLS,2);
-  if err > 1d-4, error( 'cplsLasso failed'); end;
-  disp('cplsLasso passed');
-  %semilogy( residuals, 'b', 'LineWidth', 2 );
-  %hold on; semilogy( residualsLS, 'r', 'LineWidth', 2 );
-  %legend( 'cp', 'cpls' );
   
   %% cropData
   fprintf('\nTesting cropData: \n');
@@ -148,9 +127,9 @@ function testDworkLib
   iwty = iwtHaar2( y, split );
   err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
   if err > 1d-12
-    error( 'wtHaar2 is not orthogonal' );
+    error( 'wtHaar2 is not orthogonal: error' );
   else
-    disp('wtHaar2 is orthogonal');
+    disp('wtHaar2 is orthogonal: passed');
   end
 
   %% isEven - 1D data
@@ -168,7 +147,7 @@ function testDworkLib
   A1 = rand(5,5);
   A1odd = 0.5 * ( A1 + rot90(A1,2) );
   if ~isEven( A1odd )
-    err('isEven (2D) failed');
+    error('isEven (2D) failed');
   else
     disp('isEven (2D) passed');
   end
@@ -180,7 +159,7 @@ function testDworkLib
   A1odd = 0.5 * ( A1 - flipud(A1) );
   A1hermitian = A1even + 1i * A1odd;
   if ~isHermitian( A1hermitian )
-    err('isEven (1D) failed');
+    error('isEven (1D) failed');
   else
     disp('isEven (1D) passed');
   end
@@ -192,7 +171,7 @@ function testDworkLib
   A1odd = 0.5 * ( A1 - rot90(A1,2) );
   A1hermitian = A1even + 1i * A1odd;
   if ~isHermitian( A1hermitian )
-    err('isEven (2D) failed');
+    error('isEven (2D) failed');
   else
     disp('isEven (2D) passed');
   end
@@ -202,7 +181,7 @@ function testDworkLib
   A1 = rand(5,1);
   A1odd = 0.5 * ( A1 - flipud(A1) );
   if ~isOdd( A1odd )
-    err('isOdd (1D) failed');
+    error('isOdd (1D) failed');
   else
     disp('isOdd (1D) passed');
   end
@@ -212,10 +191,31 @@ function testDworkLib
   A1 = rand(5,5);
   A1odd = 0.5 * ( A1 - rot90(A1,2) );
   if ~isOdd( A1odd )
-    err('isOdd (2D) failed');
+    error('isOdd (2D) failed');
   else
     disp('isOdd (2D) passed');
   end
+
+  %% lassoCP
+  M = 100;
+  N = M;
+  K = rand( M, N );
+  x = zeros(N,1);
+  x(2) = 1;
+  x(3) = pi;
+  x(20) = 10;
+  x(N) = 8;
+  b = K*x;
+  gamma = 1;
+  nIter = 1000;
+  [xHat,residuals] = lassoCP( K, b, gamma, 'nIter', nIter );
+  [xHatLS,residualsLS] = lassoCP( K, b, gamma, 'nIter', nIter );
+  err = norm(xHat-xHatLS,2);
+  if err > 1d-4, error( 'lassoCP failed'); end;
+  disp('lassoCP passed');
+  %semilogy( residuals, 'b', 'LineWidth', 2 );
+  %hold on; semilogy( residualsLS, 'r', 'LineWidth', 2 );
+  %legend( 'cp', 'cpls' );
 
   %%% lsqrFISTA
   %fprintf( '\nTesting lsqrFISTA: \n');
@@ -282,7 +282,7 @@ function testDworkLib
   diff = out - standard;
   err = max( abs( diff(:) ) );
   if err > 1d-14
-    err(['makeDftMatrix failed with error ', num2str(err)]);
+    error(['makeDftMatrix failed with error ', num2str(err)]);
   else
     disp('makeDftMatrix passed');
   end
