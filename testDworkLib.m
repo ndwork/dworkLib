@@ -327,6 +327,14 @@ function testDworkLib
   if err>0, error(['padData failed with error ', num2str(err)]); end;
   disp('padData passed');
 
+  %% parforProgress
+  N = 20;
+  p = parforProgress( N );
+  parfor n=1:N
+    p.progress( n );
+    pause(rand); % Replace with real code
+  end
+  
   %% plotnice
   x = 1:10; y = 2*x;
   figure; subplot(4,1,1); plotnice(x);

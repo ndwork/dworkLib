@@ -80,7 +80,7 @@ function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance )
   for iter = 1:maxIters
     MtMx = applyM( applyM(x), 'transp' );
     lambdaPrev = lambda;
-    lambda = norm(MtMx,2);
+    lambda = norm(MtMx,'fro');
     if lambda==0, break; end;
 
     x = MtMx / lambda;
@@ -103,7 +103,7 @@ function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance )
   for iter = 1:maxIters
     Mx = applyM(x);
     lambdaPrev = lambda;
-    lambda = norm(Mx,2);
+    lambda = norm(Mx,'fro');
     if lambda==0, break; end;
 
     x = Mx / lambda;
