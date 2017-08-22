@@ -38,11 +38,11 @@ function [x,residuals] = lassoCP( K, b, gamma, varargin )
 
   % requirement: sigma * tau * norm(K)^2 <= 1
   if isempty(sigma) && isempty(tau)
-    nK = powerIteration(K);
+    nK = powerIteration(K, 0);
     sigma = 1/nK;
     tau = 1/nK;
   elseif isempty(sigma)
-    nK = powerIteration(K);
+    nK = powerIteration(K, 0);
     tau = 1 / ( sigma * nK*nK );
   elseif isempty(tau)
     nK = norm(K);
