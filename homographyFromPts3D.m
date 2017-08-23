@@ -1,11 +1,16 @@
 
-function H = dltHomographyFromPts3D( pts1, pts2 )
-  % H = dltHomographyFromPts3D( pts1, pts2 )
+function H = homographyFromPts3D( pts1, pts2 )
+  % H = homographyFromPts3D( pts1, pts2 )
   %
   % Determine the homography that projects pts1 onto pts2 with the Direct
   %   Linear Transformation.
   %
-  % Written by Nicholas Dwork 2016
+  % Written by Nicholas Dwork - Copyright 2016
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   nPts = size( pts1, 1 );
 
