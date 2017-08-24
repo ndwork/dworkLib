@@ -28,38 +28,6 @@ function testDworkLib
   if err > 0, error( 'cropData test failed' ); end;
   disp('cropData test passed');
 
-  %% dltHomographyFromPts2D
-  pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
-  H = rand(3,3);
-  pts1_h = euc2Hom( pts1' );
-  pts2_h = H * pts1_h;
-  pts2 = hom2Euc( pts2_h )';
-  dltH = dltHomographyFromPts2D( pts1, pts2 );
-  H = H ./ H(3,3);
-  dltH = dltH ./ dltH(3,3);
-  err = norm( H - dltH, 'fro' );
-  if err < 1d-10
-    disp('dltHomographFromPts2D passed');
-  else
-    error('dltHomographFromPts2D failed');
-  end
-
-  %% dltHomographFromPts3D
-  pts1 = [ [0 0 0]; [0 0 1]; [0 1 0]; [0 1 1]; [1 0 0]; [1 0 1]; ];
-  H = rand(4,4);
-  pts1_h = euc2Hom( pts1' );
-  pts2_h = H * pts1_h;
-  pts2 = hom2Euc( pts2_h )';
-  dltH = dltHomographyFromPts3D( pts1, pts2 );
-  H = H ./ H(4,4);
-  dltH = dltH ./ dltH(4,4);
-  err = norm( H - dltH, 'fro' );
-  if err < 1d-10
-    disp('dltHomographFromPts3D passed');
-  else
-    error('dltHomographFromPts3D failed');
-  end
-
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );
@@ -130,6 +98,38 @@ function testDworkLib
     error( 'wtHaar2 is not orthogonal: error' );
   else
     disp('wtHaar2 is orthogonal: passed');
+  end
+
+  %% homographyFromPts2D
+  pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
+  H = rand(3,3);
+  pts1_h = euc2Hom( pts1' );
+  pts2_h = H * pts1_h;
+  pts2 = hom2Euc( pts2_h )';
+  dltH = homographyFromPts2D( pts1, pts2 );
+  H = H ./ H(3,3);
+  dltH = dltH ./ dltH(3,3);
+  err = norm( H - dltH, 'fro' );
+  if err < 1d-10
+    disp('homographFromPts2D passed');
+  else
+    error('homographFromPts2D failed');
+  end
+
+  %% homographFromPts3D
+  pts1 = [ [0 0 0]; [0 0 1]; [0 1 0]; [0 1 1]; [1 0 0]; [1 0 1]; ];
+  H = rand(4,4);
+  pts1_h = euc2Hom( pts1' );
+  pts2_h = H * pts1_h;
+  pts2 = hom2Euc( pts2_h )';
+  dltH = homographyFromPts3D( pts1, pts2 );
+  H = H ./ H(4,4);
+  dltH = dltH ./ dltH(4,4);
+  err = norm( H - dltH, 'fro' );
+  if err < 1d-10
+    disp('homographFromPts3D passed');
+  else
+    error('homographFromPts3D failed');
   end
 
   %% isEven - 1D data
