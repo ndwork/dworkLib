@@ -44,7 +44,7 @@ function showLibFiles( varargin )
         files = dir( pathDirs{i} );
         for j=1:numel(files)
           if isempty( regexp(files(j).name, '^\.', 'ONCE' ) ) && ...
-            ~isempty( regexp(files(j).name, pattern, 'ONCE' ) )
+            ~isempty( regexpi(files(j).name, pattern, 'ONCE' ) )
 
             disp( files(j).name );
           end
