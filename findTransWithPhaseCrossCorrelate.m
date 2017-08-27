@@ -10,7 +10,8 @@ function shifts = findTransWithPhaseCrossCorrelate( img1, img2 )
   %
   % Output:
   % shifts = A two element array specifying the shifts in the vertical and
-  %   horiontal directions
+  %   horiontal directions that must be applied to image 1 to align it with
+  %   image 2
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -19,12 +20,12 @@ function shifts = findTransWithPhaseCrossCorrelate( img1, img2 )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  pc = phaseCrossCorrelate( img1, img2 );
+  pc = phaseCrossCorrelate( img2, img1 );
   [~,maxIndx] = max(pc(:));
   sImg = size( img1 );
   [shiftedY, shiftedX] = ind2sub(sImg, maxIndx );
-  shiftedY = mod( -(shiftedY-1), sImg(1) );
-  shiftedX = mod( -(shiftedX-1), sImg(2) );
+  shiftedY = shiftedY - 1;  % Account for 1 based indexing of Matlab
+  shiftedX = shiftedX - 1;
   shifts = [ shiftedY shiftedX ];
 end
 
