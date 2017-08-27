@@ -26,9 +26,11 @@ function [outImg,rs,thetas] = img2Polar( img, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultDr = 1;
+  defaultDTheta = pi/180;
   p = inputParser;
-  p.addOptional( 'dr', 1 );
-  p.addOptional( 'dTheta', pi/180 );
+  p.addOptional( 'dr', defaultDr );
+  p.addOptional( 'dTheta', defaultDTheta );
   p.addOptional( 'maxRadius', 0 );
   p.addParameter( 'method', 'linear' );
   p.addParameter( 'extrapval', 0 );
@@ -39,6 +41,11 @@ function [outImg,rs,thetas] = img2Polar( img, varargin )
   method = p.Results.method;
   extrapval = p.Results.extrapval;
 
+  if numel( dr ) < 1, dr = 1; end;
+  if numel( dTheta ) < 1, dTheta = defaultDTheta; end;
+  if numel( maxRadius ) < 1, maxRadius=0; end;
+  if numel( method ) < 1, method='linear'; end;
+  if numel( extrapval ) < 1, extrapval = 0; end;
 
   sImg = size( img );
   if maxRadius==0, maxRadius = floor(min(size(img))/2); end;
