@@ -35,21 +35,34 @@ function testDworkLib
   figure;
   showFeaturesOnImg( features, img );
 
-  %% findRotAndTrans
+  %% findRotAndTransFromPts
   nPts = 5;
   theta = pi/4;
   pts1 = 10*rand(nPts,2) - 5;
   R = [ cos(theta) -sin(theta); sin(theta) cos(theta) ];
   t = [ 5.2; -4.1 ];
-  pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);;
-  [R2,t2] = findRotAndTrans( pts1, pts2 );
+  pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);
+  [R2,t2] = findRotAndTransFromPts( pts1, pts2 );
   error1 = norm( R2(:) - R(:), 2 );
   error2 = norm( t - t2, 2 );
   if error1 + error2 < 1d-7
-    disp('findRotAndTrans passed');
+    disp('findRotAndTransFromPts passed');
   else
-    error('findRotAndTrans failed');
+    error('findRotAndTransFromPts failed');
   end
+
+  %% findTransWithPhaseCrossCorrelate
+  img1 = imread( 'cameraman.tif' );
+  sImg = size( img1 );
+  shiftY=30; shiftX = sImg(2)-20;
+  img2 = circshift( img1, [shiftY, shiftX] );
+  shifts = findTransWithPhaseCrossCorrelate( img1, img2 );
+  shiftedY = shifts(1);
+  shiftedX = shifts(2);
+  errY = mod(shiftY,sImg(1)) - shiftedY;
+  errX = mod(shiftX,sImg(2)) - shiftedX;
+  if max( abs(errY), abs(errX) ) > 0, error('phaseCrossCorrelate failed'); end;
+  disp('phaseCrossCorrelate passed');
 
   %% haar
   sig = rand(1,8);
@@ -334,7 +347,7 @@ function testDworkLib
     p.progress( n );
     pause(rand); % Replace with real code
   end
-  
+
   %% plotnice
   x = 1:10; y = 2*x;
   figure; subplot(4,1,1); plotnice(x);

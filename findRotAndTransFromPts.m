@@ -1,5 +1,5 @@
 
-function [R,t] = findRotAndTrans( pts1, pts2 )
+function [R,t] = findRotAndTransFromPts( pts1, pts2 )
   % [R,t] = findRotAndTrans( pts1, pts2 )
   % This function finds the rotation matrix R and the translation matrix t
   %   such that pt2 = R * pt1 + t;
