@@ -37,10 +37,15 @@ classdef parforProgress
 
     % Destructor
     function delete( obj )
-      delete(obj.tmpFile);
+      delete( obj.tmpFile );
     end
 
     % Member functions
+    function clean( obj )
+      delete( obj.tmpFile );
+      obj.nTotal = 0;
+    end
+    
     function progress( obj, n )
       % n is the index of the current iteration
       fid = fopen( obj.tmpFile, 'a' );
@@ -50,6 +55,7 @@ classdef parforProgress
       nLines = findNumLinesInFile( obj.tmpFile );
       disp(['Working on ', num2str(n), ' of ', num2str(obj.nTotal), ...
         ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
+      drawnow('update');
     end
 
   end
