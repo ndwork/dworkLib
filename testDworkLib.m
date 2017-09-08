@@ -51,6 +51,48 @@ function testDworkLib
     error('findRotAndTransFromPts failed');
   end
 
+  %% findRotWithPCC
+  rotation = -30;  % degrees
+  img1 = padData( imread( 'cameraman.tif' ), [356 356] );
+  img2 = imrotate( img1, rotation, 'crop' );
+  rotation = findRotWithPCC( img1, img2 );
+  rotated1 = imrotate( img1, rotation*180/pi, 'crop' );
+  err = norm( img2(:) - rotated1(:) );
+  if err < 1d-7
+    disp('findRotWithPCC passed');
+  else
+    error('findRotWithPCC failed');
+  end
+
+  %% findTransRotWithPCC
+  trans = [10 50];  % pixels
+  rotation = -30;  % degrees
+  img1 = padData( imread( 'cameraman.tif' ), [600 600] );
+  tmp = circshift( img1, trans );
+  img2 = imrotate( tmp, rotation, 'crop' );
+  [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 );
+  trans1 = imrotate( circshift( img1, [vShift hShift] ), rotation * 180/pi, ...
+    'crop' );
+  err = norm( img2(:) - trans1(:) );
+  if err < 1d-7
+    disp('findTransRotWithPCC passed');
+  else
+    error('findTransRotWithPCC failed');
+  end
+
+  %% findTransWithPCC
+  trans = [10 200];  % pixels
+  img1 = padData( imread( 'cameraman.tif' ), [356 356] );
+  img2 = circshift( img1, trans );
+  [vShift,hShift] = findTransWithPCC( img1, img2 );
+  shifted1 = circshift( img1, [vShift hShift] );
+  err = norm( img2(:) - shifted1(:) );
+  if err < 1d-7
+    disp('findTransWithPCC passed');
+  else
+    error('findTransWithPCC failed');
+  end
+
   %% findTransWithPhaseCrossCorrelate
   img1 = double( imread( 'cameraman.tif' ) );
   sImg = size( img1 );
