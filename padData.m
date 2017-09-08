@@ -7,7 +7,7 @@ function padded = padData( data, N, varargin )
   % N - specifies the final size of the padded data
   %
   % Optional Inputs:
-  % padValue - the value of the new data elements
+  % padValue - the value of the new data elements (default is 0)
   %
   % Outputs:
   % padded - the padded array

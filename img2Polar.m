@@ -1,14 +1,18 @@
 
 function [outImg,rs,thetas] = img2Polar( img, varargin )
-  % [outImg,rs,thetas] = img2Polar( img, [ dr, dTheta, 'method', method, ...
-  %   'extrapval', extrapval ] )
+  % [outImg,rs,thetas] = img2Polar( img, [ 'dr', dr, 'dTheta', dTheta, ...
+  %   'rs', rs, 'thetas', thetas, 'method', method, 'extrapval', extrapval ] )
   %
   % Inputs:
   % img - a 2D array
   % 
   % Optional Inputs:
-  % dr - the difference between adjacent radius values (in pixels0
+  % dr - the difference between adjacent radius values (in pixels)
   % dTheta - the difference between adjacent angles (in radians)
+  % rs - a vector specifying the radius values (in pixels)
+  %      if specified, dr is ignored
+  % thetas - a vector specifying the angles (in radians)
+  %      if specified, dTheta is ignored
   % method - the method of interpolation used; any method accepted by
   %   interp2 is valid
   % extrapval - the value of a pixel to output when extrapolating
@@ -28,15 +32,21 @@ function [outImg,rs,thetas] = img2Polar( img, varargin )
 
   defaultDr = 1;
   defaultDTheta = pi/180;
+  defaultRs = [];
+  defaultThetas = [];
   p = inputParser;
-  p.addOptional( 'dr', defaultDr );
-  p.addOptional( 'dTheta', defaultDTheta );
-  p.addOptional( 'maxRadius', 0 );
+  p.addOptional( 'dr', defaultDr, @isnumeric );
+  p.addOptional( 'dTheta', defaultDTheta, @isnumeric );
+  p.addOptional( 'maxRadius', 0, @isnumeric );
+  p.addParameter( 'rs', defaultRs );
+  p.addParameter( 'thetas', defaultThetas );
   p.addParameter( 'method', 'linear' );
-  p.addParameter( 'extrapval', 0 );
+  p.addParameter( 'extrapval', 0, @isnumeric );
   p.parse( varargin{:} );
   dr = p.Results.dr;
   dTheta = p.Results.dTheta;
+  rs = p.Results.rs;
+  thetas = p.Results.thetas;
   maxRadius = p.Results.maxRadius;
   method = p.Results.method;
   extrapval = p.Results.extrapval;
@@ -50,8 +60,8 @@ function [outImg,rs,thetas] = img2Polar( img, varargin )
   sImg = size( img );
   if maxRadius==0, maxRadius = floor(min(size(img))/2); end;
 
-  rs = 0:dr:maxRadius;
-  thetas = -pi:dTheta:pi-dTheta;
+  if numel( rs ) < 1, rs = 0:dr:maxRadius; end;
+  if numel(thetas) < 1, thetas = -pi:dTheta:pi-dTheta; end;
 
   [rsImg,thetasImg] = ndgrid( rs, thetas );
 

@@ -21,7 +21,7 @@ function pcc = phaseCrossCorrelate( img1, img2 )
 
   fftImg1 = fft2( img1 );
   fftImg2 = fft2( img2 );
-  numerator = fftImg1 .* conj(fftImg2);
+  numerator = conj(fftImg1) .* fftImg2;
   denominator = abs( numerator );
   fftPC = numerator ./ denominator;
   pcc = ifft2( fftPC );
