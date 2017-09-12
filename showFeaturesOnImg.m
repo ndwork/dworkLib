@@ -28,10 +28,17 @@ function showFeaturesOnImg( features, img, varargin )
   range = p.Results.range;
   color = p.Results.color;
 
+  if nSigDims( features ) > 1
+    theseFeatures = features;
+  else
+    [theseFeaturesY,theseFeaturesX] = ind2sub( size(img), features );
+    theseFeatures = [ theseFeaturesY', theseFeaturesX' ];
+  end
+
   figure;
   imshow( imresize(img, scale, 'nearest'), range );
   hold on
-  rFeatures = round( scale * features );
+  rFeatures = round( scale * theseFeatures );
   plot( rFeatures(:,1), rFeatures(:,2), [color,'*']);
   drawnow;
 end
