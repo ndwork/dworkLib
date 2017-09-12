@@ -1,6 +1,8 @@
 
-function [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 )
-  % [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 )
+function [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2, ...
+  varargin )
+  % [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 [, ...
+  %   'dTheta', dTheta] )
   %
   % Finds translation and rotation so that
   %   img2 = Rotation( Translation( img1 ) )
@@ -17,10 +19,16 @@ function [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  fftImg1 = fft2( img1 );  absFft1 = abs( fftImg1 );
-  fftImg2 = fft2( img2 );  absFft2 = abs( fftImg2 );
+  defaultDTheta = [];
+  p = inputParser;
+  p.addParameter( 'dTheta', defaultDTheta, @isnumeric );
+  p.parse( varargin{:} );
+  dTheta = p.Results.dTheta;
+  
+  fftImg1 = fftshift(fft2( img1 ) );  absFft1 = abs( fftImg1 );
+  fftImg2 = fftshift(fft2( img2 ) );  absFft2 = abs( fftImg2 );
 
-  rotation = findRotWithPCC( absFft1, absFft2 );
+  rotation = findRotWithPCC( absFft1, absFft2, 'dTheta', dTheta );
   rot2 = imrotate( img2, -rotation*180/pi, 'crop' );
   [vShift,hShift] = findTransWithPCC( img1, rot2 );
 end

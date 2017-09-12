@@ -22,7 +22,7 @@ function showFeaturesOnImg( features, img, varargin )
   p = inputParser;
   p.addOptional( 'range', [0 1] );
   p.addParameter( 'scale', 1 );
-  p.addParameter( 'color', 'k' );
+  p.addParameter( 'color', 'y' );
   p.parse( varargin{:} );
   scale = p.Results.scale;
   range = p.Results.range;

@@ -93,19 +93,6 @@ function testDworkLib
     error('findTransWithPCC failed');
   end
 
-  %% findTransWithPhaseCrossCorrelate
-  img1 = double( imread( 'cameraman.tif' ) );
-  sImg = size( img1 );
-  shiftY=30; shiftX = sImg(2)-20;
-  img2 = circshift( img1, [shiftY, shiftX] );
-  shifts = findTransWithPhaseCrossCorrelate( img1, img2 );
-  shiftedY = shifts(1);
-  shiftedX = shifts(2);
-  errY = mod(shiftY,sImg(1)) - shiftedY;
-  errX = mod(shiftX,sImg(2)) - shiftedX;
-  if max( abs(errY), abs(errX) ) > 0, error('findTransWithPhaseCrossCorrelate failed'); end;
-  disp('phaseCrossCorrelate passed');
-
   %% haar
   sig = rand(1,8);
   split = [1 0];
