@@ -1,5 +1,5 @@
 
-function imshownice( img, varargin )
+function scaling = imshownice( img, varargin )
   % imshownice( img [, scale, method, 'sdevScale', sdevScale ] )
   % show the image on the following scale
   % meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
@@ -39,7 +39,8 @@ function imshownice( img, varargin )
   if ismatrix( img )
     % Grayscale image
     tmp = imresize( img, scale, method );
-    imshow( tmp, [ meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg ] );
+    scaling = [ meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg ];
+    imshow( tmp, scaling );
   else
     % Color image
     for i=1:size(img,3)
@@ -47,7 +48,8 @@ function imshownice( img, varargin )
     end
     inMin = meanImg - sdevScale*sdevImg;
     inMax = meanImg + sdevScale*sdevImg;
-    scaled = scaleImg( tmp, [inMin inMax], [0 1] );
+    scaling = [inMin inMax];
+    scaled = scaleImg( tmp, scaling, [0 1] );
     imshow( scaled );
   end
 end
