@@ -1,5 +1,5 @@
 
-function restart
+function restart( varargin )
   % restart
   % closes all windows, clears variables, and clears the command window
   %
@@ -10,7 +10,13 @@ function restart
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  type = [];
+  if nargin > 0, type = varargin{1}; end;
+
+  if strcmp( type, 'all' ), clear all; end;
+
   close all;
   clear;
   clc;
 end
+
