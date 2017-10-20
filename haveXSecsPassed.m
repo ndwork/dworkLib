@@ -1,7 +1,8 @@
 
 function xSecsHavePassed = haveXSecsPassed( x )
   % Returns 1 if x seconds have passed since the last time this function
-  %   returned 1 and returns 0 otherwise
+  %   returned 1 and returns 0 otherwise.
+  % Returns 1 for the first call of the function.
   %
   % Written by Nicholas Dwork - Copyright 2016
   %
