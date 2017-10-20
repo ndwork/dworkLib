@@ -1,6 +1,7 @@
 
-function out = haveXSecsPassed( x )
-  % Returns 1 if x seconds have passed; returns 0 otherwise
+function xSecsHavePassed = haveXSecsPassed( x )
+  % Returns 1 if x seconds have passed since the last time this function
+  %   returned 1 and returns 0 otherwise
   %
   % Written by Nicholas Dwork - Copyright 2016
   %
@@ -9,14 +10,16 @@ function out = haveXSecsPassed( x )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  persistent thisTime;
+  persistent lastTime;
 
-  if numel(thisTime) == 0
+  if numel(lastTime) == 0
     lastTime = 0;
-  else
-    lastTime = thisTime;
   end
-  thisTime = tic;
-  
-  out = thisTime - lastTime > x;
+  nowTime = cputime;
+
+  xSecsHavePassed = nowTime - lastTime > x;
+
+  if xSecsHavePassed > 0
+    lastTime = nowTime;
+  end
 end
