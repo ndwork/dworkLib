@@ -16,7 +16,7 @@ function makeAGif( varargin )
   %   delayTime (optional) - the time between frames in the animation
   %     By default, delayTime is assumed to be 0.3 seconds
   %   loopCount (optional) - the number of times to loop the animation
-  %     By default, loopCount is infinity (meaning and endless loop)
+  %     By default, loopCount is infinity (meaning an endless loop)
   %
   % Written by Nicholas Dwork - Copyright 2015
   %
