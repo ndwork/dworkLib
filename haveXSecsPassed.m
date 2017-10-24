@@ -18,7 +18,7 @@ function xSecsHavePassed = haveXSecsPassed( x )
   end
   nowTime = cputime;
 
-  xSecsHavePassed = nowTime - lastTime > x;
+  xSecsHavePassed = ( nowTime - lastTime > x );
 
   if xSecsHavePassed > 0
     lastTime = nowTime;
