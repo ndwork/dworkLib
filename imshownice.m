@@ -33,8 +33,8 @@ function scaling = imshownice( img, varargin )
   method = p.Results.method;
   sdevScale = p.Results.sdevScale;
 
-  meanImg = mean( img(:) );
-  sdevImg = std( img(:) );
+  meanImg = mean( real(img(:)) );
+  sdevImg = std( real(img(:)) );
 
   if ismatrix( img )
     % Grayscale image
