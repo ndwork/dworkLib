@@ -1,8 +1,9 @@
 
 function scaling = imshownice( img, varargin )
-  % imshownice( img [, scale, method, 'sdevScale', sdevScale ] )
-  % show the image on the following scale
-  % meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
+  % imshownice( img [, scale, method, 'sdevScale', sdevScale, ...
+  %   'border', border ] )
+  % show the image on the following scale:
+  %   meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
   %
   % Inputs:
   % img - 2D array representing the image
@@ -13,6 +14,8 @@ function scaling = imshownice( img, varargin )
   %   default is 'nearest'
   %   any method accepted by imresize is accepted for this parameter
   % sdevScale - default is 2.5
+  % border - border to put around the image in the figure window
+  %   either 'noBorder' or a value in pixels  (default is 10)
   %
   % Written by Nicholas Dwork - Copyright 2016
   %
@@ -24,14 +27,17 @@ function scaling = imshownice( img, varargin )
   defaultScale = 1.0;
   defaultMethod = 'nearest';
   defaultSDevScale = 2.5;
+  defaultBorder = 10;
   p = inputParser;
-  p.addOptional( 'scale', defaultScale );
+  p.addOptional( 'scale', defaultScale, @isnumeric );
   p.addOptional( 'method', defaultMethod );
-  p.addParameter( 'sdevScale', defaultSDevScale );
+  p.addParameter( 'sdevScale', defaultSDevScale, @isnumeric );
+  p.addParameter( 'border', defaultBorder );
   p.parse( varargin{:} );
   scale = p.Results.scale;
   method = p.Results.method;
   sdevScale = p.Results.sdevScale;
+  border = p.Results.border;
 
   meanImg = mean( real(img(:)) );
   sdevImg = std( real(img(:)) );
@@ -43,7 +49,9 @@ function scaling = imshownice( img, varargin )
     imshow( tmp, scaling );
   else
     % Color image
-    for i=1:size(img,3)
+    sImg = size(img);
+    tmp = zeros( [ sImg(1:end-1) * scale, sImg(end) ] );
+    for i=1:sImg(end)
       tmp(:,:,i) = imresize( img(:,:,i), scale, method );
     end
     inMin = meanImg - sdevScale*sdevImg;
@@ -52,4 +60,27 @@ function scaling = imshownice( img, varargin )
     scaled = scaleImg( tmp, scaling, [0 1] );
     imshow( scaled );
   end
+
+  if ischar( class(border) ) && strcmp(border,'none')
+    displayBorder = 0;
+  elseif border < 0
+    error('border must be great than or equal to 0.');
+  else
+    displayBorder = border;
+  end
+  ca = gca;
+  beforeAxesUnits = ca.Units;
+  set(ca,'units','pixels');
+  x = get(ca,'position');
+  cf = gcf;
+  beforeFigUnits = cf.Units;
+  set(cf,'units','pixels');
+  y = get(cf,'position');
+  set(cf,'position',[y(1) y(2) x(3)+2*displayBorder x(4)+2*displayBorder] );
+    % set the position of the figure to the length and width of the axes
+  %set(ca,'units','normalized','position',[0 0 1 1]);
+  set(ca,'position',[displayBorder displayBorder x(3) x(4)]);
+  % Now restore units to previously used values
+  set(ca,'units',beforeAxesUnits);
+  set(cf,'units',beforeFigUnits);
 end

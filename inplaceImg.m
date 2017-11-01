@@ -49,6 +49,11 @@ function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
   rowIndxL = (subRowIndx-1) * nRows + 1;
   rowIndxH = min( subRowIndx * nRows, sOutImg(1) );
 
-  outImg( rowIndxL:rowIndxH, colIndxL:colIndxH, : ) = subImg;
+  dCol = colIndxH - colIndxL + 1;
+  dRow = rowIndxH - rowIndxL + 1;
+  if dCol > 0 && dRow > 0
+    outImg( rowIndxL:rowIndxH, colIndxL:colIndxH, : ) = ....
+      subImg(1:dRow,1:dCol,:);
+  end
 end
 
