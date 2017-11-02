@@ -76,10 +76,15 @@ function scaling = imshownice( img, varargin )
   beforeFigUnits = cf.Units;
   set(cf,'units','pixels');
   y = get(cf,'position');
-  set(cf,'position',[y(1) y(2) x(3)+2*displayBorder x(4)+2*displayBorder] );
-    % set the position of the figure to the length and width of the axes
-  %set(ca,'units','normalized','position',[0 0 1 1]);
-  set(ca,'position',[displayBorder displayBorder x(3) x(4)]);
+  if( displayBorder > 0 )
+    set(cf,'position',[y(1) y(2) x(3)+2*displayBorder x(4)+2*displayBorder+10] );
+      % set the position of the figure to the length and width of the axes
+      % add 10 pixels to make space for a title
+    set(ca,'position',[displayBorder displayBorder x(3) x(4)]);
+  else
+    set(cf,'position',[y(1) y(2) x(3) x(4)] );
+    set(ca,'position',[0 0 x(3) x(4)]);
+  end
   % Now restore units to previously used values
   set(ca,'units',beforeAxesUnits);
   set(cf,'units',beforeFigUnits);
