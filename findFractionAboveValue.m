@@ -14,8 +14,8 @@ function value = findFractionAboveValue( data, fraction )
   % purpose.
 
   nData = numel( data );
-  lowerValue = min( data );
-  upperValue = max( data );
+  lowerValue = min( data(:) );
+  upperValue = max( data(:) );
 
   fractionAbove = 0;
   lastFractionAbove = fractionAbove - 1.0;
@@ -25,7 +25,7 @@ function value = findFractionAboveValue( data, fraction )
     lastFractionAbove = fractionAbove;
 
     value = lowerValue + 0.5 * ( upperValue - lowerValue );
-    fractionAbove = sum( data > value ) / nData;
+    fractionAbove = sum( data(:) > value ) / nData;
 
     if fractionAbove == fraction
       return;
