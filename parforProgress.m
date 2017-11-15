@@ -11,6 +11,10 @@ classdef parforProgress
   %   pause(rand*10); % Replace with real code
   % end
   %
+  % Notes:
+  % progress member function accepts optional downsampling input.
+  %   Ex: p.progress( n, 10 );  % displays only when mod(n,10) == 0
+  %
   % Written by Nicholas Dwork - Copyright 2017
   % Based on parfor_progress written by Jeremy Scheff
   %
@@ -46,16 +50,24 @@ classdef parforProgress
       obj.nTotal = 0;
     end
     
-    function progress( obj, n )
+    function progress( obj, n, varargin )
+      defaultDownsample = 1;
+      p = inputParser;
+      p.addOptional( 'downsample', defaultDownsample, @isnumeric );
+      p.parse( varargin{:} );
+      downsample = p.Results.downsample;
+      
       % n is the index of the current iteration
       fid = fopen( obj.tmpFile, 'a' );
       if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end;
       fprintf( fid, '%d\n', n ); % Save n at the top of progress.txt
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
-      disp(['Working on ', num2str(n), ' of ', num2str(obj.nTotal), ...
-        ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
-      drawnow('update');
+      if mod( n, downsample )==0
+        disp(['Working on ', num2str(n), ' of ', num2str(obj.nTotal), ...
+          ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
+        drawnow('update');
+      end
     end
 
   end
