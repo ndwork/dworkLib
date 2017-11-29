@@ -1,6 +1,6 @@
 
-function imshowscale( img, scale, varargin )
-  % imshowscale( img, scale [, method, 'range', range, 'border', border ] )
+function imshowscale( img, varargin )
+  % imshowscale( img, [ scale, method, 'range', range, 'border', border ] )
   % displays figure to the screen where size of image is scaled by scale
   %
   % Inputs:
@@ -8,7 +8,7 @@ function imshowscale( img, scale, varargin )
   %       representing the color image (third dimension has size 3)
   %
   % Optional Inputs:
-  % scale - factor to scale the size of the image for display
+  % scale - factor to scale the size of the image for display (default is 1)
   % method - when scaling method, interpolation method to use
   %   default is 'nearest'
   %   any method accepted by imresize is accepted for this parameter
@@ -26,21 +26,24 @@ function imshowscale( img, scale, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultScale = 1;
   defaultMethod = 'nearest';
   defaultRange = [];
   defaultBorder = 10;
   p = inputParser;
-  p.addOptional( 'method', defaultMethod );
+  p.addOptional( 'scale', defaultScale, @isnumeric );
+  p.addParameter( 'method', defaultMethod );
   p.addParameter( 'range', defaultRange );
   p.addParameter( 'border', defaultBorder );
   p.parse( varargin{:} );
+  scale = p.Results.scale;
   method = p.Results.method;
   range = p.Results.range;
   border = p.Results.border;
 
   if strcmp( 'nice', range )
     imshownice( img, scale, method );
-  elseif range == 0
+  elseif numel(range) == 0
     if ismatrix( img )
       imshow( imresize( img, scale, method ), range );
     elseif ndims(img) == 3
@@ -67,22 +70,22 @@ function imshowscale( img, scale, varargin )
   end
   ca = gca;
   beforeAxesUnits = ca.Units;
-  set(ca,'units','pixels');
-  x = get(ca,'position');
+  set( ca, 'units', 'pixels' );
+  x = get( ca, 'position' );
   cf = gcf;
   beforeFigUnits = cf.Units;
-  set(cf,'units','pixels');
+  set( cf, 'units', 'pixels' );
   y = get(cf,'position');
   if( displayBorder > 0 )
-    set(cf,'position',[y(1) y(2) x(3)+2*displayBorder x(4)+2*displayBorder+10] );
+    set( cf, 'position', [y(1) y(2) x(3)+2*displayBorder x(4)+2*displayBorder+10] );
       % set the position of the figure to the length and width of the axes
       % add 10 pixels to make space for a title
-    set(ca,'position',[displayBorder displayBorder x(3) x(4)]);
+    set( ca, 'position', [displayBorder displayBorder x(3) x(4)]);
   else
-    set(cf,'position',[y(1) y(2) x(3) x(4)] );
-    set(ca,'position',[0 0 x(3) x(4)]);
+    set( cf,'position', [y(1) y(2) x(3) x(4)] );
+    set( ca,'position', [0 0 x(3) x(4)]);
   end
   % Now restore units to previously used values
-  set(ca,'units',beforeAxesUnits);
-  set(cf,'units',beforeFigUnits);
+  set( ca, 'units', beforeAxesUnits );
+  set( cf, 'units', beforeFigUnits );
 end

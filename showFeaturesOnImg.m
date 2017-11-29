@@ -36,7 +36,7 @@ function showFeaturesOnImg( features, img, varargin )
   end
 
   figure;
-  imshow( imresize(img, scale, 'nearest'), range );
+  imshowscale( img, scale, 'range', range );
   hold on
   rFeatures = round( scale * theseFeatures );
   plot( rFeatures(:,1), rFeatures(:,2), [color,'*']);
