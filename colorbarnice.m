@@ -1,11 +1,15 @@
 
-function colorbarnice( varargin )
-  % colorbarnice( [ 'FontSize', FontSize, 'Label', Label', 'LineWidth', LineWidth ] );
+function cb = colorbarnice( varargin )
+  % cb = colorbarnice( [ 'FontSize', FontSize, 'Label', Label', ...
+  %   'LineWidth', LineWidth ] );
   %
   % Inputs:
   % FontSize - (default is 20)
   % Label - the label of the colorbar (default is no label)
   % LineWidth - (default is 2)
+  %
+  % Outputs:
+  % cb - the colorbar's handle
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
