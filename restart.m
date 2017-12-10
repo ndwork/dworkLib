@@ -13,10 +13,9 @@ function restart( varargin )
   type = [];
   if nargin > 0, type = varargin{1}; end;
 
-  if strcmp( type, 'all' ), clear all; end;
+  if strcmp( type, 'all' ), clear all; end;                                                %#ok<CLALL>
 
   close all;
   clear;
   clc;
 end
-

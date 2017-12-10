@@ -1,6 +1,6 @@
 
 function scaling = imshownice( img, varargin )
-  % imshownice( img [, scale, method, 'sdevScale', sdevScale, ...
+  % imshownice( img [, scale, 'methd', method, 'sdevScale', sdevScale, ...
   %   'border', border ] )
   % show the image on the following scale:
   %   meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
@@ -30,7 +30,7 @@ function scaling = imshownice( img, varargin )
   defaultBorder = 10;
   p = inputParser;
   p.addOptional( 'scale', defaultScale, @isnumeric );
-  p.addOptional( 'method', defaultMethod, @(x) true );
+  p.addParameter( 'method', defaultMethod, @(x) true );
   p.addParameter( 'sdevScale', defaultSDevScale, @isnumeric );
   p.addParameter( 'border', defaultBorder );
   p.parse( varargin{:} );
