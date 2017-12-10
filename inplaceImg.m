@@ -6,10 +6,21 @@ function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
   % subImg - the image to be put into the out image
   % nSubRows - the number of image rows in outImg
   % nSubCols - the number of image cols in outImg
-  % subIndx - the index of the current image to input
+  % subIndx - the (one based) index of the current image to input
   % inImg (optional) - the input image to be altered (if not provided, creates an
   %   image of all zeros)
   % order (optional) - either 'rowMajor' (default) or 'colMajor'
+  %
+  % Outputs:
+  % outImg - the complete image
+  %
+  % Ex:
+  % im = phantom();
+  % completeImg = inplaceImg( im, 2, 3, 1 );
+  % im = flipud( im );
+  % completeImg = inplaceImg( im, 2, 3, 2, completeImg );
+  % im = fliplr( im );
+  % completeImg = inplaceImg( im, 2, 3, 3, completeImg );
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
