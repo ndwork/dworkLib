@@ -1,15 +1,20 @@
 
 function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
-  % outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
+  % outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx [, inImg, ...
+  %   'order', order, 'border', border, 'borderValue', borderValue ] )
   %
   % Inputs:
   % subImg - the image to be put into the out image
   % nSubRows - the number of image rows in outImg
   % nSubCols - the number of image cols in outImg
   % subIndx - the (one based) index of the current image to input
-  % inImg (optional) - the input image to be altered (if not provided, creates an
+  %
+  % Optional Inputs:
+  % inImg - the input image to be altered (if not provided, creates an
   %   image of all zeros)
-  % order (optional) - either 'rowMajor' (default) or 'colMajor'
+  % order - either 'rowMajor' (default) or 'colMajor'
+  % border - specifies a border to place between images (default is 0)
+  % borderValue - specifies the value to place in between images.
   %
   % Outputs:
   % outImg - the complete image
@@ -29,18 +34,26 @@ function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultBorder = 0;
+  defaultBorderValue = 0;
   p = inputParser;
   p.addOptional( 'inImg', [] );
   p.addParameter( 'order', 'rowMajor' );
+  p.addParameter( 'border', defaultBorder, @isnumeric );
+  p.addParameter( 'borderValue', defaultBorderValue, @isnumeric );
   p.parse( varargin{:} );
+  border = p.Results.border;
+  borderValue = p.Results.borderValue;
   inImg = p.Results.inImg;
   order = p.Results.order;
 
   nRows = size( subImg, 1 );
   nCols = size( subImg, 2 );
-
+  
   if numel( inImg ) == 0
-    outImg = zeros( nSubRows*nRows, nSubCols*nCols, size(subImg,3) );
+    outImg = borderValue * ...
+      ones( nSubRows*nRows + border*(nSubRows-1), ...
+            nSubCols*nCols + border*(nSubCols-1), size(subImg,3) );
   else
     outImg = inImg;
   end
@@ -54,11 +67,11 @@ function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
     subRowIndx = ceil( subIndx / nSubCols );
   end
 
-  colIndxL = (subColIndx-1) * nCols + 1;
-  colIndxH = min( subColIndx * nCols, sOutImg(2) );
+  colIndxL = (subColIndx-1) * nCols + (subColIndx-1)*border + 1;
+  colIndxH = min( subColIndx * nCols + (subColIndx-1)*border, sOutImg(2) );
 
-  rowIndxL = (subRowIndx-1) * nRows + 1;
-  rowIndxH = min( subRowIndx * nRows, sOutImg(1) );
+  rowIndxL = (subRowIndx-1) * nRows + (subRowIndx-1)*border + 1;
+  rowIndxH = min( subRowIndx * nRows + (subRowIndx-1)*border, sOutImg(1) );
 
   dCol = colIndxH - colIndxL + 1;
   dRow = rowIndxH - rowIndxL + 1;
