@@ -485,7 +485,6 @@ function testDworkLib
   else
     error('rootsOfQuadratic failed');
   end
-  
 
   %% shearImg
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
