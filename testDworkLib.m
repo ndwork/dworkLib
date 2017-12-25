@@ -473,6 +473,20 @@ function testDworkLib
     error('ransacRotAndTrans failed');
   end
 
+  %% rootsOfQuadratic
+  a=rand(1) * sign( rand(1) - 0.5 );
+  b=rand(1) * sign( rand(1) - 0.5 );
+  c=rand(1) * sign( rand(1) - 0.5 );
+  [x1,x2] = rootsOfQuadratic( a, b, c );
+  v1 = a*x1*x1 + b*x1 + c;
+  v2 = a*x2*x2 + b*x2 + c;
+  if( abs(v1) < 1d-7 && abs(v2) < 1d-7 )
+    disp('rootsOfQuadratic passed');
+  else
+    error('rootsOfQuadratic failed');
+  end
+  
+
   %% shearImg
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );

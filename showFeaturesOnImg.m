@@ -1,6 +1,6 @@
 
-function showFeaturesOnImg( features, img, varargin )
-  % showFeaturesOnImg( features, img [, range, 'scale', scale, 'color', color] )
+function showFeaturesOnImg( features, varargin )
+  % showFeaturesOnImg( features [, img, 'range', range, 'scale', scale, 'color', color] )
   %
   % Inputs:
   % features - 2D array of size Nx2
@@ -8,6 +8,7 @@ function showFeaturesOnImg( features, img, varargin )
   %   The first/second column is the x/y location
   %
   % Optional Inputs:
+  %   img - if included, also displays the image
   %   range - 2 element array specifying image display range
   %     ( default is [0 1] )
   %   scale - magnify image by this scale
@@ -20,10 +21,12 @@ function showFeaturesOnImg( features, img, varargin )
   % purpose.
 
   p = inputParser;
-  p.addOptional( 'range', [0 1] );
+  p.addOptional( 'img', [] );
+  p.addParameter( 'range', [0 1] );
   p.addParameter( 'scale', 1 );
   p.addParameter( 'color', 'y' );
   p.parse( varargin{:} );
+  img = p.Results.img;
   scale = p.Results.scale;
   range = p.Results.range;
   color = p.Results.color;
@@ -31,12 +34,14 @@ function showFeaturesOnImg( features, img, varargin )
   if nSigDims( features ) > 1
     theseFeatures = features;
   else
+    if numel(img) == 0, error('Must supply image when providing 1D features'); end;
     [theseFeaturesY,theseFeaturesX] = ind2sub( size(img), features );
     theseFeatures = [ theseFeaturesY', theseFeaturesX' ];
   end
 
-  figure;
-  imshowscale( img, scale, 'range', range );
+  if numel( img ) > 0
+    figure; imshowscale( img, scale, 'range', range );
+  end
   hold on
   rFeatures = round( scale * theseFeatures );
   plot( rFeatures(:,1), rFeatures(:,2), [color,'*']);

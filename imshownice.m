@@ -1,6 +1,6 @@
 
 function scaling = imshownice( img, varargin )
-  % imshownice( img [, scale, 'methd', method, 'sdevScale', sdevScale, ...
+  % imshownice( img [, scale, 'method', method, 'sdevScale', sdevScale, ...
   %   'border', border ] )
   % show the image on the following scale:
   %   meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
