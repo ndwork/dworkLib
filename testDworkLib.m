@@ -28,6 +28,32 @@ function testDworkLib
   if err > 0, error( 'cropData test failed' ); end;
   disp('cropData test passed');
 
+  %% fista
+  M = 300;
+  N = 20;
+  A = rand(M,N);
+  b = rand(M,1);
+
+  bestX = A\b;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  gGrad = @(x) A'*A*x - A'*b;
+  proxth = @(x,t) x;  % Least squares
+  x0 = zeros(N,1);
+  xHat_leastSquares = fista( x0, g, gGrad, proxth );
+
+  err = norm( xHat_leastSquares - bestX ) / M;
+  if err > 1d-7, error( 'fista failed' ); end;
+
+  lambda = 10;
+  proxth = @(x,t) softThresh(x,lambda*t);  % Lasso
+  xHat_lasso = fista( x0, g, gGrad, proxth );
+  if norm( xHat_lasso, 1 ) < norm( xHat_leastSquares, 1 )
+    disp( 'fista passed' );
+  else
+    error( 'fista failed' );
+  end
+  
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );

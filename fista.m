@@ -1,6 +1,7 @@
 
 function xStar = fista( x, g, gGrad, proxth, varargin )
-  % [xStar,optValue] = fista( x, g, gGrad, proxth, varargin )
+  % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
+  %   'N', N, 'r', r, 's', s ] )
   %
   % This function implements the FISTA optimization algorithm with line
   % search as described in "Fraction-variant beam orientation optimization
@@ -17,6 +18,13 @@ function xStar = fista( x, g, gGrad, proxth, varargin )
   % proxth - the proximal operator of the h function (with parameter t);
   %     two inputs: the vector and the scalar value of the parameter t
   %
+  % Optional Inputs:
+  % N - the number of iterations that FISTA will perform
+  % r - the backtracking line search parameter; must be between 0 and 1
+  %     (default is 0.8)
+  % s - the scaling parameter each FISTA iteration; must be greater than 1
+  %     (default is 1.25)
+  %
   % Outputs:
   % xStar - the optimal point
   %
@@ -29,7 +37,7 @@ function xStar = fista( x, g, gGrad, proxth, varargin )
 
   p = inputParser;
   p.addParameter( 'N', 1000, @isnumeric );
-  p.addParameter( 'r', 0.5, @isnumeric );
+  p.addParameter( 'r', 0.8, @isnumeric );
   p.addParameter( 's', 1.25, @isnumeric );
   p.parse( varargin{:} );
   N = p.Results.N;  % total number of iterations
