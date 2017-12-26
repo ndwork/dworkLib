@@ -86,8 +86,7 @@ function [out,flag,residual] = lsqrFISTA_fh( applyA, b, tolerance, ...
 end
 
 
-function [out,flag,residual] = lsqrFISTA_matrix( A, b, tolerance, ...
-  maxIter, x0, t )
+function [out,flag,residual] = lsqrFISTA_matrix( A, b, tolerance, maxIter, x0, t )
   ATb = A' * b;
   bNorm = norm( b, 2 );
 

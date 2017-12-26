@@ -2,6 +2,10 @@
 function out = softThresh( in, thresh )
   % out = softThresh( in, thresh )
   %
+  % Note that this functionality is implemented in Matlab with the wtThresh
+  % function, but it is part of the Wavelet Toolbox.  If you don't have
+  % that toolbox, then this function will work fine.  :)
+  %
   % Inputs:
   % in - scalar or array
   % thresh - the soft thresholding value

@@ -51,8 +51,7 @@ function xStar = fista( x, g, gGrad, proxth, varargin )
         theta = 1;
       else
         a = lastT;  b = t*theta*theta;  c = -b;
-        %[r1,r2] = rootsOfQuadratic( a, b, c );
-        %theta = max( r1, r2 );
+        %[r1,r2] = rootsOfQuadratic( a, b, c );  theta = max( r1, r2 );
         theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
         if( theta < 0 ), error('theta must be positive'); end;
       end
