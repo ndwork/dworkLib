@@ -2,6 +2,7 @@
 function wt = wtHaar( sig, varargin )
   % wt = wtHaar( sig [, split] );
   % Performs a Haar wavelet transform of a signal
+  % Note that this is a unitary transform
   %
   % Inputs:
   % sig - 1D array representing the signal to be transformed

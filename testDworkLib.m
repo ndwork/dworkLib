@@ -28,7 +28,7 @@ function testDworkLib
   if err > 0, error( 'cropData test failed' ); end;
   disp('cropData test passed');
 
-  %% fista
+  %% fista test 1
   M = 300;
   N = 20;
   A = rand(M,N);
@@ -43,12 +43,31 @@ function testDworkLib
   xHat_leastSquares = fista( x0, g, gGrad, proxth );
 
   err = norm( xHat_leastSquares - bestX ) / M;
-  if err > 1d-7, error( 'fista failed' ); end;
+  if err < 1d-7
+    disp( 'fista test 1 passed' );
+  else
+    error( 'fista test 1 failed' );
+  end;
 
-  lambda = 10;
-  proxth = @(x,t) softThresh(x,lambda*t);  % Lasso
-  xHat_lasso = fista( x0, g, gGrad, proxth );
-  if norm( xHat_lasso, 1 ) < norm( xHat_leastSquares, 1 )
+  %% fista test 2
+  lambda = 50;
+  M = 300;
+  N = 30;
+  A = rand(M,N);
+  x = zeros(N,1);
+  x(3)=5; x(2)=8;  x(22)=2;
+  %b = A*x + rand(M,1);
+  b = A*x + rand(M,1)/10;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  h = @(y) norm( y, 1 );
+  gGrad = @(x) A'*A*x - A'*b;
+  x0 = rand(N,1);
+
+  proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
+  [xHat_lasso,objValues] = fista( x0, g, gGrad, proxth, 'h', h );                          %#ok<ASGLU>
+  err = norm( xHat_lasso - x, 1 ) / N;
+  if err < 0.1
     disp( 'fista passed' );
   else
     error( 'fista failed' );
