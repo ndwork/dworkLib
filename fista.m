@@ -26,6 +26,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   %     (default is 0.5)
   % s - the scaling parameter each FISTA iteration; must be greater than 1
   %     (default is 1.25)
+  % t0 - initial step size (default is 1)
   % verbose - if set then prints fista iteration
   %
   % Outputs:
@@ -43,14 +44,20 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 'r', 0.5, @isnumeric );
   p.addParameter( 's', 1.25, @isnumeric );
+  p.addParameter( 't0', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @isnumeric );
   p.parse( varargin{:} );
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
   r = p.Results.r;  % r must be between 0 and 1
   s = p.Results.s;  % s must be greater than 1
+  t0 = p.Results.t0;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
+  if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end;
+  if s <= 1, error('fista: s must be greater than 1'); end;
+  if t0 <= 0, error('fista: t0 must be greater than 0'); end;
+  
   calculateObjectiveValues = 0;
   if nargout > 1
     if numel(h) == 0
@@ -62,10 +69,9 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   end
 
 
-  t = 1;
+  t = t0;
   v = x;
   theta = 1;
-
 
   for k=1:N
     if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end;
@@ -81,9 +87,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
         theta = 1;
       else
         a = lastT;  b = t*lastTheta*lastTheta;  c = -b;
-        %[r1,r2] = rootsOfQuadratic( a, b, c );  theta = max( r1, r2 );
         theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
-        if( theta < 0 ), error('theta must be positive'); end;
       end
       y = (1-theta) * lastX + theta * v;
       Dgy = gGrad( y );
