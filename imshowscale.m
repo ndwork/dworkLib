@@ -19,7 +19,7 @@ function imshowscale( img, varargin )
   % border - border to put around the image in the figure window
   %   either 'noBorder' or a value in pixels  (default is 10)
   %
-  % Written by Nicholas - Copyright 2016
+  % Written by Nicholas - Copyright 2017
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
