@@ -1,6 +1,6 @@
 
 function scaling = imshownice( img, varargin )
-  % imshownice( img [, scale, 'method', method, 'sdevScale', sdevScale, ...
+  % scaling = imshownice( img [, scale, 'method', method, 'sdevScale', sdevScale, ...
   %   'border', border ] )
   % show the image on the following scale:
   %   meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
@@ -16,6 +16,9 @@ function scaling = imshownice( img, varargin )
   % sdevScale - default is 2.5
   % border - border to put around the image in the figure window
   %   either 'noBorder' or a value in pixels  (default is 10)
+  %
+  % Outputs:
+  % scaling - the range of intensities used in the display.
   %
   % Written by Nicholas Dwork - Copyright 2016
   %

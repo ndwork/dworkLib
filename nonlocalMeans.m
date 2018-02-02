@@ -42,9 +42,9 @@ function out = nonlocalMeans_3D( img, varargin )
   defaultSigmaS = 1.0;   % assumes images scaled from 0 to 1
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParamValue( 'kSize', defaultKSize, isIntAndPositiveAndOdd );
-  p.addParamValue( 'searchSize', defaultSSize, isIntAndPositiveAndOdd );
-  p.addParamValue( 'sigmaS', defaultSigmaS, isNumericAndPositive );
+  p.addParameter( 'kSize', defaultKSize, isIntAndPositiveAndOdd );
+  p.addParameter( 'searchSize', defaultSSize, isIntAndPositiveAndOdd );
+  p.addParameter( 'sigmaS', defaultSigmaS, isNumericAndPositive );
   p.parse( img, varargin{:} );
   kSize = p.Results.kSize;
   sSize = p.Results.searchSize;
@@ -124,8 +124,8 @@ function out = nonlocalMeans_2D( img, varargin )
   % Outputs
   %   out: the denoised image
 
-  isIntAndPositive = @(x) isInteger(x) && (x>0);
-  isIntAndPositiveAndOdd = @(x) isIntAndPositive(x) && (mod(x,2)~=0);
+  isPositive = @(x) x>0;
+  isIntAndPositiveAndOdd = @(x) isPositive(x) && (mod(x,2)~=0);
   isNumericAndPositive = @(x) isnumeric(x) && (x>0);
 
   defaultKSize = 7;
@@ -133,9 +133,9 @@ function out = nonlocalMeans_2D( img, varargin )
   defaultSigmaS = 1.0;   % assumes images scaled from 0 to 1
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParamValue( 'kSize', defaultKSize, isIntAndPositiveAndOdd );
-  p.addParamValue( 'searchSize', defaultSSize, isIntAndPositiveAndOdd );
-  p.addParamValue( 'sigmaS', defaultSigmaS, isNumericAndPositive );
+  p.addParameter( 'kSize', defaultKSize, isIntAndPositiveAndOdd );
+  p.addParameter( 'searchSize', defaultSSize, isIntAndPositiveAndOdd );
+  p.addParameter( 'sigmaS', defaultSigmaS, isNumericAndPositive );
   p.parse( img, varargin{:} );
   kSize = p.Results.kSize;
   sSize = p.Results.searchSize;
@@ -165,7 +165,7 @@ function out = nonlocalMeans_2D( img, varargin )
       for jP=0:sSize-1
         vJ = j-halfSearchSize+jP;
 
-        for iP=0:sSize-1          
+        for iP=0:sSize-1
           vI = i-halfSearchSize+iP;
 
           v = img( vJ-halfKSize : vJ+halfKSize, ...

@@ -1,6 +1,6 @@
 
 function imshowscale( img, varargin )
-  % imshowscale( img, [ scale, method, 'range', range, 'border', border ] )
+  % imshowscale( img, [ scale, 'method', method, 'range', range, 'border', border ] )
   % displays figure to the screen where size of image is scaled by scale
   %
   % Inputs:

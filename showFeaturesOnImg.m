@@ -9,8 +9,7 @@ function showFeaturesOnImg( features, varargin )
   %
   % Optional Inputs:
   %   img - if included, also displays the image
-  %   range - 2 element array specifying image display range
-  %     ( default is [0 1] )
+  %   range - 2 element array specifying image display range ( default is [] )
   %   scale - magnify image by this scale
   %
   % Written by Nicholas Dwork - Copyright 2016
@@ -22,7 +21,7 @@ function showFeaturesOnImg( features, varargin )
 
   p = inputParser;
   p.addOptional( 'img', [] );
-  p.addParameter( 'range', [0 1] );
+  p.addParameter( 'range', [] );
   p.addParameter( 'scale', 1 );
   p.addParameter( 'color', 'y' );
   p.parse( varargin{:} );
@@ -31,19 +30,11 @@ function showFeaturesOnImg( features, varargin )
   range = p.Results.range;
   color = p.Results.color;
 
-  if nSigDims( features ) > 1
-    theseFeatures = features;
-  else
-    if numel(img) == 0, error('Must supply image when providing 1D features'); end;
-    [theseFeaturesY,theseFeaturesX] = ind2sub( size(img), features );
-    theseFeatures = [ theseFeaturesY', theseFeaturesX' ];
-  end
-
   if numel( img ) > 0
     figure; imshowscale( img, scale, 'range', range );
   end
   hold on
-  rFeatures = round( scale * theseFeatures );
+  rFeatures = round( scale * features );
   plot( rFeatures(:,1), rFeatures(:,2), [color,'*']);
   drawnow;
 end

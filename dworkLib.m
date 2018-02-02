@@ -12,5 +12,5 @@ function dworkLib( varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  showLibFiles('dworkLib', varargin{:});
+  showLibFiles( 'dworkLib', varargin{:} );
 end

@@ -18,6 +18,11 @@ function out = findErnstAngle( T1, TR )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp( 'Usage:  out = findErnstAngle( T1, TR )' );
+    return
+  end
+
   out = acos( exp( -TR / T1 ) );  
 end
 

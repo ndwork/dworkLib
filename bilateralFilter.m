@@ -100,7 +100,7 @@ function out = bilateralFilter_2D( img, varargin )
   defaultSigmaR = 0.3;
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParameter( 'S', defaultS, isIntAndPositiveAndOdd );
+  p.addOptional( 'S', defaultS, isIntAndPositiveAndOdd );
   p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
   p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
   p.parse( img, varargin{:} );
