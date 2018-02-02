@@ -1,7 +1,7 @@
 
 
 function corners = findHarrisCorners( img, varargin )
-  % corners = findHarrisCorners( img [, N, buffer, w, k ] )
+  % corners = findHarrisCorners( img [, N, 'buffer', buffer, 'w', w, 'k', k ] )
   %
   % Inputs:
   % img - a 2D array
@@ -26,9 +26,9 @@ function corners = findHarrisCorners( img, varargin )
   defaultK = 0.04;
   p = inputParser;
   p.addOptional( 'N', defaultN );
-  p.addOptional( 'buffer', defaultBuffer );
-  p.addOptional( 'w', defaultW );
-  p.addOptional( 'k', defaultK );
+  p.addParameter( 'buffer', defaultBuffer, @isnumeric );
+  p.addParameter( 'w', defaultW, @isnumeric );
+  p.addParameter( 'k', defaultK, @isnumeric );
   p.parse( varargin{:} );
   N = p.Results.N;
   buffer = p.Results.buffer;
@@ -47,13 +47,13 @@ function corners = findHarrisCorners( img, varargin )
   IySq = Iy .* Iy;
   IxIy = Ix .* Iy;
 
-  smoothFilter = fspecial( 'average', w );
-  G11 = imfilter( IxSq, smoothFilter );
-  G22 = imfilter( IySq, smoothFilter );
-  G12 = imfilter( IxIy, smoothFilter );
+  %smoothFilter = fspecial( 'average', w );
+  G11 = imgaussfilt( IxSq, w );
+  G22 = imgaussfilt( IySq, w );
+  G12 = imgaussfilt( IxIy, w );
 
-  trG = G11 .* G22;
-  detG = trG - G12 .* G12;
+  trG = G11 + G22;
+  detG = G11 .* G22 - G12 .* G12;
   score = detG - k * trG .* trG;
 
   minScore = min( score(:) );
