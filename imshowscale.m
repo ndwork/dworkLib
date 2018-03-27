@@ -88,4 +88,6 @@ function imshowscale( img, varargin )
   % Now restore units to previously used values
   set( ca, 'units', beforeAxesUnits );
   set( cf, 'units', beforeFigUnits );
+  
+  drawnow;
 end
