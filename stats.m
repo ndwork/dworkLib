@@ -46,6 +46,10 @@ function stats( data )
 
   imagData = imag(data);
   if max( abs(imagData(:)) ~= 0 )
+    disp('Mag: ');
+    arrayStats( abs(double(data)), '  ' );
+    disp('Phase: ');
+    arrayStats( angle(double(data)), '  ' );
     disp('Real: ');
     arrayStats( real(double(data)), '  ' );
     disp('Imag: ');
