@@ -33,8 +33,7 @@ function cb = colorbarnice( varargin )
   cf = gcf;  beforeFigUnits = cf.Units;  set( cf, 'units', 'pixels' );
   ca = gca;  beforeAxesUnits = ca.Units;  set( ca, 'units', 'pixels' );
 
-  % Position is [ left bottom width height ]
-  cfPos = get( cf, 'position' );
+  cfPos = get( cf, 'position' );  % Position is [ left bottom width height ]
   caPos = get( ca, 'position' );
 
   cb = colorbar( 'eastoutside' );

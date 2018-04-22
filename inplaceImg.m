@@ -15,6 +15,7 @@ function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
   % order - either 'rowMajor' (default) or 'colMajor'
   % border - specifies a border to place between images (default is 0)
   % borderValue - specifies the value to place in between images.
+  %   (Only used when inImg is not specified.)
   %
   % Outputs:
   % outImg - the complete image
@@ -76,8 +77,7 @@ function outImg = inplaceImg( subImg, nSubRows, nSubCols, subIndx, varargin )
   dCol = colIndxH - colIndxL + 1;
   dRow = rowIndxH - rowIndxL + 1;
   if dCol > 0 && dRow > 0
-    outImg( rowIndxL:rowIndxH, colIndxL:colIndxH, : ) = ....
-      subImg(1:dRow,1:dCol,:);
+    outImg( rowIndxL:rowIndxH, colIndxL:colIndxH, : ) = subImg(1:dRow,1:dCol,:);
   end
 end
 

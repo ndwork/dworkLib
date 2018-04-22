@@ -1,5 +1,5 @@
 
-function scaling = imshownice( img, varargin )
+function [scaling,imH] = imshownice( img, varargin )
   % scaling = imshownice( img [, scale, 'method', method, 'sdevScale', sdevScale, ...
   %   'border', border ] )
   % show the image on the following scale:
@@ -19,6 +19,7 @@ function scaling = imshownice( img, varargin )
   %
   % Outputs:
   % scaling - the range of intensities used in the display.
+  % imH - image handle
   %
   % Written by Nicholas Dwork - Copyright 2016
   %
@@ -49,7 +50,7 @@ function scaling = imshownice( img, varargin )
     % Grayscale image
     tmp = imresize( img, scale, method );
     scaling = [ meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg ];
-    imshow( tmp, scaling );
+    imH = imshow( tmp, scaling );
   else
     % Color image
     sImg = size(img);
@@ -61,7 +62,7 @@ function scaling = imshownice( img, varargin )
     inMax = meanImg + sdevScale*sdevImg;
     scaling = [inMin inMax];
     scaled = scaleImg( tmp, scaling, [0 1] );
-    imshow( scaled );
+    imH = imshow( scaled );
   end
 
   if ischar( class(border) ) && strcmp( border, 'none' )
