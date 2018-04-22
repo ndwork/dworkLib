@@ -30,6 +30,8 @@ function newArray = insertValueIntoOrderedArray( array, value )
       newArray = [ array(1:minIndx); 0; array(minIndx+1:end); ];
     elseif array( minIndx ) - value > 0
       newArray = [ array(1:minIndx-1); 0; array(minIndx:end); ];
+    else
+      newArray = array;
     end
 
   else  % row array
@@ -38,6 +40,8 @@ function newArray = insertValueIntoOrderedArray( array, value )
       newArray = [ array(1:minIndx) 0 array(minIndx+1:end) ];
     elseif array( minIndx ) - value > 0
       newArray = [ array(1:minIndx-1) 0 array(minIndx:end) ];
+    else
+      newArray = array;
     end
 
   end
