@@ -44,7 +44,10 @@ function namePlottedPoints( x, y, names, varargin )
   dxData = dx / plotWidthPxls * plotWidthData;
   dyData = dy / plotHeightPxls * plotHeightData;
   
-  text( x+dxData, y+dyData, names, 'FontSize', 16 );
+  t = text( x+dxData, y+dyData, names, 'FontSize', 16 );
+  for i=1:numel(t)
+    t(i).HorizontalAlignment = 'center';
+  end
 
   set( ax, 'Units', currentAxUnits )
 end
