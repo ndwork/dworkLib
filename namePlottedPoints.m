@@ -1,6 +1,6 @@
 
 
-function nameScatterPoints( x, y, names, varargin )
+function namePlottedPoints( x, y, names, varargin )
   % namePlottedPoints( x, y, names [, dx, dy, options ] )
   % Names individual points in a plot; this function can be used with plot
   % or scatter.
