@@ -52,10 +52,14 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
   parfor i=1:nPts
     x = pts1(i,1);
     y = pts1(i,2);
+    %figure; imshowscale( img1 ); title( 'img1' );  labelImgPts( [x,y] );
+    %figure; showFeaturesOnImg( [x,y], img1 );  title('img1');
     if y-hkw(1) < 1 || y+hkw(1) > sImg(1) || ...
        x-hkw(2) < 1 || x+hkw(2) > sImg(2), ...
-      continue; end;
+      continue;
+    end;
     template = img1(y-hkw(1):y+hkw(1),x-hkw(2):x+hkw(2));
+    %figure; imshowscale( template, 5 ); title( 'template' );
 
     sB = max( y-hsw(1)+offset(1), 1 );  % search bottom
     sT = min( y+hsw(1)+offset(1), sImg(1) );  % search top
@@ -67,11 +71,18 @@ function pts2 = trackFeatures( pts1, img1, img2, varargin )
 
     ncc = normxcorr2(template, search);
     sSearch = size(search);
+    %figure; imshowscale( search ); title( 'search' );
     ncc = cropData( ncc, sSearch );
-    [maxNCC,maxNccIndx] = max( ncc(:) );  %#ok<ASGLU>
+    [maxNCC,maxNccIndx] = max( ncc(:) );                                                   %#ok<ASGLU>
     [nccY,nccX] = ind2sub( sSearch, maxNccIndx );
+    %figure; imshowscale( ncc ); title( 'ncc' );  labelImgPts( [nccX,nccY] );
+    %figure; showFeaturesOnImg( [nccX,nccY], ncc );
     pts2x(i) = nccX + sL - 1;
     pts2y(i) = nccY + sB - 1;
+    %figure; imshowscale( img2 ); title( 'img2' );  labelImgPts( [pts2x(i),pts2y(i)] );
+    %figure; showFeaturesOnImg( [pts2x(i),pts2y(i)], img2 );
+    
+    %close all;
   end
   pts2 = [ pts2x pts2y ];
 
