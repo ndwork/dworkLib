@@ -118,7 +118,7 @@ function imH = imshowscale( img, varargin )
     set( ca, 'units', beforeAxesUnits );
   end
 
-  drawnow;
+  drawnow; pause(0.1);
 
   % Now restore units to previously used values
   set( ca, 'units', beforeAxesUnits );

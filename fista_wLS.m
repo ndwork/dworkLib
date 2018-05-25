@@ -1,9 +1,11 @@
 
 function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = fista( x, g, gGrad, proxth [, ...
-  %   'h', h, 'N', N, 'verbose', verbose ] )
+  % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
+  %   'h', h, 'N', N, 'r', r, 's', s, 'verbose', verbose ] )
   %
-  % This function implements the FISTA optimization algorithm
+  % This function implements the FISTA optimization algorithm with line
+  % search as described in "Fraction-variant beam orientation optimization
+  % for non-coplanar IMRT" by O'Connor et al. (2017)
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
   % g is differentiable and h has a simple proximal operator.
   %
@@ -20,7 +22,11 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
   % N - the number of iterations that FISTA will perform
-  % t - step size (default is 1)
+  % r - the backtracking line search parameter; must be between 0 and 1
+  %     (default is 0.5)
+  % s - the scaling parameter each FISTA iteration; must be greater than 1
+  %     (default is 1.25)
+  % t0 - initial step size (default is 1)
   % verbose - if set then prints fista iteration
   %
   % Outputs:
@@ -36,15 +42,21 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   p = inputParser;
   p.addParameter( 'h', [] );
   p.addParameter( 'N', 100, @isnumeric );
-  p.addParameter( 't', 1, @isnumeric );
+  p.addParameter( 'r', 0.5, @isnumeric );
+  p.addParameter( 's', 1.25, @isnumeric );
+  p.addParameter( 't0', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @isnumeric );
   p.parse( varargin{:} );
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
-  t = p.Results.t;  % t0 must be greater than 0
+  r = p.Results.r;  % r must be between 0 and 1
+  s = p.Results.s;  % s must be greater than 1
+  t0 = p.Results.t0;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
-  if t <= 0, error('fista: t0 must be greater than 0'); end;
+  if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end;
+  if s <= 1, error('fista: s must be greater than 1'); end;
+  if t0 <= 0, error('fista: t0 must be greater than 0'); end;
   
   calculateObjectiveValues = 0;
   if nargout > 1
@@ -56,17 +68,36 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
     end
   end
 
-  z = x;
-  y = 0;
 
-  for k=0:N-1
+  t = t0;
+  v = x;
+  theta = 1;
+
+  for k=1:N
     if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if numel(calculateObjectiveValues) > 0, objectiveValues(k) = g(x) + h(x); end
 
-    x = z - t * gGrad( z );
-    lastY = y;
-    y = proxth( x, t );
-    z = y + (k/(k+3)) * (y-lastY);
+    lastX = x;
+    lastT = t;
+    t = s * lastT;
+    lastTheta = theta;
+
+    while true
+      if k==1
+        theta = 1;
+      else
+        a = lastT;  b = t*lastTheta*lastTheta;  c = -b;
+        theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
+      end
+      y = (1-theta) * lastX + theta * v;
+      Dgy = gGrad( y );
+      x = proxth( y - t * Dgy, t );
+      breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t))*norm(x(:)-y(:),2)^2;
+      if g(x) <= breakThresh, break; end;
+      t = r*t;
+    end
+
+    v = x + (1/theta) * ( x - lastX );
   end
 
   xStar = x;
