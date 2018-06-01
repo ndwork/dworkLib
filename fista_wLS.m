@@ -1,5 +1,5 @@
 
-function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
+function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
   %   'h', h, 'N', N, 'r', r, 's', s, 'verbose', verbose ] )
   %
@@ -32,7 +32,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   % Outputs:
   % xStar - the optimal point
   %
-  % Written by Nicholas Dwork - Copyright 2017
+  % Written by Nicholas Dwork - Copyright 2018
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
@@ -73,9 +73,9 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   v = x;
   theta = 1;
 
-  for k=1:N
+  for k=0:N-1
     if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(k) = g(x) + h(x); end
+    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     lastX = x;
     lastT = t;
@@ -83,7 +83,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
     lastTheta = theta;
 
     while true
-      if k==1
+      if k==0
         theta = 1;
       else
         a = lastT;  b = t*lastTheta*lastTheta;  c = -b;

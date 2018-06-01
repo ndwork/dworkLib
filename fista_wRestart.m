@@ -86,12 +86,12 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
       restarted = 0;
       lastZ = z;
       k = k + 1;
-      iter = iter + 1;
     end
+    iter = iter + 1;
 
   end
 
   xStar = x;
-  disp([ 'Number of restarts: ', num2str(nRestarts) ]);
+  disp([ 'Fista w Restart Number of restarts: ', num2str(nRestarts) ]);
 end
 
