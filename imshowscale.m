@@ -52,7 +52,7 @@ function imH = imshowscale( img, varargin )
   yAxis = p.Results.yAxis;
 
   if strcmp( 'nice', range )
-    [~,imH] = imshownice( img, scale, method );
+    [~,imH] = imshownice( img, scale, 'method', method );
   elseif numel(range) == 0
     if ismatrix( img )
       imH = imshow( imresize( img, scale, method ), range );
