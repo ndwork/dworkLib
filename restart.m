@@ -1,7 +1,9 @@
 
 function restart( varargin )
   % restart
-  % closes all windows, clears variables, and clears the command window
+  %
+  % closes all windows, clears variables, clears the command window, and
+  % removes the parforProgress.txt file (if it exists)
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -14,6 +16,10 @@ function restart( varargin )
   if nargin > 0, type = varargin{1}; end;
 
   if strcmp( type, 'all' ), clear all; end;                                                %#ok<CLALL>
+
+  if exist( 'parforProgress.txt', 'file' )
+    delete parforProgress.txt
+  end
 
   close all;
   clear;
