@@ -1,6 +1,7 @@
 
 function showFeaturesOnImg( features, varargin )
-  % showFeaturesOnImg( features [, img, 'range', range, 'scale', scale, 'color', color] )
+  % showFeaturesOnImg( features [, img, 'range', range, 'scale', scale, ...
+  %   'color', color] )
   %
   % Inputs:
   % features - 2D array of size Nx2
