@@ -1,6 +1,6 @@
 
 function showImageCube( cube, varargin )
-  showImageCube( cube [, scale] )
+  % showImageCube( cube [, scale ] )
   % Given an MxNxK array, shows each slice as a separate image on a single
   % figure.
   %
@@ -27,7 +27,7 @@ function showImageCube( cube, varargin )
   
   outImg = inplaceImg( cube(:,:,1), nSubRows, nSubCols, 1 );
   for i=2:nImgs
-    outImg = inplaceImg( cube(:,:,1), nSubRows, nSubCols, i, outImg );
+    outImg = inplaceImg( cube(:,:,i), nSubRows, nSubCols, i, outImg );
   end
 
   figure; imshowscale( outImg, scale );
