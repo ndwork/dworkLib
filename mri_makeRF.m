@@ -5,7 +5,9 @@ function R = mri_makeRF( alpha, phi )
   %
   % Inputs:
   % alpha - the tip angle in radians
-  % phi - the phase of the RF pulse in radians
+  %
+  % Optional Inputs:
+  % phi - the phase of the RF pulse in radians (default is 0)
   %
   % Outputs:
   % the 3x3 rotation matrix

@@ -10,6 +10,7 @@ classdef parforProgress
   %   p.progress( n );
   %   pause(rand*10); % Replace with real code
   % end
+  % p.clean;
   %
   % Notes:
   % progress member function accepts optional downsampling input.
