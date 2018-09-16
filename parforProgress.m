@@ -48,7 +48,6 @@ classdef parforProgress
     % Member functions
     function clean( obj )
       delete( obj.tmpFile );
-      obj.nTotal = 0;
     end
     
     function progress( obj, n, varargin )

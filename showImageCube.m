@@ -23,6 +23,7 @@ function showImageCube( cube, varargin )
   p.addParameter( 'nImgsPerRow', 5, @isnumeric );
   p.parse( varargin{:} );
   scale = p.Results.scale;
+  nImgsPerRow = p.Results.nImgsPerRow;
 
   if scale <= 0, error('scale must be positive'); end;
   if nImgsPerRow <= 1, error('nImgsPerRow must be positive integer'); end;

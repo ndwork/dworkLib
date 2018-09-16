@@ -2,7 +2,7 @@
 
 function t1Map = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
   % t1Map = mri_mapT1InversionRecovery( dataCube, TIs, ...
-  %   [, 'mask', mask, 'verbose', verbose )
+  %   [, 'mask', mask, 'verbose', verbose ] )
   %
   % Inputs:
   % dataCube - a 3D array of size MxNxK.  Each k index corresponds to an
