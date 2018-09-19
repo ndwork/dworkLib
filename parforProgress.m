@@ -5,7 +5,8 @@ classdef parforProgress
   % Usage:
   %
   % N = 100;
-  % p = parforProgress( N );
+  % p = parforProgress( N, tmpFile );  % Note: if tmpFile is not supplied
+  %                                    % then parforProgress.txt is used.
   % parfor n=1:N
   %   p.progress( n );
   %   pause(rand*10); % Replace with real code
@@ -31,11 +32,12 @@ classdef parforProgress
 
   methods
     % Constructor
-    function obj = parforProgress( nTotal )
+    function obj = parforProgress( nTotal, tmpFile )
       % nTotal is the total number of iterations for completion
       if nargin < 1, error('Must supply total number of iterations.'); end;
+      if nargin < 2, tmpFile='parforProgress.txt'; end;
       obj.nTotal = nTotal;
-      obj.tmpFile = 'parforProgress.txt';
+      obj.tmpFile = tmpFile;
       fid = fopen( obj.tmpFile, 'w' );
       fclose(fid);
     end
