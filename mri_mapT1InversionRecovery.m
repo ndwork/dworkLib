@@ -36,25 +36,28 @@ function t1Map = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
 
   fminconOptions = optimoptions('fmincon','Display','off');
   f = @(x,TIs) (x(1)+1i*x(2)) + (x(3)+1i*x(4))*exp(-TIs/x(5));
-  t1MapIRCols_ms = cell( sData(2), 1 );
+  t1MapCols = cell( sData(2), 1 );
   p = parforProgress( sData(2) );
   parfor i=1:sData(2)
     if verbose ~= 0, p.progress( i, 10 );  end;                                            %#ok<PFBNS>
-    t1MapIRCol_ms = zeros( sData(1), 1 );                                                  %#ok<PFBNS>
+    t1MapCol = zeros( sData(1), 1 );                                                  %#ok<PFBNS>
 
     for j=1:sData(1)
       if mask(j,i) == 0, continue; end;
       thisData = squeeze( dataCube(j,i,:) ); 
-      tmp = fmincon( @(tmp) norm( abs(thisData) - abs(f(tmp,TIs(:))) ), ...
-        [1;0;1;0;100], [],[],[],[], [-Inf;-Inf;-Inf;-Inf;0], [], [], fminconOptions );
-      t1MapIRCol_ms(j) = tmp(5);
+      [~,minSigIndx] = min(abs(thisData));
+      tmp0 = [ 1; 0; 1; 0; TIs(minSigIndx) ];                                              %#ok<PFBNS>
+      tmp = fmincon( @(tmp) norm( thisData - f(tmp,TIs(:)) ), ...
+        tmp0, [],[],[],[], [-Inf;-Inf;-Inf;-Inf;0], [], [], fminconOptions );
+      t1MapCol(j) = tmp(5);
     end
-    t1MapIRCols_ms{i} = t1MapIRCol_ms;
+    t1MapCols{i} = t1MapCol;
   end
   p.clean;
   t1Map = zeros( sData(1:2) );
   for i=1:sData(2)
-    t1Map(:,i) = t1MapIRCols_ms{i};
+    t1Map(:,i) = t1MapCols{i};
   end
 
 end
+

@@ -28,7 +28,7 @@ function v = fitPolyToData( N, x, y )
 
   A = ones( numel(x), N+1 );
   for i=1:N
-    A(:,i+1) = x(:).^i;
+    A(:,i+1) = A(:,i) .* x(:);
   end
 
   v = A \ y(:);

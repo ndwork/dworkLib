@@ -39,5 +39,5 @@ function showImageCube( cube, varargin )
     outImg = inplaceImg( cube(:,:,i), nSubRows, nSubCols, i, outImg );
   end
 
-  figure; imshowscale( outImg, scale );
+  figure; imshowscale( outImg, scale );  drawnow;
 end
