@@ -19,7 +19,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   % Optional Inputs:
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
-  % N - the number of iterations that FISTA will perform
+  % N - the number of iterations that FISTA will perform (default is 100)
   % t - step size (default is 1)
   % verbose - if set then prints fista iteration
   %
