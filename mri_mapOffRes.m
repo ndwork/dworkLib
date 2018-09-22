@@ -13,7 +13,7 @@ function [ offResMap, phaseOffsetMap ] = mri_mapOffRes( dataCube, TEs, varargin 
   %
   % Ouptuts:
   % offResMap - An MxN array representing off resonance frequency (in
-  % radians per unit of echo times)
+  %   radians per unit of echo times)
   % phaseOffsetMap - An MxN array representing the phase at time 0 (in
   %   radians)
   %
