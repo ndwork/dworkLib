@@ -3,7 +3,7 @@
 function out = volVectorOp( volume, vector, varargin )
   % This function performs a volume-vector operation
   %
-  % out = volVectorProd( volume, vector [, dim, 'op', 'op ] )
+  % out = volVectorOp( volume, vector [, dim, 'op', op ] )
   %
   % Inputs:
   % volume - an array

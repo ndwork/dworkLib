@@ -41,7 +41,8 @@ function [ offResMap, phaseOffsetMap ] = mri_mapOffRes( dataCube, TEs, varargin 
   for i=1:sData(2)
     for j=1:sData(1)
       if mask(j,i) == 0, continue; end;
-      coeffs = fitPolyToData( 1, TEs, angles(j,i,:) );
+      unwrapped = squeeze( unwrap( squeeze( angles(j,i,:) ) ) );
+      coeffs = fitPolyToData( 1, TEs, unwrapped );
       phaseOffsetMap(j,i) = coeffs(1);
       offResMap(j,i) = coeffs(2);
     end

@@ -1,9 +1,12 @@
 
-function titlenice( myTitle )
-  % titlenice( myTitle )
+function titlenice( myTitle, varargin )
+  % titlenice( myTitle, varargin )
   %
   % Inputs:
   % myTitle - String to name the graphic as well as the figure
+  %
+  % Optional Inputs:
+  % varargin - all optional inputs accepted by title function
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
@@ -12,6 +15,11 @@ function titlenice( myTitle )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  title( myTitle );
+  if nargin > 1
+    title( myTitle, varargin{:} );
+  else
+    title( myTitle );
+  end
   set( gcf, 'Name', myTitle )
+  drawnow;
 end
