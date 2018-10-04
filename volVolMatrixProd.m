@@ -1,6 +1,6 @@
 
-function out = volVolMatrixProduct( A, B )
-  % out = volVolMatrixProduct( A, B )
+function out = volVolMatrixProd( A, B )
+  % out = volVolMatrixProd( A, B )
   %
   % Inputs:
   % A,B - 2 3D arraysof the same sizes
