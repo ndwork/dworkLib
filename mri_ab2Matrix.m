@@ -24,10 +24,10 @@ function M = mri_ab2Matrix( a, b )
   
   M = zeros(3,3,numel(a));
 
-  M(1,1,:) = ca.^2;
-  M(1,2,:) = -b.^2;
+  M(1,1,:) = ca.*ca;
+  M(1,2,:) = -b.*b;
   M(1,3,:) = 2*ca.*b;
-  M(2,1,:) = -cb.^2;
+  M(2,1,:) = -cb.*cb;
   M(2,2,:) = a.^2;
   M(2,3,:) = 2*a.*cb;
   M(3,1,:) = -ca.*cb;
