@@ -6,10 +6,10 @@ function out = matrixVolProd( A, vol )
   % is faster than just writing a loop.
   %
   % Inputs:
-  % M - 2D array of size MxN
+  % A - 2D array of size MxN
   % vol - 3D array of size NxPxK
   %
-  % Matrix multiply each slice of vol by the matrix M
+  % Left matrix multiply each slice of vol by the matrix M
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
