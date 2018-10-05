@@ -374,6 +374,21 @@ function testDworkLib
     disp('makeDftMatrix passed');
   end
 
+  %% matrixVolProd
+  A = rand(3,3);
+  vol = rand(3,3,1000);
+  out1 = zeros( [ size(A,1) size(vol,2) size(vol,3) ] );
+  for m=1:size(vol,3)
+    out1(:,:,m) = A * vol(:,:,m);
+  end
+  out2 = matrixVolProd( A, vol );
+  err = max( abs( out1(:) - out2(:) ) );
+  if err > 1d-14
+    error(['matrixVolProd failed with error ', num2str(err)]);
+  else
+    disp('matrixVolProd passed');
+  end
+
   %% nonlocal mean
   fprintf('\nTesting nonlocal means: \n');
   img = phantom();  sImg = size(img);
@@ -548,4 +563,20 @@ function testDworkLib
   fprintf('\nTesting showLibFiles: \n');
   showLibFiles( 'dworkLib' );
 
+  %% volVolVectorProd
+  M = rand(3,3);
+  vol1 = rand(3,3,100000);
+  vol2 = rand( size(vol1) );
+  tmp = zeros(size(vol1));
+  for m=1:size(vol1,3)
+    tmp(:,:,m) = vol1(:,:,m) * vol2(:,:,m);
+  end
+  asdf = volVolMatrixProd( vol1, vol2 );
+  err = max( abs( asdf(:) - tmp(:) ) );
+  if err < 1d-7
+    disp('volVolVectorProd passed');
+  else
+    error('volVolVectorProd failed');
+  end
+  
 end
