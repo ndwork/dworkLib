@@ -1,6 +1,6 @@
 
-function R = mri_makeRF( alpha, phi )
-  % R = mri_makeRF( alpha, phi )
+function R = mri_makeRF( alphas, phis )
+  % R = mri_makeRF( alphas, phis )
   % determine the tip-angle rotation matrix applied to (Mx,My,Mz)
   %
   % Inputs:
@@ -19,12 +19,12 @@ function R = mri_makeRF( alpha, phi )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2, phi=0; end;
+  if nargin < 2, phis=0; end;
 
-  calpha = cos(alpha);
-  salpha = sin(alpha);
-  cphi = cos(phi);  cphiSq = cphi.*cphi;
-  sphi = sin(phi);  sphiSq = sphi.*sphi;
+  calpha = cos(alphas);
+  salpha = sin(alphas);
+  cphi = cos(phis);  cphiSq = cphi.*cphi;
+  sphi = sin(phis);  sphiSq = sphi.*sphi;
 
   R12 = cphi.*sphi.*(1-calpha);
   R23 = cphi.*salpha;
@@ -41,11 +41,11 @@ function R = mri_makeRF( alpha, phi )
   else
 
     R = zeros( 3, 3, numel(alphas) );
-    R(1,1,:) = cphiSq + sphiSq*calpha;
+    R(1,1,:) = cphiSq + sphiSq.*calpha;
     R(1,2,:) = R12;
     R(1,3,:) = -R31;
     R(2,1,:) = R12;
-    R(2,2,:) = sphiSq+cphiSq*calpha;
+    R(2,2,:) = sphiSq + cphiSq.*calpha;
     R(2,3,:) = R23;
     R(3,1,:) = R31;
     R(3,2,:) = -R23;
