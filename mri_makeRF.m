@@ -4,10 +4,10 @@ function R = mri_makeRF( alpha, phi )
   % determine the tip-angle rotation matrix applied to (Mx,My,Mz)
   %
   % Inputs:
-  % alpha - the tip angle in radians
+  % alphas - the tip angles in radians
   %
   % Optional Inputs:
-  % phi - the phase of the RF pulse in radians (default is 0)
+  % phis - the phases of the RF pulse in radians (default is 0)
   %
   % Outputs:
   % the 3x3 rotation matrix
@@ -23,17 +23,34 @@ function R = mri_makeRF( alpha, phi )
 
   calpha = cos(alpha);
   salpha = sin(alpha);
-  cphi = cos(phi);  cphiSq = cphi*cphi;
-  sphi = sin(phi);  sphiSq = sphi*sphi;
+  cphi = cos(phi);  cphiSq = cphi.*cphi;
+  sphi = sin(phi);  sphiSq = sphi.*sphi;
 
-  R12 = cphi*sphi*(1-calpha);
-  R23 = cphi*salpha;
-  R31 = sphi*salpha;
+  R12 = cphi.*sphi.*(1-calpha);
+  R23 = cphi.*salpha;
+  R31 = sphi.*salpha;
 
-  R = [ ...
-    cphiSq + sphiSq*calpha, R12, -R31; ...
-    R12, sphiSq+cphiSq*calpha, R23; ...
-    R31, -R23, calpha; ...
-  ];
+  if numel( alphas ) == 1
+
+    R = [ ...
+     cphiSq + sphiSq*calpha, R12, -R31; ...
+     R12, sphiSq+cphiSq*calpha, R23; ...
+     R31, -R23, calpha; ...
+    ];
+
+  else
+
+    R = zeros( 3, 3, numel(alphas) );
+    R(1,1,:) = cphiSq + sphiSq*calpha;
+    R(1,2,:) = R12;
+    R(1,3,:) = -R31;
+    R(2,1,:) = R12;
+    R(2,2,:) = sphiSq+cphiSq*calpha;
+    R(2,3,:) = R23;
+    R(3,1,:) = R31;
+    R(3,2,:) = -R23;
+    R(3,3,:) = calpha;
+
+  end
 
 end
