@@ -18,7 +18,8 @@ function out = matrixVolProd( A, vol )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  sVol = size( vol );
+  sVol = ones(1,3);
+  sVol(1:ndims(vol)) = size( vol );
   out = zeros( [ size(A,1) sVol(2) sVol(3) ] );
 
   if sVol(3) < 2 * sVol(1)*sVol(2)
