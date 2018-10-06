@@ -1,6 +1,6 @@
 
 function out = volMatrixProd( vol, A )
-  % out = volMatrixProd( A, vol )
+  % out = volMatrixProd( vol, A )
   %
   % Inputs:
   % vol - 3D array of size NxPxK
