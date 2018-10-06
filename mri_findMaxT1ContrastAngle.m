@@ -1,6 +1,6 @@
 
-function out = findMaxT1ContrastAngle( T1, TR )
-  % out = findMaxT1ContrastAngle( T1, TR )
+function out = mri_findMaxT1ContrastAngle( T1, TR )
+  % out = mri_findMaxT1ContrastAngle( T1, TR )
   %
   % This function calculates the angle that yields maximum contrast
   % It is from the paper entitled, "Optimization of Flip Angle for 
@@ -20,7 +20,7 @@ function out = findMaxT1ContrastAngle( T1, TR )
   % purpose.
 
   if nargin < 2
-    disp( 'Usage:  out = findMaxT1ContrastAngle( T1, TR )' );
+    disp( 'Usage:  out = mri_findMaxT1ContrastAngle( T1, TR )' );
     return
   end
 

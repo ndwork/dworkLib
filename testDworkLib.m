@@ -375,8 +375,8 @@ function testDworkLib
   end
 
   %% matrixVolProd
-  A = rand(3,3);
-  vol = rand(3,3,1000);
+  A = rand(3,4);
+  vol = rand(4,5,10000);
   out1 = zeros( [ size(A,1) size(vol,2) size(vol,3) ] );
   for m=1:size(vol,3)
     out1(:,:,m) = A * vol(:,:,m);
@@ -562,6 +562,22 @@ function testDworkLib
   %% showLibFiles
   fprintf('\nTesting showLibFiles: \n');
   showLibFiles( 'dworkLib' );
+
+  %% volMatrixProd
+  vol = rand(3,4,10000);
+  A = rand(4,2);
+  out1 = zeros( [ size(vol,1) size(A,2) size(vol,3) ] );
+  for m=1:size(vol,3)
+    out1(:,:,m) = vol(:,:,m) * A;
+  end
+  out2 = volMatrixProd( vol, A );
+
+  err = max( abs( out1(:) - out2(:) ) );
+  if err < 1d-10
+    disp('volMatrixProd passed');
+  else
+    error('volMatrixProd failed');
+  end
 
   %% volVolVectorProd
   M = rand(3,3);

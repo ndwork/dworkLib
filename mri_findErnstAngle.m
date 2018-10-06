@@ -1,6 +1,6 @@
 
-function out = findErnstAngle( T1, TR )
-  % out = findErnstAngle( T1, TR )
+function out = mri_findErnstAngle( T1, TR )
+  % out = mri_findErnstAngle( T1, TR )
   % The Ernst angle is the angle for maximum signal of a GRE spoiled sequence
   % See Ernst RR, Anderson WA.  Application of Fourier transform spectroscopy to magnetic resonance.
   %   Rev Sci Instrum 1966; 37:93-102.
@@ -19,7 +19,7 @@ function out = findErnstAngle( T1, TR )
   % purpose.
 
   if nargin < 2
-    disp( 'Usage:  out = findErnstAngle( T1, TR )' );
+    disp( 'Usage:  out = mri_findErnstAngle( T1, TR )' );
     return
   end
 
