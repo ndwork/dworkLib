@@ -1,25 +1,22 @@
 
-function [xStar,objectiveValues] = gradDescent( x, g, gGrad, varargin )
+function [xStar,objectiveValues] = gradDescent( x, gGrad, varargin )
   % [xStar,objectiveValues] = proxGrad( x, gGrad [, ...
   %   't', 'g', g, 'N', N, 'verbose', verbose ] )
   %
   % This function implements the gradient descent method.
-  % This method finds the x that minimizes functions of form g(x) + h(x) where
-  % g is (sub)differentiable
+  % This method finds the x that minimizes a (sub)differentiable function g
   %
   % Inputs:
   % x - the starting point
   % gGrad - a function handle representing the (sub)gradient function of g;
   %   input: the point to evaluation, output: the gradient vector
-  % proxth - the proximal operator of the h function (with parameter t);
-  %   two inputs: the vector and the scalar value of the parameter t
   %
   % Optional Inputs:
   % t - step size (default is 1)
   % g - a function handle representing the g function; accepts a vector x
   %   as input and returns a scalar.  This is needed to calculate the
   %   objective values.
-  % N - the number of iterations that proxGrad will perform
+  % N - the number of iterations that gradDescent will perform (default is 100)
   % verbose - if set then prints iteration information
   %
   % Outputs:
@@ -34,11 +31,9 @@ function [xStar,objectiveValues] = gradDescent( x, g, gGrad, varargin )
 
   p = inputParser;
   p.addParameter( 't', 1, @isnumeric );
-  p.addParameter( 'h', [] );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 'verbose', 0, @isnumeric );
   p.parse( varargin{:} );
-  h = p.Results.h;
   N = p.Results.N;  % total number of iterations
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
@@ -47,8 +42,8 @@ function [xStar,objectiveValues] = gradDescent( x, g, gGrad, varargin )
 
   calculateObjectiveValues = 0;
   if nargout > 1
-    if numel(h) == 0
-      warning('fista.m - Cannot calculate objective values without h function handle');
+    if numel(g) == 0
+      warning('gradDescent.m - Cannot calculate objective values without h function handle');
     else
       objectiveValues = zeros(N,1);
       calculateObjectiveValues = 1;
@@ -56,8 +51,8 @@ function [xStar,objectiveValues] = gradDescent( x, g, gGrad, varargin )
   end
 
   for k=0:N-1
-    if verbose, disp([ 'proxGrad Iteration: ', num2str(k) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if verbose, disp([ 'gradDescent Iteration: ', num2str(k) ]); end;
+    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x); end;
 
     x = x - t * gGrad( x );
   end
