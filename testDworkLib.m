@@ -454,7 +454,7 @@ function testDworkLib
   if err > 1d-5, error('Power Iteration failed'); end;
 
   symmM = M + M';
-  [est,flag] = powerIteration( symmM, true );
+  [est,flag] = powerIteration( symmM, true );                                              %#ok<ASGLU>
   normSymmM = norm( symmM );
   err = abs( est - normSymmM ) / normM;
   if err > 1d-5, error('Power Iteration failed'); end;
@@ -563,6 +563,22 @@ function testDworkLib
   fprintf('\nTesting showLibFiles: \n');
   showLibFiles( 'dworkLib' );
 
+  %% vecVolMatrixProd
+  v = rand(1,5);
+  vol = rand(5,3,100000);
+  sVol = size( vol );
+  out1 = zeros( 1, sVol(2), sVol(3) );
+  for m = 1:sVol(3)
+    out1(:,:,m) = v * vol(:,:,m);
+  end
+  out2 = vecVolMatrixProd( v, vol );
+  err = max( abs( out1(:) - out2(:) ) );
+  if err < 1d-10
+    disp('vecVolMatrixProd passed');
+  else
+    error('vecVolMatrixProd failed');
+  end
+
   %% volMatrixProd
   vol = rand(3,4,10000);
   A = rand(4,2);
@@ -580,16 +596,16 @@ function testDworkLib
   end
 
 
-  %% volVectorMatrixProd
-  vol = rand(3,3,100000);
-  v = rand(3,1);
+  %% volVecMatrixProd
+  vol = rand(3,4,100000);
+  v = rand(4,1);
 
   sVol = size( vol );
   out1 = zeros( sVol(1), 1, sVol(3) );
   for m = 1:sVol(3)
     out1(:,m) = vol(:,:,m) * v;
   end
-  out2 = volVectorMatrixProd( vol, v );
+  out2 = volVecMatrixProd( vol, v );
   err = max( abs( out1(:) - out2(:) ) );
   if err < 1d-7
     disp('volVectorMatrixProd passed');

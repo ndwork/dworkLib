@@ -1,6 +1,6 @@
 
-function out = volVectorMatrixProd( vol, vec )
-  % Each slice of vol is a matrix that will multiply vector
+function out = volVecMatrixProd( vol, vec )
+  % Each slice of vol is a matrix that will multiply a column vector
   %
   % Inputs:
   % vol - an MxNxK array where vol(:,:,k) left multiplies vec
