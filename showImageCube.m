@@ -9,7 +9,7 @@ function showImageCube( cube, varargin )
   %
   % Optional Inputs:
   % scale - the amount to scale each image for display (default is 1)
-  % nImgsPerRow - (default is 5)
+  % nImgsPerRow - ( default is ceil(sqrt(K)) )
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
@@ -20,17 +20,21 @@ function showImageCube( cube, varargin )
 
   p = inputParser;
   p.addOptional( 'scale', 1, @isnumeric );
-  p.addParameter( 'nImgsPerRow', 5, @isnumeric );
+  p.addParameter( 'nImgsPerRow', [], @isnumeric );
   p.parse( varargin{:} );
   scale = p.Results.scale;
   nImgsPerRow = p.Results.nImgsPerRow;
 
-  if scale <= 0, error('scale must be positive'); end;
-  if nImgsPerRow <= 1, error('nImgsPerRow must be positive integer'); end;
-  if mod(nImgsPerRow,1) ~= 0, error('nImgsPerRow must be positive integer'); end;
-
   sCube = size( cube );
   nImgs = sCube(3);
+  if numel( nImgsPerRow ) == 0, nImgsPerRow = ceil( sqrt( nImgs ) ); end;
+
+  if scale <= 0, error('scale must be positive'); end;
+  if nImgsPerRow < 1
+    error('nImgsPerRow must be positive integer');
+  end;
+  if mod(nImgsPerRow,1) ~= 0, error('nImgsPerRow must be positive integer'); end;
+
   nSubCols = min( nImgsPerRow, nImgs );
   nSubRows = ceil( nImgs / nImgsPerRow );
   
