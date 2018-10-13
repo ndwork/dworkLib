@@ -16,7 +16,7 @@ function out = volVecMatrixProd( vol, vec )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  out = vec(1) * vol(:,1,:);
+  out = vol(:,1,:) * vec(1);
   for i = 2:numel(vec)
     out = out + vec(i) * vol(:,i,:);
   end
