@@ -614,6 +614,24 @@ function testDworkLib
   end
 
 
+  %% volVecsMatrixProd
+  vol = rand(3,4,100000);
+  vs = rand(4,100000);
+
+  sVol = size( vol );
+  out1 = zeros( sVol(1), 1, sVol(3) );
+  for m = 1:sVol(3)
+    out1(:,m) = vol(:,:,m) * vs(:,m);
+  end
+  out2 = volVecsMatrixProd( vol, vs );
+  err = max( abs( out1(:) - out2(:) ) );
+  if err < 1d-7
+    disp('volVectorMatrixProd passed');
+  else
+    error('volVectorMatrixProd failed');
+  end
+
+
   %% volVolMatrixProd
   M = rand(3,3);
   vol1 = rand(3,3,100000);

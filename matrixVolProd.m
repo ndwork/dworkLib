@@ -2,14 +2,13 @@
 function out = matrixVolProd( A, vol )
   % out = matrixVolProd( A, vol )
   %
-  % If 3rd dimension of vol is much larger than the dimensions of A, this
+  % Left matrix multiply each slice of vol by the matrix M.
+  % If the 3rd dimension of vol is much larger than the dimensions of A, this
   % is faster than just writing a loop.
   %
   % Inputs:
   % A - 2D array of size MxN
   % vol - 3D array of size NxPxK
-  %
-  % Left matrix multiply each slice of vol by the matrix M
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
