@@ -614,7 +614,7 @@ function testDworkLib
   end
 
 
-  %% volVolVectorProd
+  %% volVolMatrixProd
   M = rand(3,3);
   vol1 = rand(3,3,100000);
   vol2 = rand( size(vol1) );
@@ -625,9 +625,9 @@ function testDworkLib
   asdf = volVolMatrixProd( vol1, vol2 );
   err = max( abs( asdf(:) - tmp(:) ) );
   if err < 1d-7
-    disp('volVolVectorProd passed');
+    disp('volVolMatrixProd passed');
   else
-    error('volVolVectorProd failed');
+    error('volVolMatrixProd failed');
   end
 
 end

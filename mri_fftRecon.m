@@ -15,17 +15,7 @@ function recons = mri_fftRecon( kData )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  [Ny,Nx,nSlices,nPhases,nCoils] = size( kData );
-  recons = zeros( Ny, Nx, nSlices, nPhases );
-  for slice=1:nSlices
-    for phase=1:nPhases
-      for coil = 1:nCoils
-        tmpFFT = squeeze( kData(:,:,slice,phase,coil) );
-        recons(:,:,slice,phase,coil) = fftshift( ifft2( ifftshift(tmpFFT) ) );
-      end
-    end
-  end
+  recons = fftshift( fftshift( ifft2( ifftshift( ifftshift( ...
+    kData, 1 ), 2) ), 1 ), 2 );
 
 end
-
-
