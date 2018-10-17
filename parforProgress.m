@@ -53,16 +53,15 @@ classdef parforProgress
     end
     
     function progress( obj, n, varargin )
-      defaultDownsample = 1;
       p = inputParser;
-      p.addOptional( 'downsample', defaultDownsample, @isnumeric );
+      p.addOptional( 'downsample', 1, @isnumeric );
       p.parse( varargin{:} );
       downsample = p.Results.downsample;
       
       % n is the index of the current iteration
       fid = fopen( obj.tmpFile, 'a' );
       if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end;
-      fprintf( fid, '%d\n', n ); % Save n at the top of progress.txt
+      fprintf( fid, '%d\n', n );
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
       if mod( n, downsample )==0

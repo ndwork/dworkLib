@@ -33,7 +33,6 @@ function t2Map = mri_mapT2( dataCube, TEs, varargin )
 
   sData = size( dataCube );
   if numel( mask ) == 0, mask=ones( sData(1:2) ); end;
-  %showImageCube( mask.*abs(dataCube), showScale );  titlenice('t1 ir Data');
 
   f = @(x,tmp) tmp(1) .* exp(-x./tmp(2)) + tmp(3);
   fminconOptions = optimoptions('fmincon','Display','off');
