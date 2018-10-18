@@ -7,7 +7,7 @@ function v = fitPolyToData( N, x, y )
   %
   % Inputs:
   % N - the order of the polynomial
-  % x - (optional) domain values
+  % x - (optional) domain values.  If not supplied, x = 1, 2, ..., numel(y)
   % y - range values
   %
   % Outputs:
