@@ -12,6 +12,9 @@ function R = mri_makeRF( alphas, phis )
   % Outputs:
   % the 3x3 rotation matrix
   %
+  % NOTE:  All angles in this function follow a left handed convention
+  %        I really would have preferred otherwise, but whadareyougonnado?
+  %
   % Written by Nicholas Dwork - Copyright 2016
   %
   % This software is offered under the GNU General Public License 3.0.  It

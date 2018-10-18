@@ -35,7 +35,12 @@ classdef parforProgress
     function obj = parforProgress( nTotal, tmpFile )
       % nTotal is the total number of iterations for completion
       if nargin < 1, error('Must supply total number of iterations.'); end;
-      if nargin < 2, tmpFile='parforProgress.txt'; end;
+
+      pid = feature('getpid');
+      if nargin < 2
+        tmpFile = ['parforProgress_', num2str(pid), '.txt'];
+      end
+
       obj.nTotal = nTotal;
       obj.tmpFile = tmpFile;
       fid = fopen( obj.tmpFile, 'w' );
@@ -51,13 +56,13 @@ classdef parforProgress
     function clean( obj )
       delete( obj.tmpFile );
     end
-    
+
     function progress( obj, n, varargin )
       p = inputParser;
       p.addOptional( 'downsample', 1, @isnumeric );
       p.parse( varargin{:} );
       downsample = p.Results.downsample;
-      
+
       % n is the index of the current iteration
       fid = fopen( obj.tmpFile, 'a' );
       if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end;

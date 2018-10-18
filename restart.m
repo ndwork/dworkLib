@@ -17,11 +17,10 @@ function restart( varargin )
 
   if strcmp( type, 'all' ), clear all; end;                                                %#ok<CLALL>
 
-  if exist( 'parforProgress.txt', 'file' )
-    delete parforProgress.txt
+  parforFiles = dir( 'parforProgress*.txt' );
+  for fileIndx = 1 : numel( parforFiles )
+    delete( parforFiles(fileIndx).name );
   end
 
-  close all;
-  clear;
-  clc;
+  close all;  clear;  clc;
 end

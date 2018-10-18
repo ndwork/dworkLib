@@ -430,12 +430,13 @@ function testDworkLib
   disp('padData passed');
 
   %% parforProgress
-  N = 20;
+  N = 10;
   p = parforProgress( N );
   parfor n=1:N
     p.progress( n );
     pause(rand); % Replace with real code
   end
+  p.clean;
 
   %% plotnice
   x = 1:10; y = 2*x;
