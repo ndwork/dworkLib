@@ -23,17 +23,17 @@ function [p,dp] = evaluatePoly( c, x )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  p = c(1);
+  p = c(end);
 
   if nargout > 1
     % evaluate the polynomial and its derivatve
     dp = 0;
-    for i = 1:numel(c)-1
-      dp = dp.*x + p;
+    for i = numel(c)-1:-1:1
+      dp = p + dp.*x;
       p = p.*x + c(i);
     end
   else
-    for i = 1:numel(c)-1
+    for i = numel(c)-1:-1:1
       p = p.*x + c(i);
     end
   end

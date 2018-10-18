@@ -28,6 +28,21 @@ function testDworkLib
   if err > 0, error( 'cropData test failed' ); end;
   disp('cropData test passed');
 
+  %% evlautePoly
+  c = [1 2 3];  x = [4 5 6];
+  p1 = evaluatePoly( c, x );
+  [p2,dp] = evaluatePoly( c, x );
+  rightP = c(1) + c(2)*x + c(3)*x.^2;
+  rightDp = c(2) + 2*c(3)*x;
+  err1 = norm( p1 - rightP );
+  err2 = norm( p2 - rightP );
+  err3 = norm( dp - rightDp );
+  if err1 + err2 + err3 < 1d-8
+    disp( 'evlautePoly passed' );
+  else
+    error( 'evlautePoly failed' );
+  end
+
   %% fista test 1
   M = 300;
   N = 20;
