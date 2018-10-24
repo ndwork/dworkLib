@@ -38,3 +38,4 @@ function [p,dp] = evaluatePoly( c, x )
     end
   end
 end
+

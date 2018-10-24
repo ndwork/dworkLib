@@ -11,7 +11,17 @@ function testDworkLib
   denoisedImg = bilateralFilter( img, 'sigmaR', 0.1 );
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Bilateral Filter Result');
-  
+
+  %% bisection method
+  fprintf('\nTesting bisection method: \n');
+  myFunc = @(x) x^2 - 80;
+  myFuncRoot = bisectionMethod( myFunc, 0, 100, 'nMax', 10000 );
+  if myFunc( myFuncRoot ) < 1d-12
+    disp( 'bisection passed' );
+  else
+    error( 'bisection failed' );
+  end
+
   %% cropData
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
