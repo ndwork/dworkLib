@@ -33,8 +33,10 @@ function t2Map = mri_mapT2( dataCube, TEs, varargin )
 
   sData = size( dataCube );
   if numel( mask ) == 0, mask=ones( sData(1:2) ); end;
+  TEs = TEs(:);
 
   f = @(x,tmp) tmp(1) .* exp(-x./tmp(2)) + tmp(3);
+
   fminconOptions = optimoptions('fmincon','Display','off');
   t2MapCols = cell( sData(2), 1 );
   p = parforProgress( sData(2) );
@@ -45,7 +47,7 @@ function t2Map = mri_mapT2( dataCube, TEs, varargin )
     for j=1:sData(1)
       if mask(j,i)==0, continue; end;
       thisData = abs( squeeze( dataCube(j,i,:) ) );
-      params = fmincon( @(tmp) norm(thisData - f(TEs,tmp) ), ...
+      params = fmincon( @(tmp) norm( thisData - f(TEs,tmp) ), ...
         [0; 0; 0;], [], [], [], [], [0; 0; 0], [], [], fminconOptions );
       t2MapCol(j) = params(2);
     end

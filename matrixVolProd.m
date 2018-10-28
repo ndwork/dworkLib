@@ -2,7 +2,7 @@
 function out = matrixVolProd( A, vol )
   % out = matrixVolProd( A, vol )
   %
-  % Left matrix multiply each slice of vol by the matrix M.
+  % Left matrix multiply each slice of vol by the matrix A.
   % If the 3rd dimension of vol is much larger than the dimensions of A, this
   % is faster than just writing a loop.
   %
