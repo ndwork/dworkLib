@@ -27,7 +27,9 @@ function restart( varargin )
 
     pid = feature('getpid');
     parforProgressFile = ['parforProgress_', num2str(pid), '.txt'];
-    delete( parforProgressFile );
+    if exist( parforProgressFile, 'file' )
+      delete( parforProgressFile );
+    end
 
   end
 
