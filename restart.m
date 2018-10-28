@@ -15,11 +15,20 @@ function restart( varargin )
   type = [];
   if nargin > 0, type = varargin{1}; end;
 
-  if strcmp( type, 'all' ), clear all; end;                                                %#ok<CLALL>
+  if strcmp( type, 'all' )
+    clear all;
 
-  parforFiles = dir( 'parforProgress*.txt' );
-  for fileIndx = 1 : numel( parforFiles )
-    delete( parforFiles(fileIndx).name );
+    parforFiles = dir( 'parforProgress*.txt' );
+    for fileIndx = 1 : numel( parforFiles )
+      delete( parforFiles(fileIndx).name );
+    end
+    
+  else
+
+    pid = feature('getpid');
+    parforProgressFile = ['parforProgress_', num2str(pid), '.txt'];
+    delete( parforProgressFile );
+
   end
 
   close all;  clear;  clc;
