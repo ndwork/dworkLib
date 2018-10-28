@@ -63,16 +63,17 @@ classdef parforProgress
       p.parse( varargin{:} );
       downsample = p.Results.downsample;
 
-      % n is the index of the current iteration
       fid = fopen( obj.tmpFile, 'a' );
       if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end;
-      fprintf( fid, '%d\n', n );
+      nowTime = datestr( now, 'yyyy-mm-dd HH:MM:SS.FFF');
+      fprintf( fid, [ '%d: ', nowTime, '\n' ], n );
+        % n is the index of the current iteration
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
       if mod( n, downsample )==0
         disp(['Working on ', num2str(n), ' of ', num2str(obj.nTotal), ...
           ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
-        drawnow('update');
+        drawnow( 'update' );
       end
     end
 
