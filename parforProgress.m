@@ -1,5 +1,7 @@
 
 classdef parforProgress
+  % p = parforProgress( N [, tmpFile, 'msgHdr', msgHdr ] );
+  % 
   % Function measures progress of an iteration implemented with parfor
   %
   % Usage:
@@ -28,21 +30,27 @@ classdef parforProgress
   properties
     nTotal
     tmpFile
+    msgHdr
   end
 
   methods
     % Constructor
-    function obj = parforProgress( nTotal, tmpFile )
+    function obj = parforProgress( nTotal, varargin )
       % nTotal is the total number of iterations for completion
       if nargin < 1, error('Must supply total number of iterations.'); end;
 
       pid = feature('getpid');
-      if nargin < 2
-        tmpFile = ['parforProgress_', num2str(pid), '.txt'];
-      end
+      defaultTmpFile = ['parforProgress_', num2str(pid), '.txt'];
+      
+      p = inputParser;
+      p.addOptional( 'tmpFile', defaultTmpFile, ...
+        @(x) validateattributes(x,{'char'}) );
+      p.addParameter( 'msgHdr', [], @(x) true );
+      p.parse( varargin{:} );
+      obj.tmpFile = p.Results.tmpFile;
+      obj.msgHdr = p.Results.msgHdr;
 
       obj.nTotal = nTotal;
-      obj.tmpFile = tmpFile;
       fid = fopen( obj.tmpFile, 'w' );
       fclose(fid);
     end
@@ -71,8 +79,9 @@ classdef parforProgress
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
       if mod( n, downsample )==0
-        disp(['Working on ', num2str(n), ' of ', num2str(obj.nTotal), ...
-          ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
+        disp([obj.msgHdr, 'Working on ', num2str(n), ' of ', ...
+          num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), ...
+          '%' ]);
         drawnow( 'update' );
       end
     end
