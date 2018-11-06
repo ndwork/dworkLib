@@ -1,6 +1,6 @@
 
 classdef parforProgress
-  % p = parforProgress( N [, tmpFile, 'msgHdr', msgHdr ] );
+  % p = parforProgress( [ N, tmpFile, 'msgHdr', msgHdr ] );
   % 
   % Function measures progress of an iteration implemented with parfor
   %
@@ -15,9 +15,12 @@ classdef parforProgress
   % end
   % p.clean;
   %
-  % Notes:
-  % progress member function accepts optional downsampling input.
+  % Optional Inputs:
+  % N - downsampling input.
   %   Ex: p.progress( n, 10 );  % displays only when mod(n,10) == 0
+  % tmpFile - the file to use to store progress information
+  % msgHdr - a string to append to the beginning of progress statements.
+  %   By default: this string is the calling function's name.
   %
   % Written by Nicholas Dwork - Copyright 2017
   % Based on parfor_progress written by Jeremy Scheff
@@ -41,11 +44,14 @@ classdef parforProgress
 
       pid = feature('getpid');
       defaultTmpFile = ['parforProgress_', num2str(pid), '.txt'];
+
+      st = dbstack;
+      defaultMsgHdr = [ st(2).name, ':  ' ]; % The function caller's name (parent)
       
       p = inputParser;
       p.addOptional( 'tmpFile', defaultTmpFile, ...
         @(x) validateattributes(x,{'char'}) );
-      p.addParameter( 'msgHdr', [], @(x) true );
+      p.addParameter( 'msgHdr', defaultMsgHdr, @(x) true );
       p.parse( varargin{:} );
       obj.tmpFile = p.Results.tmpFile;
       obj.msgHdr = p.Results.msgHdr;
