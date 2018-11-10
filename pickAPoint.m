@@ -26,6 +26,7 @@ function pt = pickAPoint( varargin )
   arg2 = p.Results.arg2;
 
   img = [];
+  scale = [];
   if numel( arg1 ) > 1
     img = arg1;
   elseif numel( arg1 ) == 1
