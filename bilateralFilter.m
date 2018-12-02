@@ -57,21 +57,28 @@ function out = bilateralFilter_3D( img, varargin )
   varR = sigmaR * sigmaR;
 
   sImg = size( img );
-  out = zeros( size(img) );
-  for j=ceil(s/2):sImg(1)-floor(s/2)
-    for i=ceil(s/2):sImg(2)-floor(s/2)
-      for k=ceil(s/2):sImg(3)-floor(s/2)
-        subImg = img( j-halfS:j+halfS, i-halfS:i+halfS, k-halfS:k+halfS );
+  sliceCells = cell(1,1,sImg(3));
+  lastK = sImg(3)-floor(s/2);
+  parfor k=ceil(s/2):lastK
+    disp([ 'Working on ', num2str(k), ' of ', num2str(lastK) ]);
+    tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
+    kImg = img(:,:,k-halfS:k+halfS);                                                       %#ok<PFBNS>
+    for j=ceil(s/2):sImg(1)-floor(s/2)
+      for i=ceil(s/2):sImg(2)-floor(s/2)
+        %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS, k-halfS:k+halfS );
+        subImg = kImg( j-halfS:j+halfS, i-halfS:i+halfS, : );
 
         pKernel = exp( -( img(j,i,k) - subImg ).^2 / ( 2 * varR ) );
 
         weights = pKernel .* dKernel;
         weights = weights / sum( weights(:) );
 
-        out(j,i,k) = sum( subImg(:) .* weights(:) );
+        tmp(j,i) = sum( subImg(:) .* weights(:) );
       end
     end
+    sliceCells{1,1,k} = tmp;
   end
+  out = cell2mat( sliceCells );
 
 end
 
