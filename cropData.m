@@ -16,6 +16,8 @@ function out = cropData( data, N )
   % implied warranties of merchantability or fitness for a particular 
   % purpose.
 
+  if nargin < 2, disp('Usage: out = cropData( data, N )'); end;
+
   nD = ndims( data );
   if numel(N) == 1
     N = N * ones(nD,1);
