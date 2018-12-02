@@ -21,9 +21,13 @@ function showImageCube( cube, varargin )
   p = inputParser;
   p.addOptional( 'scale', 1, @isnumeric );
   p.addParameter( 'nImgsPerRow', [], @isnumeric );
+  p.addParameter( 'range', [] );
+  p.addParameter( 'sdevScale', [], @isnumeric );
   p.parse( varargin{:} );
   scale = p.Results.scale;
   nImgsPerRow = p.Results.nImgsPerRow;
+  range = p.Results.range;
+  sdevScale = p.Results.sdevScale;
 
   sCube = size( cube );
   nImgs = sCube(3);
@@ -43,5 +47,6 @@ function showImageCube( cube, varargin )
     outImg = inplaceImg( cube(:,:,i), nSubRows, nSubCols, i, outImg );
   end
 
-  figure; imshowscale( outImg, scale );  drawnow;
+  figure; imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
+  drawnow;
 end

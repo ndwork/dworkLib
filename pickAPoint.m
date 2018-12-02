@@ -1,6 +1,6 @@
 
 function pt = pickAPoint( varargin )
-  % pt = pickAPoint( [ arg1, arg2 ] )
+  % pt = pickAPoint( [ arg1, arg2, 'range', range ] )
   %
   % Find the coordinates of a point in an image
   %
@@ -9,6 +9,7 @@ function pt = pickAPoint( varargin )
   %   display
   % arg2 - can either be an image or a scalar specifying the scale of the
   %   display
+  % 'range' - the dynamic range to use in the display
   %
   % Written by Nicholas Dwork, Copyright 2018
   %
@@ -21,9 +22,11 @@ function pt = pickAPoint( varargin )
   p = inputParser;
   p.addOptional( 'arg1', [], @isnumeric );
   p.addOptional( 'arg2', [], @isnumeric );
+  p.addParameter( 'range', [], @isnumeric );
   p.parse( varargin{:} );
   arg1 = p.Results.arg1;
   arg2 = p.Results.arg2;
+  range = p.Results.range;
 
   img = [];
   scale = [];
@@ -44,7 +47,7 @@ function pt = pickAPoint( varargin )
   if numel( scale ) == 0, scale = 1; end;
 
   if numel( img ) > 0
-    figure; imshowscale( img, scale );
+    figure; imshowscale( img, scale, 'range', range );
   end
 
   pt = getFeaturesFromImg( 1, scale );
