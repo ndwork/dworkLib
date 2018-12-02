@@ -16,9 +16,12 @@ function imH = imshowscale( img, varargin )
   %   default is 'nearest'
   %   any method accepted by imresize is accepted for this parameter
   % range - two element array specifying the display range of intensities
+  %   or an image
   %   If range is [], sets equal to [min(img(:)) max(img(:))]
   %     This is the default.
   %   If range is 'nice', uses imshownice to display image
+  %   If range is an image (larger than two elements), then the range of
+  %     the display equals the dynamic range of the input array
   % border - border to put around the image in the figure window
   %   either 'noBorder' or a value in pixels (default is 10) or an array
   %   with four elements [ left bottom right top ]
@@ -40,6 +43,7 @@ function imH = imshowscale( img, varargin )
   p.addParameter( 'fontSize', defaultFontSize, @isnumeric );
   p.addParameter( 'method', defaultMethod );
   p.addParameter( 'range', [] );
+  p.addParameter( 'sdevScale', [], @isnumeric );
   p.addParameter( 'xAxis', [], @isnumeric );
   p.addParameter( 'yAxis', [], @isnumeric );
   p.parse( varargin{:} );
@@ -48,18 +52,28 @@ function imH = imshowscale( img, varargin )
   fontSize = p.Results.fontSize;
   method = p.Results.method;
   range = p.Results.range;
+  sdevScale = p.Results.sdevScale;
   xAxis = p.Results.xAxis;
   yAxis = p.Results.yAxis;
 
   if strcmp( 'nice', range )
-    [~,imH] = imshownice( img, scale, 'method', method );
+    [~,imH] = imshownice( img, scale, 'method', method, 'sdevScale', sdevScale );
   elseif numel(range) == 0
     if ismatrix( img )
       imH = imshow( imresize( img, scale, method ), range );
     elseif ndims(img) == 3
       imH = imshow( imColorResize( img, scale, method ), range );
     else
-      error('wrong number of dimensions');
+      error('wrong number of dimensions of img');
+    end
+  elseif numel(range) > 2
+    thisRange = [ min(range(:)) max(range(:)) ];
+    if ismatrix( img )
+      imH = imshow( imresize( img, scale, method ), thisRange );
+    elseif ndims(img) == 3
+      imH = imshow( imColorResize( img, scale, method ), thisRange );
+    else
+      error('wrong number of dimensions of img');
     end
   else
     if ismatrix( img )
