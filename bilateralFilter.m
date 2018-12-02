@@ -52,7 +52,7 @@ function out = bilateralFilter_3D( img, varargin )
   sigmaD = p.Results.sigmaD;
   sigmaR = p.Results.sigmaR;
 
-  dKernel = fspecial3d_gaussian( 'gaussian', s, sigmaD );
+  dKernel = fspecial3d( 'gaussian', s, sigmaD );
   halfS = floor(s/2);
   varR = sigmaR * sigmaR;
 
@@ -61,13 +61,13 @@ function out = bilateralFilter_3D( img, varargin )
   for j=ceil(s/2):sImg(1)-floor(s/2)
     for i=ceil(s/2):sImg(2)-floor(s/2)
       for k=ceil(s/2):sImg(3)-floor(s/2)
+        subImg = img( j-halfS:j+halfS, i-halfS:i+halfS, k-halfS:k+halfS );
 
         pKernel = exp( -( img(j,i,k) - subImg ).^2 / ( 2 * varR ) );
 
         weights = pKernel .* dKernel;
         weights = weights / sum( weights(:) );
 
-        subImg = img( j-halfS:j+halfS, i-halfS:i+halfS, k-halfS:k+halfS );
         out(j,i,k) = sum( subImg(:) .* weights(:) );
       end
     end

@@ -57,7 +57,7 @@ function h = fspecial3d_gaussian( hSize, sigma )
   end
 
   [x,y,z] = meshgrid(x,y,z);
-  h = exp( -0.5/(sigma*sigma) * ( x.*x + y.*y + z.*z );
+  h = exp( -0.5/(sigma*sigma) * ( x.*x + y.*y + z.*z ) );
   h = h / sum(h(:));
 end
 
