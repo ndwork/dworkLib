@@ -63,9 +63,10 @@ function out = bilateralFilter_3D( img, varargin )
   for k=1:lastK, sliceCells{k} = zeros( sImg(1:2) ); end;
   p = parforProgress( lastK-firstK+1 );
   parfor k=firstK:lastK
-    p.progress( k );                                                                       %#ok<PFBNS>
+    p.progress( k-firstK+1 );                                                                       %#ok<PFBNS>
     tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
     kImg = img(:,:,k-halfS:k+halfS);                                                       %#ok<PFBNS>
+
     for j=ceil(s/2):sImg(1)-floor(s/2)
       for i=ceil(s/2):sImg(2)-floor(s/2)
         %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS, k-halfS:k+halfS );
@@ -123,19 +124,29 @@ function out = bilateralFilter_2D( img, varargin )
   varR = sigmaR * sigmaR;
 
   sImg = size( img );
-  out = zeros( size(img) );
-  for j=ceil(s/2):sImg(1)-floor(s/2)
-    for i=ceil(s/2):sImg(2)-floor(s/2)
+  jCells = cell( sImg(1), 1 );
+  firstJ = ceil(s/2);
+  lastJ = sImg(1)-floor(s/2);
+  for j=1:sImg(1), jCells{j}=zeros(1,sImg(2)); end;
+  p = parforProgress( lastJ-firstJ+1 );
+  parfor j=firstJ:lastJ
+    p.progress( j-firstJ+1, 50 );                                                                   %#ok<PFBNS>
+    tmp = zeros( 1, sImg(2) );                                                             %#ok<PFBNS>
+    imgLine = img( j-halfS:j+halfS, : );                                                   %#ok<PFBNS>
 
-      subImg = img( j-halfS:j+halfS, i-halfS:i+halfS );
+    for i=ceil(s/2):sImg(2)-floor(s/2)
+      %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS );
+      subImg = imgLine( :, i-halfS : i+halfS );
 
       pKernel = exp( -( img(j,i) - subImg ).^2 / ( 2 * varR ) );
 
       weights = pKernel .* dKernel;
       weights = weights / sum( weights(:) );
 
-      out(j,i) = sum( subImg(:) .* weights(:) );
+      tmp(i) = sum( subImg(:) .* weights(:) );
     end
+    jCells{j} = tmp;
   end
-
+  out = cell2mat( jCells );
+  p.clean;
 end

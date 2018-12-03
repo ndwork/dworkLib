@@ -9,7 +9,7 @@ function testDworkLib
   noise = normrnd( 0, noiseSig, sImg(1), sImg(2) );
   noisyImg = img + noise;
   denoisedImg = bilateralFilter( img, 'sigmaR', 0.1 );
-  figure; imshow( [noisyImg, denoisedImg], [] );
+  figure; imshowscale( [noisyImg, denoisedImg], 3 );
   title('Bilateral Filter Result');
 
   %% bisection method
