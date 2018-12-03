@@ -59,6 +59,7 @@ function out = bilateralFilter_3D( img, varargin )
   sImg = size( img );
   sliceCells = cell(1,1,sImg(3));
   lastK = sImg(3)-floor(s/2);
+  for k=1:lastK, sliceCells{k} = zeros( sImg(1:2) ); end;
   parfor k=ceil(s/2):lastK
     disp([ 'Working on ', num2str(k), ' of ', num2str(lastK) ]);
     tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
