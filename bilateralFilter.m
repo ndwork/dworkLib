@@ -63,7 +63,7 @@ function out = bilateralFilter_3D( img, varargin )
   for k=1:lastK, sliceCells{k} = zeros( sImg(1:2) ); end;
   p = parforProgress( lastK-firstK+1 );
   parfor k=firstK:lastK
-    p.progress( k-firstK+1 );                                                                       %#ok<PFBNS>
+    p.progress( k-firstK+1 );                                                              %#ok<PFBNS>
     tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
     kImg = img(:,:,k-halfS:k+halfS);                                                       %#ok<PFBNS>
 
@@ -111,7 +111,7 @@ function out = bilateralFilter_2D( img, varargin )
   defaultSigmaR = 0.3;
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addOptional( 'S', defaultS, isIntAndPositiveAndOdd );
+  p.addParameter( 'S', defaultS, isIntAndPositiveAndOdd );
   p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
   p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
   p.parse( img, varargin{:} );
