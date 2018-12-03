@@ -61,7 +61,7 @@ function out = bilateralFilter_3D( img, varargin )
   firstK = ceil(s/2);
   lastK = sImg(3)-floor(s/2);
   for k=1:lastK, sliceCells{k} = zeros( sImg(1:2) ); end;
-  p = parforProgress( lastK-firstK+1, tmpFile );
+  p = parforProgress( lastK-firstK+1 );
   parfor k=firstK:lastK
     p.progress( k );                                                                       %#ok<PFBNS>
     tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
