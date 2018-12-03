@@ -58,10 +58,12 @@ function out = bilateralFilter_3D( img, varargin )
 
   sImg = size( img );
   sliceCells = cell(1,1,sImg(3));
+  firstK = ceil(s/2);
   lastK = sImg(3)-floor(s/2);
   for k=1:lastK, sliceCells{k} = zeros( sImg(1:2) ); end;
-  parfor k=ceil(s/2):lastK
-    disp([ 'Working on ', num2str(k), ' of ', num2str(lastK) ]);
+  p = parforProgress( lastK-firstK+1, tmpFile );
+  parfor k=firstK:lastK
+    p.progress( k );                                                                       %#ok<PFBNS>
     tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
     kImg = img(:,:,k-halfS:k+halfS);                                                       %#ok<PFBNS>
     for j=ceil(s/2):sImg(1)-floor(s/2)
@@ -79,8 +81,8 @@ function out = bilateralFilter_3D( img, varargin )
     end
     sliceCells{1,1,k} = tmp;
   end
+  p.clean;
   out = cell2mat( sliceCells );
-
 end
 
 
