@@ -8,6 +8,10 @@ function showImageCube( cube, varargin )
   % cube is an MxNxK array
   %
   % Optional Inputs:
+  % border - specifies a border to place between images (default is 0)
+  % borderValue - specifies the value to place in between images
+  %   If set to 'max' then the maximum value of the cube is specified as the
+  %   border value (making the border white with grayscale)
   % scale - the amount to scale each image for display (default is 1)
   % nImgsPerRow - ( default is ceil(sqrt(K)) )
   %
@@ -20,11 +24,15 @@ function showImageCube( cube, varargin )
 
   p = inputParser;
   p.addOptional( 'scale', 1, @isnumeric );
+  p.addParameter( 'border', 0, @isnumeric );
+  p.addParameter( 'borderValue', 0, @(x) true);
   p.addParameter( 'nImgsPerRow', [], @isnumeric );
   p.addParameter( 'range', [] );
   p.addParameter( 'sdevScale', [], @isnumeric );
   p.parse( varargin{:} );
   scale = p.Results.scale;
+  border = p.Results.border;
+  borderValue = p.Results.borderValue;
   nImgsPerRow = p.Results.nImgsPerRow;
   range = p.Results.range;
   sdevScale = p.Results.sdevScale;
@@ -41,10 +49,25 @@ function showImageCube( cube, varargin )
 
   nSubCols = min( nImgsPerRow, nImgs );
   nSubRows = ceil( nImgs / nImgsPerRow );
-  
-  outImg = inplaceImg( cube(:,:,1), nSubRows, nSubCols, 1 );
+
+  maxCube = max( cube(:) );
+  tmpBorderValue = maxCube + 1;
+  outImg = inplaceImg( cube(:,:,1), nSubRows, nSubCols, 1, ...
+    'border', border, 'borderValue', tmpBorderValue );
   for i=2:nImgs
-    outImg = inplaceImg( cube(:,:,i), nSubRows, nSubCols, i, outImg );
+    outImg = inplaceImg( cube(:,:,i), nSubRows, nSubCols, i, outImg, ...
+    'border', border, 'borderValue', tmpBorderValue );
+  end
+  if border > 0
+    if isnumeric( borderValue )
+      outImg( outImg == tmpBorderValue ) = borderValue;
+    else
+      if strcmp( borderValue, 'max' )
+        outImg( outImg == tmpBorderValue ) = maxCube;
+      else
+        error( 'Unrecognized border value term' );
+      end
+    end
   end
 
   figure; imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
