@@ -18,11 +18,12 @@ function pt = pickAPoint( varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  isNumericOrLogical = @(x) isnumeric(x) || islogical(x);
 
   p = inputParser;
-  p.addOptional( 'arg1', [], @isnumeric );
-  p.addOptional( 'arg2', [], @isnumeric );
-  p.addParameter( 'range', [], @isnumeric );
+  p.addOptional( 'arg1', [], isNumericOrLogical );
+  p.addOptional( 'arg2', [], isNumericOrLogical );
+  p.addParameter( 'range', [], isNumericOrLogical );
   p.parse( varargin{:} );
   arg1 = p.Results.arg1;
   arg2 = p.Results.arg2;
