@@ -14,43 +14,66 @@ function out = bilateralFilter( img, varargin )
   % Outputs
   %   out: the denoised image
 
-  if ismatrix(img)
-    out = bilateralFilter_2D( img, varargin{:} );
-  elseif ndims(img)==3
-    out = bilateralFilter_3D( img, varargin{:} );
-  end
-end
-
-
-function out = bilateralFilter_3D( img, varargin )
-  % out = bilateralFilter( img, [ 'S', S, 'sigmaD', sigmaD, 'sigmaR', sigmaR ] );
-  %
-  % Inputs
-  %   img: the input image to be denoised (a 2D array)
-  %   S: (optional) the length of each side of the kernel (must be odd)
-  %   sigmaD: (optional) euclidean distance spread parameter
-  %   sigmaR: (optional) photometric distance spread parameter
-  %
-  % Outputs
-  %   out: the denoised image
-
-
-  isIntAndPositive = @(x) isInteger(x) && (x>0);
-  isIntAndPositiveAndOdd = @(x) isIntAndPositive(x) && (mod(x,2)~=0);
+  isPositiveAndOdd = @(x) (x>0) && (mod(x,2) == 1);
   isNumericAndPositive = @(x) isnumeric(x) && (x>0);
 
-  defaultS = 31;
+  defaultS = 17;
   defaultSigmaD = 3;
   defaultSigmaR = 0.3;
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParameter( 'S', defaultS, isIntAndPositiveAndOdd );
+  p.addParameter( 'S', defaultS, isPositiveAndOdd );
   p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
   p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
   p.parse( img, varargin{:} );
   s = p.Results.S;
   sigmaD = p.Results.sigmaD;
   sigmaR = p.Results.sigmaR;
+  
+  if ismatrix(img)
+    out = bilateralFilter_2D( img, s, sigmaD, sigmaR );
+  elseif ndims(img)==3
+    out = bilateralFilter_3D( img, s, sigmaD, sigmaR );
+  end
+end
+
+
+function out = bilateralFilter_2D( img, s, sigmaD, sigmaR )
+
+  dKernel = fspecial( 'gaussian', s, sigmaD );
+  halfS = floor(s/2);
+  varR = sigmaR * sigmaR;
+
+  sImg = size( img );
+  jCells = cell( sImg(1), 1 );
+  firstJ = ceil(s/2);
+  lastJ = sImg(1)-floor(s/2);
+  for j=1:sImg(1), jCells{j}=zeros(1,sImg(2)); end;
+  p = parforProgress( lastJ-firstJ+1 );
+  parfor j=firstJ:lastJ
+    p.progress( j-firstJ+1, 50 );                                                                   %#ok<PFBNS>
+    tmp = zeros( 1, sImg(2) );                                                             %#ok<PFBNS>
+    imgLine = img( j-halfS:j+halfS, : );                                                   %#ok<PFBNS>
+
+    for i=ceil(s/2):sImg(2)-floor(s/2)
+      %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS );
+      subImg = imgLine( :, i-halfS : i+halfS );
+
+      pKernel = exp( -( img(j,i) - subImg ).^2 / ( 2 * varR ) );
+
+      weights = pKernel .* dKernel;
+      weights = weights / sum( weights(:) );
+
+      tmp(i) = sum( subImg(:) .* weights(:) );
+    end
+    jCells{j} = tmp;
+  end
+  out = cell2mat( jCells );
+  p.clean;
+end
+
+
+function out = bilateralFilter_3D( img, s, sigmaD, sigmaR )
 
   dKernel = fspecial3d( 'gaussian', s, sigmaD );
   halfS = floor(s/2);
@@ -87,66 +110,3 @@ function out = bilateralFilter_3D( img, varargin )
 end
 
 
-function out = bilateralFilter_2D( img, varargin )
-  % out = bilateralFilter( img, [ 'S', S, 'sigmaD', sigmaD, 'sigmaR', sigmaR ] );
-  %
-  % Inputs
-  %   img: the input image to be denoised (a 2D array)
-  %
-  % Optional Inputs:
-  %   S: the length of each side of the kernel (must be odd)
-  %   sigmaD: euclidean distance spread parameter
-  %   sigmaR: photometric distance spread parameter
-  %
-  % Outputs
-  %   out: the denoised image
-
-
-  isIntAndPositive = @(x) mod(x,1)==0 && (x>0);
-  isIntAndPositiveAndOdd = @(x) isIntAndPositive(x) && (mod(x,2)~=0);
-  isNumericAndPositive = @(x) isnumeric(x) && (x>0);
-
-  defaultS = 31;
-  defaultSigmaD = 3;
-  defaultSigmaR = 0.3;
-  p = inputParser;
-  p.addRequired( 'img', @isnumeric );
-  p.addParameter( 'S', defaultS, isIntAndPositiveAndOdd );
-  p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
-  p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
-  p.parse( img, varargin{:} );
-  s = p.Results.S;
-  sigmaD = p.Results.sigmaD;
-  sigmaR = p.Results.sigmaR;
-
-  dKernel = fspecial( 'gaussian', s, sigmaD );
-  halfS = floor(s/2);
-  varR = sigmaR * sigmaR;
-
-  sImg = size( img );
-  jCells = cell( sImg(1), 1 );
-  firstJ = ceil(s/2);
-  lastJ = sImg(1)-floor(s/2);
-  for j=1:sImg(1), jCells{j}=zeros(1,sImg(2)); end;
-  p = parforProgress( lastJ-firstJ+1 );
-  parfor j=firstJ:lastJ
-    p.progress( j-firstJ+1, 50 );                                                                   %#ok<PFBNS>
-    tmp = zeros( 1, sImg(2) );                                                             %#ok<PFBNS>
-    imgLine = img( j-halfS:j+halfS, : );                                                   %#ok<PFBNS>
-
-    for i=ceil(s/2):sImg(2)-floor(s/2)
-      %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS );
-      subImg = imgLine( :, i-halfS : i+halfS );
-
-      pKernel = exp( -( img(j,i) - subImg ).^2 / ( 2 * varR ) );
-
-      weights = pKernel .* dKernel;
-      weights = weights / sum( weights(:) );
-
-      tmp(i) = sum( subImg(:) .* weights(:) );
-    end
-    jCells{j} = tmp;
-  end
-  out = cell2mat( jCells );
-  p.clean;
-end
