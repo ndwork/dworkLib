@@ -1,6 +1,6 @@
 
-function nLines = findNumLinesInFile( file )
-  % nLines = findNumLinesInFile( file );
+function nLines = countNumLinesInFile( file )
+  % nLines = countNumLinesInFile( file );
   %
   % Inputs:
   % file - string with filename
