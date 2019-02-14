@@ -1,8 +1,13 @@
-function out = gammaVariate( alpha1, beta1, A0, t0, dValues )
+function out = gammaVariate( alpha, beta, A0, t0, dValues, varargin )
+  % out = gammaVariate( alpha, beta, A0, t0, dValues [, deriv ] )
+  %
   % Standard parameterization of the gamma variate function
   %
   % Inputs:
   % dValues - domain values specifying where to evaluate the function
+  %
+  % Optional Inputs:
+  % deriv - if true, then evaluate the derivative
   %
   % Ouputs:
   % out - values of gamma variate function at sample times
@@ -14,11 +19,21 @@ function out = gammaVariate( alpha1, beta1, A0, t0, dValues )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  p = inputParser;
+  p.addOptional( 'deriv', 0 );
+  p.parse( varargin{:} );
+  deriv = p.Results.deriv;
+
   dts = dValues - t0;
 
-  gvs = A0 * dts.^alpha1 .* exp( -dts / beta1 );
+  if deriv == 0
+    out = A0 * dts.^alpha .* exp( -dts / beta );
+  else
+    % calculate the first derivative
+    out = A0 * dts.^(alpha-1) .* exp( -dts / beta ) .* ( alpha - dts / beta );
+  end
 
-  gvs( dts <= 0 ) = 0;
-  out = gvs(:);
+  out( dts <= 0 ) = 0;
+  out = out(:);
 end
 
