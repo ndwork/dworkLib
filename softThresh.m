@@ -18,5 +18,5 @@ function out = softThresh( in, thresh )
   % purpose.
 
   out = sign(in) .* max( ( abs(in) - thresh ), 0 );
-  
+
 end
