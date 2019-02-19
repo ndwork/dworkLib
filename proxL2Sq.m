@@ -1,8 +1,8 @@
 
-function out = proxL2Sq( x, t )
-  % out = proxL2Sq( x )
+function out = proxL2Sq( v, t, b )
+  % out = proxL2Sq( v )
   %
-  % Evaluate the proximal operator of tf where f(x) = 1/2 || x ||_2^2
+  % Evaluate the proximal operator of tf where f(x) = t/2 || x - b ||_2^2
   %
   % Inputs:
   % x - the argument of the proximal operator
@@ -24,5 +24,10 @@ function out = proxL2Sq( x, t )
 
   if nargin < 2, t = 1; end
 
-  out = 1 ./ ( 1 + t ) .* x;
+  if nargin > 2
+    out = ( v + t*b ) / ( 1 + t );
+  else
+    out = v ./ ( 1 + t );
+  end
+
 end

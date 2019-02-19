@@ -25,15 +25,17 @@ function out = norms( A, varargin )
   p = par.Results.p;
   dim = par.Results.dim;
 
+  absA = abs( A );
+
   if mod( p, 1 ) == 0
     % p is an integer
-    tmp = abs(A);
+    tmp = absA;
     for i=2:p
-      tmp = tmp .* abs(A);
+      tmp = tmp .* absA;
     end    
   else
     % p is not an integer
-    tmp = abs(A).^p;
+    tmp = absA.^p;
   end
 
   tmp = sum( tmp, dim );
