@@ -1,6 +1,8 @@
 
 function showImageCube( cube, varargin )
-  % showImageCube( cube [, scale, 'nImgsPerRow', nImgsPerRow ] )
+  % showImageCube( cube [, scale, 'border', border, 'borderValue', borderValue, ...
+  %   'nImgsPerRow', nImgsPerRow, 'range', range, 'sdevScale', sdevScale ] )
+  %
   % Given an MxNxK array, shows each slice as a separate image on a single
   % figure.
   %
@@ -13,6 +15,8 @@ function showImageCube( cube, varargin )
   %   If set to 'max' then the maximum value of the cube is specified as the
   %   border value (making the border white with grayscale)
   % scale - the amount to scale each image for display (default is 1)
+  % sdevscale - passed into underlying imshowscale call
+  %   (Not used if range is specified)
   % nImgsPerRow - ( default is ceil(sqrt(K)) )
   %
   % Written by Nicholas Dwork - Copyright 2018
@@ -39,13 +43,13 @@ function showImageCube( cube, varargin )
 
   sCube = size( cube );
   nImgs = sCube(3);
-  if numel( nImgsPerRow ) == 0, nImgsPerRow = ceil( sqrt( nImgs ) ); end;
+  if numel( nImgsPerRow ) == 0, nImgsPerRow = ceil( sqrt( nImgs ) ); end
 
-  if scale <= 0, error('scale must be positive'); end;
+  if scale <= 0, error('scale must be positive'); end
   if nImgsPerRow < 1
     error('nImgsPerRow must be positive integer');
-  end;
-  if mod(nImgsPerRow,1) ~= 0, error('nImgsPerRow must be positive integer'); end;
+  end
+  if mod(nImgsPerRow,1) ~= 0, error('nImgsPerRow must be positive integer'); end
 
   nSubCols = min( nImgsPerRow, nImgs );
   nSubRows = ceil( nImgs / nImgsPerRow );

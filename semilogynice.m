@@ -1,6 +1,6 @@
 
-function plotnice( in1, varargin )
-  % plotnice( in1 [, in2, 'ax', ax, options ] )
+function semilogynice( in1, varargin )
+  % semilogynice( in1 [, in2, 'ax', ax, options ] )
   %
   % Inputs:
   %   in1 - 1D array to plot
@@ -18,6 +18,6 @@ function plotnice( in1, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  displayNice( @plot, in1, varargin{:} );
+  displayNice( @semilogy, in1, varargin{:} );
   return
 end
