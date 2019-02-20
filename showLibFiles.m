@@ -64,7 +64,7 @@ function showLibFiles( varargin )
             fid = fopen( [ pathDirs{i}, '/', files(j).name ] );
             while feof(fid) == 0
               thisLine = fgetl(fid);
-              if regexp( thisLine, pattern, 'ONCE' )
+              if regexpi( thisLine, pattern, 'ONCE' )
                 if found == 0
                   fprintf('\nAlso found within these files: \n');
                   found = 1;
