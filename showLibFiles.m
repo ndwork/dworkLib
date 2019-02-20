@@ -18,11 +18,9 @@ function showLibFiles( varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  
-  defaultLib = [];
   defaultPattern = '.*';
   p = inputParser;
-  p.addOptional( 'libName', defaultLib, @(x) true );
+  p.addOptional( 'libName', [], @(x) true );
     % must specify validation function above to keep addOptional from
     % thinking that argument is a parameter's name.
   p.addOptional( 'pattern', defaultPattern, @(x) true );
@@ -39,6 +37,7 @@ function showLibFiles( varargin )
     myPath = path;
     pathDirs = strsplit( myPath, ':' );
 
+    % Search in filenames
     for i=1:numel(pathDirs)
       if ~isempty( regexp( pathDirs{i}, libName, 'ONCE' ) )
         files = dir( pathDirs{i} );
@@ -47,6 +46,34 @@ function showLibFiles( varargin )
             ~isempty( regexpi(files(j).name, pattern, 'ONCE' ) )
 
             disp( files(j).name );
+          end
+        end
+      end
+    end
+
+    found = 0;
+    if ~strcmp( pattern, defaultPattern )
+      % Search within files
+      for i=1:numel(pathDirs)
+        if ~isempty( regexp( pathDirs{i}, libName, 'ONCE' ) )
+          files = dir( pathDirs{i} );
+          for j=1:numel(files)
+            if ~isempty( regexpi(files(j).name, pattern, 'ONCE' ) ), continue; end
+            if ~isempty( regexp(files(j).name, '^\.', 'ONCE' ) ), continue; end
+
+            fid = fopen( [ pathDirs{i}, '/', files(j).name ] );
+            while feof(fid) == 0
+              thisLine = fgetl(fid);
+              if regexp( thisLine, pattern, 'ONCE' )
+                if found == 0
+                  fprintf('\nAlso found within these files: \n');
+                  found = 1;
+                end
+                disp([ '  ', files(j).name ]);
+                break
+              end
+            end
+            fclose(fid);
           end
         end
       end
