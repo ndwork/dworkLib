@@ -74,6 +74,6 @@ function showImageCube( cube, varargin )
     end
   end
 
-  figure; imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
+  imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
   drawnow;
 end
