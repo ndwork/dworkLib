@@ -1,5 +1,5 @@
-function out = gammaVariate( alpha, beta, A0, t0, dValues, varargin )
-  % out = gammaVariate( alpha, beta, A0, t0, dValues [, deriv ] )
+function out = gammaVariate( dValues, alpha, beta, A0, t0, varargin )
+  % out = gammaVariate( dValues, alpha, beta, A0, t0 [, deriv ] )
   %
   % Standard parameterization of the gamma variate function
   %
