@@ -5,8 +5,8 @@ function newParams = updateScaleShifts( g, gPrime, ts, ys, beta, alpha, ...
   %   g, gPrime, ts, ys, beta, alpha, gamma, stepSize [, ...
   %   'findBeta', findBeta, 'findAlpha', findAlpha, 'findGamma', findGamma ] )
   %
-  % Compute a gradient descent update on the scaling and shifting parameters
-  %   beta * f( alpha t - domainShift )
+  % Compute a gradient descent update on the scaling and shifting parameters to minimize
+  %   (1/2) || beta * f( alpha t - domainShift ) - ys ||_2^2
   % The parameters are beta, alpha, and gamma
   % ts - the domain values of the gamma variate function
   % ys - the noisy outputs of the shifted and scaled gamma variate function
@@ -27,9 +27,14 @@ function newParams = updateScaleShifts( g, gPrime, ts, ys, beta, alpha, ...
   % findGamma - determine the new value of the domain shifting parameter
   %
   % Outputs:
-  % newParams = 
+  % newParams = an array of size 1-3 (depending on the parameters sought)
   %
-  % Written by Nicholas Dwork, 2019
+  % Written by Nicholas Dwork, Copyright 2019
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   p = inputParser;
   p.addParameter( 'findBeta', 1, @(x) isnumeric(x) || islogical(x) );
