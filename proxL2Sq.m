@@ -1,8 +1,8 @@
 
-function out = proxL2Sq( v, t, b )
+function out = proxL2Sq( v, t, b, A )
   % out = proxL2Sq( v )
   %
-  % Evaluate the proximal operator of tf where f(x) = t/2 || x - b ||_2^2
+  % Evaluate the proximal operator of tf where f(x) = t/2 || A x - b ||_2^2
   %
   % Inputs:
   % x - the argument of the proximal operator
@@ -11,6 +11,8 @@ function out = proxL2Sq( v, t, b )
   % Optional Inputs:
   % t - scaling of the L2 norm squared function
   %     Either a scalar or the same size as x
+  % b - the shifting factor
+  % E - the matrix
   %
   % Output:
   % out - the result of the proximal operator
@@ -22,12 +24,23 @@ function out = proxL2Sq( v, t, b )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2, t = 1; end
-
-  if nargin > 2
-    out = ( v + t*b ) / ( 1 + t );
-  else
-    out = v ./ ( 1 + t );
+  switch nargin
+    case 1
+      out = 0.5 .* v;
+    case 2
+      out = v ./ ( 1 + t );
+    case 3
+      out = ( v + t*b ) / ( 1 + t );
+    case 4
+      if isa( A, 'function_handle' )
+        % solve with the conjugate gradient method
+        E = @(x) A( A( x ), 'transp' ) + 1/t * ones( size(x) );
+        v = applyA( b, 'transp' ) + v / t;
+        out = cgs( E, v );
+        % TODO: If A is tight frame, this can be solved much faster
+      else
+        out = ( A'*A + eye( size(A,2) ) / t ) \ ( A' * b + v / t );
+      end
   end
 
 end
