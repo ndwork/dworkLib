@@ -48,24 +48,24 @@ function newParams = updateScaleShifts( g, gPrime, ts, ys, beta, alpha, ...
   gTmp = g( tmp );
   gPrimeTmp = gPrime( tmp );
 
-  errs = ys(:) - beta * gTmp;
+  errs = beta * gTmp - ys(:);
 
   newParams = [];
 
   if findBeta ~= 0
-    grad1  = sum( -2 .* errs .* gTmp );
+    grad1  = sum( errs .* gTmp );
     newBeta = beta - stepSize(1) * grad1;
     newParams = newBeta;
   end
 
   if findAlpha ~= 0
-    grad2 = sum( -2 * beta .* errs .* gPrimeTmp .* ts(:) );
+    grad2 = sum( beta .* errs .* gPrimeTmp .* ts(:) );
     newAlpha = alpha - stepSize(2) * grad2;
     newParams = [ newParams, newAlpha ];
   end
 
   if findDomainShift ~= 0
-    grad3 = sum( 2 * beta .* errs .* gPrimeTmp );
+    grad3 = sum( -errs .* gPrimeTmp );
     newDomainShift = domainShift - stepSize(3) * grad3;
     newParams = [ newParams, newDomainShift ];
   end
