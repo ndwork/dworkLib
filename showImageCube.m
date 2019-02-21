@@ -13,7 +13,9 @@ function showImageCube( cube, varargin )
   % border - specifies a border to place between images (default is 0)
   % borderValue - specifies the value to place in between images
   %   If set to 'max' then the maximum value of the cube is specified as the
-  %   border value (making the border white with grayscale)
+  %     border value (making the border white with grayscale)
+  %   If set to 'mean' then the mean value of the cube is specified as the
+  %     border value.
   % scale - the amount to scale each image for display (default is 1)
   % sdevscale - passed into underlying imshowscale call
   %   (Not used if range is specified)
@@ -68,6 +70,8 @@ function showImageCube( cube, varargin )
     else
       if strcmp( borderValue, 'max' )
         outImg( outImg == tmpBorderValue ) = maxCube;
+      elseif strcmp( borderValue, 'mean' )
+        outImg( outImg == tmpBorderValue ) = mean( cube(:) );
       else
         error( 'Unrecognized border value term' );
       end
