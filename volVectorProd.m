@@ -20,7 +20,7 @@ function out = volVectorProd( volume, vector, dim )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 3, dim=ndims(volume); end;
+  if nargin < 3, dim=ndims(volume); end
 
   newShape = ones( 1, ndims(volume) );
   newShape(dim) = numel(vector);
