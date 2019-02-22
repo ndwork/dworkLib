@@ -1,4 +1,4 @@
-function [x,y] = poissonDisc2D(r,varargin)
+function [x,y] = randPoissonDisc2D( r, varargin )
   % POISSONDIC2D Generate Poisson-disc-sampled points in two dimensions
   % 
   %   [X,Y] = RANDPD2D(R) randomly generates a collection of points (X,Y) in
@@ -8,7 +8,7 @@ function [x,y] = poissonDisc2D(r,varargin)
   %   
   %   RANDPD2D uses the RAND function in its current/existing state.
   %   
-  % Ethan Johnson, 2016
+  % Ethan Johnson, Copyriht 2016
   %
   % Inspiration:
   %  + http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
@@ -16,15 +16,20 @@ function [x,y] = poissonDisc2D(r,varargin)
   % Other reading:
   %  + https://www.jasondavies.com/poisson-disc/
   %  + https://bost.ocks.org/mike/algorithms/
-  
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
+
   % Defaults
   k = 30; % limit of samples before rejection
   bx = [-0.5 0.5]; by = [-0.5 0.5]; % bounds
   
   % Parse
-  if nargin>1 && ~isempty(varargin{1}), k = varargin{1}; end;
-  if nargin>2 && ~isempty(varargin{2}), bx = sort(varargin{2}); end;
-  if nargin>3 && ~isempty(varargin{3}), by = sort(varargin{3}); end;
+  if nargin>1 && ~isempty(varargin{1}), k = varargin{1}; end
+  if nargin>2 && ~isempty(varargin{2}), bx = sort(varargin{2}); end
+  if nargin>3 && ~isempty(varargin{3}), by = sort(varargin{3}); end
   
   % Grid size, shortcuts
   r2 = r^2; t=3*r2; b = [by;bx].';
