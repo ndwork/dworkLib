@@ -14,7 +14,7 @@ function out = ifftc( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  p = inputParers;
+  p = inputParser;
   p.addOptional( 'type', [], @(x) true )
   p.parse( varargin{:} );
   type = p.Results.type;
