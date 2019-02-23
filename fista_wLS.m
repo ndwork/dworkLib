@@ -75,7 +75,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
   for k=0:N-1
     if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     lastX = x;
     lastT = t;

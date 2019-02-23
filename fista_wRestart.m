@@ -67,7 +67,7 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   while iter < N
 
     if verbose, disp([ 'FISTA wRestarting Iteration: ', num2str(iter) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(iter+1) = g(x) + h(x); end
+    if calculateObjectiveValues > 0, objectiveValues(iter+1) = g(x) + h(x); end
 
     gGradZ = gGrad( z );
     x = z - t * gGradZ;

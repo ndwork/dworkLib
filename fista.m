@@ -44,7 +44,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
-  if t <= 0, error('fista: t0 must be greater than 0'); end;
+  if t <= 0, error('fista: t0 must be greater than 0'); end
   
   calculateObjectiveValues = 0;
   if nargout > 1
@@ -60,8 +60,8 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   y = 0;
 
   for k=0:N-1
-    if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end
+    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     x = z - t * gGrad( z );
     lastY = y;
