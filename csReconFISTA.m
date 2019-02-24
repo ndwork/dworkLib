@@ -1,6 +1,6 @@
 
-function recon = csReconFISTA( samples, lambda )
-  % recon = csReconFISTA2( samples [, lambda ] )
+function recon = csReconFISTA( samples, lambda, varargin )
+  % recon = csReconFISTA2( samples, lambda [, 'polish', polish ] )
   % This routine minimizes 0.5 * || Ax - b ||_2^2 + lambda || W x ||_1
   %   where A is sampleMask * Fourier Transform * real part, and
   %   W is the Haar wavelet transform.
@@ -15,20 +15,25 @@ function recon = csReconFISTA( samples, lambda )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  p = inputParser;
+  p.addParameter( 'polish', true, @(x) isnumeric(x) || islogical(x) );
+  p.parse( varargin{:} );
+  polish = p.Results.polish;
+  
   M = ( samples ~= 0 );
-  N = numel( samples );  % Note that A is square
+  nIter = numel( samples );  % Note that A is square
 
   % A = M F Re , A' = Re * F' * M
   % A' * A = Re * F' * M * F * Re
   % gGrad = A'*A*x - A'*b;
 
   function out = F( x )
-    Fx = 1/sqrt(N) .* fftshift( fft2( x(:,:,1) + 1i * x(:,:,2) ) );
+    Fx = 1/sqrt(nIter) .* fftshift( fft2( x(:,:,1) + 1i * x(:,:,2) ) );
     out = cat( 3, real(Fx), imag(Fx) );
   end
 
   function out = Fadj( y )
-    Fadjy = sqrt(N) * ifft2( ifftshift( y(:,:,1) + 1i * y(:,:,2) ) );
+    Fadjy = sqrt(nIter) * ifft2( ifftshift( y(:,:,1) + 1i * y(:,:,2) ) );
     out = cat( 3, real(Fadjy), imag(Fadjy) );
   end
 
@@ -73,17 +78,31 @@ function recon = csReconFISTA( samples, lambda )
 
 
   x0 = real( ifft2( ifftshift( samples ) ) );
+  % Could make this better with inverse gridding
 
-  debug = 1;
+  debug = 0;
+  t = 1;
   if debug
-    %[recon,oValues] = fista( x0, @g, gGrad, proxth, 'h', @h, 'verbose', 1 );                                  %#ok<ASGLU>
+    nIter = 30;
+    %[recon,oValues] = fista( x0, @g, gGrad, proxth, 'h', @h, 'verbose', verbose );                            %#ok<ASGLU>
     [recon,oValues] = fista_wLS( x0, @g, gGrad, proxth, 'h', @h, ...
-      'verbose', 1, 'N', 30 );                                                                                 %#ok<ASGLU>
+      't0', t, 'N', nIter, 'verbose', 1 );                                                                     %#ok<ASGLU>
   else
+    nIter = 100;
     %recon = fista( x0, @g, gGrad, proxth );                                                                   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, gGrad, proxth );                                                                %#ok<UNRCH>
+    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter );                                           %#ok<UNRCH>
   end
 
+  if polish
+    maskW = softThresh( W(recon), t*lambda ) ~= 0;
+    proxth = @(x,t) WT( maskW.*W(x) );
+    if debug
+      [recon,oValues2] = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, ...
+        'N', nIter, 't0', t, 'verbose', 1 );                                                                   %#ok<ASGLU>
+    else
+      recon = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, 'N', nIter, 't0', t );
+    end
+  end
 end
 
 
