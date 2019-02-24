@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
-  %   'h', h, 'N', N, 'r', r, 's', s, 'verbose', verbose ] )
+  %   'h', h, 'N', N, 'r', r, 's', s, 't0', t0, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
   % search as described in "Fraction-variant beam orientation optimization

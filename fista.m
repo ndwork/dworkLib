@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   % [xStar,objectiveValues] = fista( x, g, gGrad, proxth [, ...
-  %   'h', h, 'N', N, 'verbose', verbose ] )
+  %   'h', h, 'N', N, 't', t, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
