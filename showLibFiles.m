@@ -38,6 +38,7 @@ function showLibFiles( varargin )
     pathDirs = strsplit( myPath, ':' );
 
     % Search in filenames
+    found = 0;
     for i=1:numel(pathDirs)
       if ~isempty( regexp( pathDirs{i}, libName, 'ONCE' ) )
         files = dir( pathDirs{i} );
@@ -45,13 +46,17 @@ function showLibFiles( varargin )
           if isempty( regexp(files(j).name, '^\.', 'ONCE' ) ) && ...
             ~isempty( regexpi(files(j).name, pattern, 'ONCE' ) )
 
+            found = 1;
             disp( files(j).name );
           end
         end
       end
     end
+    if found==0
+      disp('The pattern does not match with any filenames.');
+    end
 
-    found = 0;
+    foundWithin = 0;
     if ~strcmp( pattern, defaultPattern )
       % Search within files
       for i=1:numel(pathDirs)
@@ -65,9 +70,13 @@ function showLibFiles( varargin )
             while feof(fid) == 0
               thisLine = fgetl(fid);
               if regexpi( thisLine, pattern, 'ONCE' )
-                if found == 0
-                  fprintf('\nAlso found within these files: \n');
-                  found = 1;
+                if foundWithin == 0
+                  if found == 0
+                    fprintf('\nBut, it was found within these files: \n');
+                  else
+                    fprintf('\nAlso, it was found within these files: \n');
+                  end
+                  foundWithin = 1;
                 end
                 disp([ '  ', files(j).name ]);
                 break
