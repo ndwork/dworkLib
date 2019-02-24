@@ -12,6 +12,7 @@ function [x,y] = randPoissonDisc2D( r, varargin )
   % Ethan Johnson, Copyriht 2016
   %
   % Inspiration:
+  %  Fast Poisson Disk Sampling in Arbitrary Dimensions by Bridson
   %  + http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
   % 
   % Other reading:
