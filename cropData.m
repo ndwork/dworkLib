@@ -31,11 +31,11 @@ function out = cropData( data, N )
       continue;
     end
 
-    if N(i) > sData(i),
+    if N(i) > sData(i)
       errorMsg = ['Cropping size ', num2str(N(i)), ' for dimension ', ...
         num2str(i), ' is too large'];
       error(errorMsg);
-    end;
+    end
 
     halfS = sData(i)/2;
     if mod(sData(i),2)==0
