@@ -4,8 +4,8 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   %   'h', h, 'N', N, 'r', r, 's', s, 't0', t0, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
-  % search as described in "Fraction-variant beam orientation optimization
-  % for non-coplanar IMRT" by O'Connor et al. (2017)
+  search as described in "Fraction-variant beam orientation optimization
+  for non-coplanar IMRT" by O'Connor et al. (2017)
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
   % g is differentiable and h has a simple proximal operator.
   %
@@ -74,7 +74,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   theta = 1;
 
   for k=0:N-1
-    if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end;
+    if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     lastX = x;
@@ -93,7 +93,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       Dgy = gGrad( y );
       x = proxth( y - t * Dgy, t );
       breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t))*norm(x(:)-y(:),2)^2;
-      if g(x) <= breakThresh, break; end;
+      if g(x) <= breakThresh, break; end
       t = r*t;
     end
 
