@@ -63,6 +63,9 @@ function [x,y] = randPoissonDisc2D( r, varargin )
         && ~tooprox( [yj xj], l(1:n,:), r ) ) % in bounds & not close?
 
         n = n+1; l(n,:) = [yj xj]; % save in list
+        if mod( n, 1000 ) == 0
+          disp(['Made ', num2str(n), ' points.']);
+        end
         s = s+1; q(s,:) = [yj xj]; % add to queue
         c = true; % signal that candidate was found
         break; % quit making candidates
