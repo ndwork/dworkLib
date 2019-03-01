@@ -91,7 +91,7 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
 
   end
 
-  xStar = x;
+  xStar = y;
   disp([ 'Fista w Restart Number of restarts: ', num2str(nRestarts) ]);
 end
 
