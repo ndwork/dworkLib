@@ -16,10 +16,12 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
+  p.addParameter( 'debug', 1, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'polish', true, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
+  debug = p.Results.debug;
   polish = p.Results.polish;
-  
+
   M = ( samples ~= 0 );
   nIter = numel( samples );  % Note that A is square
 
@@ -49,7 +51,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
     out = tmp(:,:,1);
   end
 
-  %csReconFISTA2_checkAdjoints( samples, @F, @Fadj, @A, @Aadj )
+  %csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj )
 
   b = cat( 3, real(samples), imag(samples) );
   function out = g( x )
@@ -80,7 +82,6 @@ function recon = csReconFISTA( samples, lambda, varargin )
   x0 = real( ifft2( ifftshift( samples ) ) );
   % Could make this better with inverse gridding
 
-  debug = 0;
   t = 1;
   if debug
     nIter = 30;
@@ -90,7 +91,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
   else
     nIter = 100;
     %recon = fista( x0, @g, gGrad, proxth );                                                                   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter );                                           %#ok<UNRCH>
+    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter );
   end
 
   if polish
@@ -106,7 +107,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
 end
 
 
-function csReconFISTA2_checkAdjoints( samples, F, Fadj, A, Aadj )
+function csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
   % Check to make sure that Fadj is the adjoint of F
   x1 = rand( [size(samples) 2] );
   y1 = rand( [size(samples) 2] );
