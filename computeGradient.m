@@ -8,17 +8,17 @@ function out = computeGradient( in, varargin )
   p.addParameter( 'op', [], @(x) true );
   p.parse( varargin{:} );
   op = p.Results.op;
-  
-  
+
+
   if strcmp( 'transp', op )
     sIn = size( in );
     out = zeros( sIn(1:end-1) );
 
-    for dimIndx = 1 : ndims(in)
-      cmd2run = [ 'subIn = in(', repmat(':,', [ndims(in)-1]), num2str(dimIndx), ') = dimD;' ];
+    for dimIndx = 1 : sIn(end)
+      cmd2run = [ 'subIn = in(', repmat(':,', [1 ndims(in)-1]), num2str(dimIndx), ');' ];
       eval( cmd2run );
       STin = circshift( subIn, -1, dimIndx );
-      out = out + STin;
+      out = out + ( STin - subIn );
     end
 
   else
