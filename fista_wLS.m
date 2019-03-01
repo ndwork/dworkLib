@@ -4,8 +4,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   %   'h', h, 'N', N, 'r', r, 's', s, 't0', t0, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
-  search as described in "Fraction-variant beam orientation optimization
-  for non-coplanar IMRT" by O'Connor et al. (2017)
+  % search as described in "Fraction-variant beam orientation optimization
+  % for non-coplanar IMRT" by O'Connor et al. (2017)
+  %
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
   % g is differentiable and h has a simple proximal operator.
   %
@@ -21,7 +22,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % Optional Inputs:
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
-  % N - the number of iterations that FISTA will perform
+  % N - the number of iterations that FISTA will perform (default is 100)
   % r - the backtracking line search parameter; must be between 0 and 1
   %     (default is 0.5)
   % s - the scaling parameter each FISTA iteration; must be greater than 1
@@ -45,7 +46,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   p.addParameter( 'r', 0.5, @isnumeric );
   p.addParameter( 's', 1.25, @isnumeric );
   p.addParameter( 't0', 1, @isnumeric );
-  p.addParameter( 'verbose', 0, @isnumeric );
+  p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
@@ -54,9 +55,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   t0 = p.Results.t0;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
-  if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end;
-  if s <= 1, error('fista: s must be greater than 1'); end;
-  if t0 <= 0, error('fista: t0 must be greater than 0'); end;
+  if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end
+  if s <= 1, error('fista: s must be greater than 1'); end
+  if t0 <= 0, error('fista: t0 must be greater than 0'); end
   
   calculateObjectiveValues = 0;
   if nargout > 1
