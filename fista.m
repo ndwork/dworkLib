@@ -37,7 +37,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   p.addParameter( 'h', [] );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 't', 1, @isnumeric );
-  p.addParameter( 'verbose', 0, @isnumeric );
+  p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
@@ -45,7 +45,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   verbose = p.Results.verbose;
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
-  
+
   calculateObjectiveValues = 0;
   if nargout > 1
     if numel(h) == 0
@@ -61,14 +61,16 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
 
   for k=0:N-1
     if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end
-    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     x = z - t * gGrad( z );
+
     lastY = y;
     y = proxth( x, t );
+    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
+
     z = y + (k/(k+3)) * (y-lastY);
   end
 
-  xStar = x;
+  xStar = y;
 end
 
