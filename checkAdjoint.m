@@ -17,6 +17,10 @@ function [out,err] = checkAdjoint( x, f, varargin )
   %     and random values
   % nRand - number of random inputs to check
   %
+  % Outputs:
+  % out - returns true if check passed; otherwise, returns false
+  % err - returns the maximum relative error of all tests conducted
+  %
   % Written by Nicholas Dwork
   %
   % This software is offered under the GNU General Public License 3.0.  It

@@ -41,19 +41,15 @@ function out = smoothImg( in, varargin )
   end
 
   if strcmp( op, 'transp' )
-    if min( mod( N, 2 ) ) == 0, error('smoothImg only works with odd N'); end
-    sIn = size( in );
-    hN = floor( N / 2 );
-    adjIn = zeros( sIn + 2 * hN );
-
-    for i=1:sIn(2)
-      for j=1:sIn(1)
-        %disp([ j i ]);
-        adjIn( j:j+N(1)-1, i:i+N(2)-1 ) = ...
-          adjIn( j:j+N(1)-1, i:i+N(2)-1 ) + in(j,i) * h;
+    out = zeros( size(in) );
+    for i=1:N
+      for j=1:N
+        shiftJ = j - floor(N(1)/2) - 1;
+        shiftI = i - floor(N(2)/2) - 1;
+        shifted = shiftImg( in, [ shiftJ shiftI ] );
+        out = out + h(j,i) * shifted;
       end
     end
-    out = adjIn( hN(1)+1 : hN(1)+sIn(1), hN(2)+1 : hN(2)+sIn(2) );
 
   else
     out = imfilter( in, h );

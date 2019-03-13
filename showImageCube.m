@@ -44,7 +44,11 @@ function showImageCube( cube, varargin )
   sdevScale = p.Results.sdevScale;
 
   sCube = size( cube );
-  nImgs = sCube(3);
+  if ismatrix( cube )
+    nImgs = 1;
+  else
+    nImgs = sCube(3);
+  end
   if numel( nImgsPerRow ) == 0, nImgsPerRow = ceil( sqrt( nImgs ) ); end
 
   if scale <= 0, error('scale must be positive'); end
