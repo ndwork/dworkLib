@@ -1,5 +1,5 @@
 
-function [out,err] = checkAdjoint( x, f, varargin )
+function [out,err] = checkAdjoint( x, f_in, varargin )
   % out = checkAdjoint( x, f [, fAdj, 'tol', tol, 'y', y, 'nRand', nRand ] )
   %
   % Check whether the adjoint of f is implemented correctly
@@ -39,7 +39,12 @@ function [out,err] = checkAdjoint( x, f, varargin )
   tol = p.Results.tol;
   y = p.Results.y;
 
-  if numel( fAdj ) == 0, fAdj = @(x) f(x,'transp'); end
+  if numel( fAdj ) == 0
+    f = @(x) f_in( x, 'notransp' );
+    fAdj = @(x) f_in( x, 'transp' );
+  else
+    f = f_in;
+  end
 
   out = true;
 

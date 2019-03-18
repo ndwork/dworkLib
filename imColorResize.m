@@ -21,7 +21,7 @@ function out = imColorResize( img, newSize, varargin )
 
   if numel( newSize ) == 1
     sImg = size(img);
-    newChannelSize = sImg(1:2);
+    newChannelSize = sImg(1:2) * newSize;
   else
     newChannelSize = newSize(1:2);
   end
