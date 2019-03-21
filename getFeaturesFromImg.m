@@ -1,5 +1,5 @@
 
-function features = getFeaturesFromImg( n, varargin )
+function [features,values] = getFeaturesFromImg( n, varargin )
   % features = getFeaturesFromImg( n [, scale ] )
   %
   % Inputs:
@@ -19,10 +19,20 @@ function features = getFeaturesFromImg( n, varargin )
   % purpose.
 
   p = inputParser;
+  p.addRequired( 'n', @(x) isnumeric(x) && x>0 );
   p.addOptional( 'scale', 1, @isnumeric );
-  p.parse( varargin{:} );
+  p.parse( n, varargin{:} );
   scale = p.Results.scale;
 
   scaledFeatures = ginput(n);
   features = round( scaledFeatures / scale );
+
+  if nargout > 1
+    img = getimage;
+    values = zeros( n, 1 );
+    scaledFeatures = round( scaledFeatures );
+    for fIndx = 1:n
+      values(fIndx) = img( scaledFeatures(fIndx,2), scaledFeatures(fIndx,1) );
+    end
+  end
 end
