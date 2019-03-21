@@ -11,9 +11,9 @@ function angleMap = mri_mapB1( dataCube, varargin )
   mask = p.Results.mask;
   verbose = p.Results.verbose;
 
-  if size( dataCube, 3 ) ~= 2, error('mri_mapB1: must supply two images'); end;
-  if numel( angles ) ~= 2, error('mri_mapB1: must supply two angles'); end;
-  if numel( mask ) == 0, mask = ones( size(dataCube(:,:,1)) ); end;
+  if size( dataCube, 3 ) ~= 2, error('mri_mapB1: must supply two images'); end
+  if numel( angles ) ~= 2, error('mri_mapB1: must supply two angles'); end
+  if numel( mask ) == 0, mask = ones( size(dataCube(:,:,1)) ); end
 
   tbw = 8;
   rfDuration = 1.28;  % ms
@@ -23,8 +23,8 @@ function angleMap = mri_mapB1( dataCube, varargin )
 
   nRF = tbw * 100 + 1;
   rf = real( dzrf( nRF, tbw, 'ex', 'ms' ) )';  % Hamming windowed sinc function
-  rfSmall = rf / sum( rf ) * pi/3;
-  rfLarge = 2 * rfSmall;
+  rfLarge = rf / sum( rf ) * angles(2) * pi/180;
+  rfSmall = rf / sum( rf ) * angles(1) * pi/180;
 
   dtRF = rfDuration / (nRF-1);  % dtRf is time between samples of pulse
   nVoxLayers = tbw * 10 + 1;  % Number of layers to break the voxel up into
@@ -46,6 +46,8 @@ function angleMap = mri_mapB1( dataCube, varargin )
 
   R2C = mri_makeSigConversionMatrix_r2c();
   C2R = mri_makeSigConversionMatrix_c2r();
+  layerSigsSmall = zeros( nVoxLayers, 1 );
+  layerSigsLarge = zeros( nVoxLayers, 1 );
   sigsSmall = zeros( numel(b1s), 1 );
   sigsLarge = zeros( numel(b1s), 1 );
   for b1Indx=1:numel( b1s )
@@ -57,8 +59,6 @@ function angleMap = mri_mapB1( dataCube, varargin )
     [aLarge,bLarge] = abr( b1*rfLarge_total, gz_total, zSlice, B0 );
     rfMsSmall = mri_ab2Matrix( aSmall, bSmall );
     rfMsLarge = mri_ab2Matrix( aLarge, bLarge );
-    layerSigsSmall = zeros( nVoxLayers, 1 );
-    layerSigsLarge = zeros( nVoxLayers, 1 );
     for layer=1:nVoxLayers
       MprimeSmall = C2R * rfMsSmall(:,:,layer) * R2C * [0; 0; 1];
       MprimeLarge = C2R * rfMsLarge(:,:,layer) * R2C * [0; 0; 1];
