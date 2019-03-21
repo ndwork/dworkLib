@@ -56,35 +56,40 @@ function imH = imshowscale( img, varargin )
   xAxis = p.Results.xAxis;
   yAxis = p.Results.yAxis;
 
+  img = double(img);
+  
   if strcmp( 'nice', range )
     [~,imH] = imshownice( img, scale, 'method', method, 'sdevScale', sdevScale );
-  elseif numel(range) == 0
-    if ismatrix( img )
-      imH = imshow( imresize( img, scale, method ), range );
-    elseif ndims(img) == 3
-      imH = imshow( imColorResize( img, scale, method ), range );
-    else
-      error('wrong number of dimensions of img');
-    end
-  elseif numel(range) > 2
-    thisRange = [ min(range(:)) max(range(:)) ];
-    if ismatrix( img )
-      imH = imshow( imresize( img, scale, method ), thisRange );
-    elseif ndims(img) == 3
-      imH = imshow( imColorResize( img, scale, method ), thisRange );
-    else
-      error('wrong number of dimensions of img');
-    end
+
   else
+
     if ismatrix( img )
-      imH = imshow( imresize( img, scale, method ), range );
+      if numel( range ) == 0
+        thisRange = range;
+      else
+        thisRange = [ min(range(:)) max(range(:)) ];
+      end
+
+      imH = imshow( imresize( img, scale, method ), thisRange );
+
     elseif ndims(img) == 3
-      imH = imshow( imColorResize( img, scale, method ), range );
+
+      if numel( range ) > 0
+        minRange = min( range );
+        maxRange = max( range );
+        dRange = maxRange - minRange;
+        img = ( img - minRange ) / dRange;
+      end
+
+      imH = imshow( imColorResize( img, scale, method ) );
+
     else
-      error('wrong number of dimensions');
+      error('wrong number of dimensions of img');
+
     end
   end
-  
+
+
   if ischar( class(border) ) && strcmp(border,'none')
     displayBorder = zeros(1,4);
   elseif border < 0
