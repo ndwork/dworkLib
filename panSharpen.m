@@ -1,6 +1,6 @@
 
 function out = panSharpen( M, C, varargin )
-  % out = panSharpen( M, C/R [, G, B, IR, 'chWs', chWs, 'sigma', sigma ] )
+  % out = panSharpen( M, C/R [, G, B, IR, 'chWs', chWs, 'lambda', lambda, 'sigma', sigma ] )
   %
   % The algorithm implemented is described in "Fusion of Multispectral and Panchromatic
   % Images Using a Restoration-Based Method" by Zhenhua Li et al.
@@ -24,18 +24,20 @@ function out = panSharpen( M, C, varargin )
   % purpose.
 
   ds = size( M, 1 ) / size( C, 1 );
-  
+
   p = inputParser;
   p.addOptional( 'G', [], @isnumeric );
   p.addOptional( 'B', [], @isnumeric );
   p.addOptional( 'IR', [], @isnumeric );
   p.addParameter( 'chWs', [], @isnumeric );
+  p.addParameter( 'lambda', 1, @(x) isnumeric(x) && x>0 && numel(x)==1 );
   p.addParameter( 'sigma', ds/2, @isnumeric );
   p.parse( varargin{:} );
   G = p.Results.G;
   B = p.Results.B;
   IR = p.Results.IR;
   chWs = p.Results.chWs;
+  lambda = p.Results.lambda;
   sigma = p.Results.sigma;
 
   if ismatrix( C )
@@ -47,7 +49,7 @@ function out = panSharpen( M, C, varargin )
 
   if numel( chWs ) == 0
     if nChannels == 3
-      chWs = [ 0.2989, 0.5870, 0.1140 ];
+      chWs = [ 0.2989, 0.5870, 0.1140 ];  % luminance weights
     elseif nChannels ==4
       chWs = [ 0.23, 0.24, 0.11, 0.42 ];  % quickbird weights
     end
@@ -55,13 +57,11 @@ function out = panSharpen( M, C, varargin )
 
   x0 = repmat( M, [1 1 nChannels] );
   kSize = ceil( max( 5*sigma, 3 ) );
-  for i=1:numel(kSize)
-    if mod( kSize(i), 2 ) == 0, kSize(i) = kSize(i) + 1; end
+  for kIndx=1:numel(kSize)
+    if mod( kSize(kIndx), 2 ) == 0, kSize(kIndx) = kSize(kIndx) + 1; end
   end
 
   sM = size(M);
-  nM = numel(M);
-  chAs = cell( 1, 1, nChannels );
   sCh = [ size(C,1), size(C,2) ];
 
   lum = zeros( sCh );  % luminance image
@@ -115,21 +115,22 @@ function out = panSharpen( M, C, varargin )
   end
   %[out,err] = checkAdjoint( x0(:), @cA );
 
+  lambdaSq = lambda * lambda;
   function out = A( in, arg )
     if nargin < 2 || strcmp( arg, 'notransp' )
       mOut = mA( in );
-      cOut = cA( in );
+      cOut = lambdaSq * cA( in );
       out = [ mOut; cOut; ];
     else
       % Return the adjoint of the A operator
       mIn = in(1:numel(M));
       cIn = in(numel(M)+1:end);
-      out = mA( mIn, arg ) + cA( cIn, arg );
+      out = mA( mIn, arg ) + lambdaSq * cA( cIn, arg );
     end
   end
   %[out,err] = checkAdjoint( x0(:), @A );
 
-  b = [ M(:); C(:); ];
+  b = [ M(:); lambdaSq * C(:); ];
   [x,flag] = lsqr( @A, b, [], [], [], [], x0(:) );    %#ok<ASGLU>
   out = reshape( x, [ size(M) nChannels ] );
 end
