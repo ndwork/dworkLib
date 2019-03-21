@@ -21,10 +21,9 @@ function out = smoothImg( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultN = 5;
   defaultSigma = 0;
   p = inputParser;
-  p.addOptional( 'N', defaultN );
+  p.addOptional( 'N', [] );
   p.addParameter( 'gaussian', defaultSigma, @isnumeric );
   p.addParameter( 'op', 'notransp', @(x) true );
   p.parse( varargin{:} );
@@ -32,8 +31,14 @@ function out = smoothImg( in, varargin )
   sigma = p.Results.gaussian;
   op = p.Results.op;
 
-  if numel( N ) == 1, N = [ N N ]; end
+  if numel( N ) == 0
+    N = ceil( max( 5*sigma, 3 ) );
+    for i=1:numel(N)
+      if mod( N(i), 2 ) == 0, N(i) = N(i) + 1; end
+    end
+  end
 
+  if numel( N ) == 1, N = [ N N ]; end
 
   if sigma > 0
     % Gaussian filter with standard deviation sigma
