@@ -1,5 +1,5 @@
 
-function angleMap = mri_mapB1( dataCube, varargin )
+function angleMap = mri_doubleAngleMapB1( dataCube, varargin )
   %b1Map = mri_mapB1( dataCube [, angles, 'mask', mask, 'verbose', verbose' ] )
 
   p = inputParser;
