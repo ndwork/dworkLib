@@ -75,7 +75,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   theta = 1;
 
   for k=0:N-1
-    if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end
+    if verbose, disp([ 'FISTA (with Line Search) Iteration: ', num2str(k) ]); end
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     lastX = x;
@@ -96,6 +96,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t))*norm(x(:)-y(:),2)^2;
       if g(x) <= breakThresh, break; end
       t = r*t;
+      if verbose, disp([ '  Step size change to: ', num2str(t) ]); end
     end
 
     v = x + (1/theta) * ( x - lastX );

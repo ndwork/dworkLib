@@ -1,6 +1,6 @@
 
-function angleMap = mri_doubleAngleMapB1( dataCube, varargin )
-  %b1Map = mri_mapB1( dataCube [, angles, 'mask', mask, 'verbose', verbose' ] )
+function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
+  %b1ScaleMap = mri_mapB1( dataCube [, angles, 'mask', mask, 'verbose', verbose' ] )
 
   p = inputParser;
   p.addOptional( 'angles', [60 120], @isnumeric );
@@ -18,7 +18,7 @@ function angleMap = mri_doubleAngleMapB1( dataCube, varargin )
   tbw = 8;
   rfDuration = 1.28;  % ms
   sliceThickness = 0.5; % cm
-  b1s = 0.0:0.01:180/angles(2);
+  b1s = 0.0:0.01:1.5;
   B0 = 0;  % residual B0 offset
 
   nRF = tbw * 100 + 1;
@@ -46,11 +46,12 @@ function angleMap = mri_doubleAngleMapB1( dataCube, varargin )
 
   R2C = mri_makeSigConversionMatrix_r2c();
   C2R = mri_makeSigConversionMatrix_c2r();
+  simSigsSmall = cell( numel(b1s), 1 );
+  simSigsLarge = cell( numel(b1s), 1 );
+  %parfor b1Indx=1:numel( b1s )
+for b1Indx=1:numel( b1s )
   layerSigsSmall = zeros( nVoxLayers, 1 );
   layerSigsLarge = zeros( nVoxLayers, 1 );
-  sigsSmall = zeros( numel(b1s), 1 );
-  sigsLarge = zeros( numel(b1s), 1 );
-  for b1Indx=1:numel( b1s )
     if verbose ~= 0 && mod( b1Indx, 10 ) == 0
       disp([ 'Working on ', num2str(b1Indx), ' of ', numel( b1s ) ]);
     end
@@ -65,28 +66,18 @@ function angleMap = mri_doubleAngleMapB1( dataCube, varargin )
       layerSigsSmall( layer ) = MprimeSmall(1) + 1i * MprimeSmall(2);
       layerSigsLarge( layer ) = MprimeLarge(1) + 1i * MprimeLarge(2);
     end
-    sigsSmall( b1Indx ) = mean( layerSigsSmall );
-    sigsLarge( b1Indx ) = mean( layerSigsLarge );
+    simSigsSmall{ b1Indx } = sum( layerSigsSmall(:) );
+    simSigsLarge{ b1Indx } = sum( layerSigsLarge(:) );
   end
-  divDataSim = abs( sigsLarge ) ./ abs( sigsSmall );
-  simAngles = acos( 0.5 * divDataSim );
-  simAngles( ~isfinite( simAngles ) ) = 0;
+  simSigsSmall = cell2mat( simSigsSmall );
+  simSigsLarge = cell2mat( simSigsLarge );
 
-  idealSigsSmall = sin( angles(1) * pi/180 * b1s );
-  idealSigsLarge = sin( angles(2) * pi/180 * b1s );
-  idealAngles = acos( 0.5 * idealSigsLarge ./ idealSigsSmall );
-  idealAngles( ~isfinite(idealAngles) ) = 0;
+  simDiv = abs( simSigsLarge ) ./ abs( simSigsSmall );
+  b1s = b1s( isfinite( simDiv ) );
+  simDiv = simDiv( isfinite( simDiv ) );
 
-  divData = abs(dataCube(:,:,2)) ./ abs(dataCube(:,:,1)) .* mask;
-  divData = max( min( divData, 2 ), 0 );
-  angleMapIdeal = acos( 0.5 * divData ) .* mask;
-
-  angleMap = interp1( idealAngles, simAngles, angleMapIdeal(:) );
-  angleMap = reshape( angleMap, size( angleMapIdeal ) );
-  %figure; imshowscale( angleMap*180/pi, 3 ); titlenice( 'Angle Map with slice profile' );
-
-disp('NICK, YOU STILL NEED TO GET THE B1 MAP FROM THE ANGLE MAP');
-  
-  %error('How do I get the B1 map from the angle map?');
+  dataDiv = abs( dataCube(:,:,2) ) ./  abs( dataCube(:,:,1) );
+  b1ScaleMap = interp1( simDiv(:), b1s(:), dataDiv(:) );
+  b1ScaleMap = reshape( b1ScaleMap, [ size(dataCube,1), size(dataCube,2) ] );
 end
 
