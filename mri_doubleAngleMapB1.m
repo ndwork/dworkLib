@@ -40,7 +40,6 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
 
   if size( dataCube, 3 ) ~= 2, error('mri_mapB1: must supply two images'); end
   if numel( angles ) ~= 2, error('mri_mapB1: must supply two angles'); end
-  if numel( mask ) == 0, mask = ones( size(dataCube(:,:,1)) ); end
 
   if simple == 1
 
@@ -118,6 +117,6 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
     
   end
 
-  b1ScaleMap = b1ScaleMap .* mask;
+  if numel( mask ) > 0,  b1ScaleMap = b1ScaleMap .* mask; end
 end
 
