@@ -90,20 +90,24 @@ function [out1,out2] = alignDicoms( in1, in2, varargin )
 
   end
 
+
   closest2 = zeros( size(data1) );
   newZ2s = zeros( size(data1,3) );
+  sliceThickness1 = info1.SliceThickness;
   for i = 1 : size( data1, 3 )
     % Find the closest slice in data2
     thisZ1 = z1s( i );
-    [~,closestIndx] = min( abs( z2s - thisZ1 ) );
-    closest2(:,:,i) = data2( :, :, closestIndx );
-    newZ2s(i) = z2s( closestIndx );
+    [zDist,closestIndx] = min( abs( z2s - thisZ1 ) );
+    if zDist < sliceThickness1
+      closest2(:,:,i) = data2( :, :, closestIndx );
+      newZ2s(i) = z2s( closestIndx );
+    end
   end
   data2 = closest2;
   %z2s = newZ2s;
 
-  pxlSpacing1 = info1.PixelSpacing;  pos1 = info1.ImagePositionPatient;
-  pxlSpacing2 = info2.PixelSpacing;  pos2 = info2.ImagePositionPatient;
+  pxlSpacing1 = info1.PixelSpacing;           pxlSpacing2 = info2.PixelSpacing;
+  pos1 = info1.ImagePositionPatient;          pos2 = info2.ImagePositionPatient;
 
   if max( pxlSpacing2 ~= pxlSpacing1 ) == 1
     % scale image 2 so that pixels have the same size as image 1
