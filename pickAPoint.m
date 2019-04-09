@@ -11,6 +11,9 @@ function pt = pickAPoint( varargin )
   %   display
   % 'range' - the dynamic range to use in the display
   %
+  % Outputs:
+  % pt - [x y]
+  %
   % Written by Nicholas Dwork, Copyright 2018
   %
   % This software is offered under the GNU General Public License 3.0.  It
@@ -38,14 +41,14 @@ function pt = pickAPoint( varargin )
   end
   
   if numel( arg2 ) > 1
-    if numel( img ) > 0, error('Img already specified'); end;
+    if numel( img ) > 0, error('Img already specified'); end
     img = arg2;
   elseif numel( arg2 ) == 1
-    if numel( scale ) > 0, error('scale already specified'); end;
+    if numel( scale ) > 0, error('scale already specified'); end
     scale = arg2;
   end
 
-  if numel( scale ) == 0, scale = 1; end;
+  if numel( scale ) == 0, scale = 1; end
 
   if numel( img ) > 0
     figure; imshowscale( img, scale, 'range', range );
