@@ -91,47 +91,60 @@ function [out1,out2] = alignDicoms( in1, in2, varargin )
   end
 
 
-  closest2 = zeros( size(data1) );
-  newZ2s = zeros( size(data1,3) );
-  sliceThickness1 = info1.SliceThickness;
-  for i = 1 : size( data1, 3 )
-    % Find the closest slice in data2
-    thisZ1 = z1s( i );
-    [zDist,closestIndx] = min( abs( z2s - thisZ1 ) );
-    if zDist < sliceThickness1
-      closest2(:,:,i) = data2( :, :, closestIndx );
-      newZ2s(i) = z2s( closestIndx );
-    end
-  end
-  data2 = closest2;
-  %z2s = newZ2s;
-
-  pxlSpacing1 = info1.PixelSpacing;           pxlSpacing2 = info2.PixelSpacing;
-  pos1 = info1.ImagePositionPatient;          pos2 = info2.ImagePositionPatient;
+  pxlSpacing1 = info1.PixelSpacing;     pos1 = info1.ImagePositionPatient;
+  pxlSpacing2 = info2.PixelSpacing;     pos2 = info2.ImagePositionPatient;
 
   if max( pxlSpacing2 ~= pxlSpacing1 ) == 1
     % scale image 2 so that pixels have the same size as image 1
     hScale = pxlSpacing2(1) / pxlSpacing1(1);
     vScale = pxlSpacing2(2) / pxlSpacing1(2);
-    newSize = size( data2 ) .* [ vScale hScale ];
+    newSize = size( data2(:,:,1) ) .* [ vScale hScale ];
 
     scaled2 = zeros( newSize(1), newSize(2), size(data2,3) );
     for i = 1 : size( data2, 3 )
-      scaled2(:,:,i) = imresize( data2(:,:,i), newSize, 'bilinear' );
+      scaled2(:,:,i) = imresize( data2(:,:,i), newSize, 'nearest' );
     end
     data2 = scaled2;
+  end
+  if size(data2,1) < size(data1,1)
+    tmp = zeros( size(data1,1), size(data2,2), size(data2,3) );
+    tmp(1:size(data2,1),:,:) = data2;
+    data2 = tmp;
+    clear tmp;
+  end
+  if size(data2,2) < size(data1,2)
+    tmp = zeros( size(data2,1), size(data1,2), size(data2,3) );
+    tmp(:,1:size(data2,2),:) = data2;
+    data2 = tmp;
+    clear tmp;
   end
 
   % Perform in-plane shifts
   dPos = pos2 - pos1;
   dShift = dPos(2:-1:1) ./ pxlSpacing1;
-  shifted2 = zeros( size(data2) );
+  shifted2 = zeros( size( data2 ) );
   for i = 1 : size( data2, 3 )
     shifted2(:,:,i) = shiftImg( data2(:,:,i), round( dShift ) );
   end
-  shifted2 = shifted2( 1:size(data1,1), 1:size(data1,2), : );
+  shifted2 = shifted2( 1 : size(data1,1), 1 : size(data1,2), : );
 
-  out2 = shifted2;
+
+  closest2 = zeros( size(data1) );
+  newZ2s = zeros( size(data1,3) );
+  sliceThickness1 = info1.SliceThickness;
+  sliceThickness2 = info2.SliceThickness;
+  for i = 1 : size( data1, 3 )
+    % Find the closest slice in data2
+    thisZ1 = z1s( i );
+    [zDist,closestIndx] = min( abs( z2s - thisZ1 ) );
+    if zDist < sliceThickness1 + sliceThickness2
+      closest2(:,:,i) = shifted2( :, :, closestIndx );
+      newZ2s(i) = z2s( closestIndx );
+    end
+  end
+
+
+  out2 = closest2;
   out1 = data1;
 end
 
