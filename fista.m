@@ -60,13 +60,20 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   y = 0;
 
   for k=0:N-1
-    if verbose, disp([ 'FISTA Iteration: ', num2str(k) ]); end
 
     x = z - t * gGrad( z );
 
     lastY = y;
     y = proxth( x, t );
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
+
+    if verbose
+      verboseString = [ 'FISTA Iteration: ', num2str(k) ];
+      if calculateObjectiveValues > 0
+        verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+      end
+      disp( verboseString );
+    end
 
     z = y + (k/(k+3)) * (y-lastY);
   end
