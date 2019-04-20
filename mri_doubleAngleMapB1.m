@@ -113,6 +113,7 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
 
     dataDiv = abs( dataCube(:,:,2) ) ./  abs( dataCube(:,:,1) );
     b1ScaleMap = interp1( simDiv(:), b1s(:), dataDiv(:) );
+    b1ScaleMap( ~isfinite( b1ScaleMap ) ) = 0;
     b1ScaleMap = reshape( b1ScaleMap, [ size(dataCube,1), size(dataCube,2) ] );
     
   end
