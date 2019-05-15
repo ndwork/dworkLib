@@ -65,7 +65,7 @@ function t2Map = mri_mapT2( dataCube, TEs, varargin )
         t2MapCol(j) = thisT2;
       end
     end
-      
+
     t2MapCols{i} = t2MapCol;
   end
   p.clean;
