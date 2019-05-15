@@ -73,11 +73,12 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   t = t0;
   v = x;
   theta = 1;
-
+  
   for k=0:N-1
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
     if verbose
-      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k) ];
+      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
+      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', ...
           num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>

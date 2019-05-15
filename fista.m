@@ -49,7 +49,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   calculateObjectiveValues = 0;
   if nargout > 1
     if numel(h) == 0
-      warning('fista.m - Cannot calculate objective values without h function handle');
+      error( 'fista.m - Cannot calculate objective values without h function handle' );
     else
       objectiveValues = zeros(N,1);
       calculateObjectiveValues = 1;
@@ -68,7 +68,8 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
 
     if verbose
-      verboseString = [ 'FISTA Iteration: ', num2str(k) ];
+      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
+      verboseString = [ 'FISTA Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
       end
