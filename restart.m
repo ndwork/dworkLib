@@ -13,10 +13,10 @@ function restart( varargin )
   % purpose.
 
   type = [];
-  if nargin > 0, type = varargin{1}; end;
+  if nargin > 0, type = varargin{1}; end
 
   if strcmp( type, 'all' )
-    clear all;
+    clear all;  %#ok<CLALL>
 
     parforFiles = dir( 'parforProgress*.txt' );
     for fileIndx = 1 : numel( parforFiles )
