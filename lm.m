@@ -1,6 +1,6 @@
 
-function out = levenbergMarquardt( f, fPrime, x0, varargin )
-  % out = levenbergMarquardt( f, fPrime, x0 [, 'L0', L0, 'nIter', nIter ] )
+function out = lm( f, fPrime, x0, varargin )
+  % out = lm( f, fPrime, x0 [, 'L0', L0, 'nIter', nIter ] )
   %
   % This is an implementation of the Levenberg-Marquardt algorithm that
   % utilizes an analytic expression of the gradient of the objective function.
