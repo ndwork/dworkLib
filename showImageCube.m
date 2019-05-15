@@ -80,6 +80,12 @@ function showImageCube( cube, varargin )
         error( 'Unrecognized border value term' );
       end
     end
+  else
+    if isnumeric( borderValue )
+      outImg( outImg == tmpBorderValue ) = borderValue;
+    else
+      outImg( outImg == tmpBorderValue ) = maxCube;
+    end
   end
 
   imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
