@@ -26,18 +26,21 @@ function testDworkLib
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
   err = norm( cropped - [4 5 6 7 8], 2 );
-  if err > 0, error( 'cropData test failed' ); end;
+  if err > 0, error( 'cropData test failed' ); end
   cropped = cropData( 1:5, 4 );
   err = norm( cropped - [1 2 3 4], 2 );
-  if err > 0, error( 'cropData test failed' ); end;
+  if err > 0, error( 'cropData test failed' ); end
   cropped = cropData( 1:6, 4 );
   err = norm( cropped - [2 3 4 5] );
-  if err > 0, error( 'cropData test failed' ); end;
+  if err > 0, error( 'cropData test failed' ); end
   cropped = cropData( 1:5, 3 );
   err = norm( cropped - [2 3 4] );
-  if err > 0, error( 'cropData test failed' ); end;
+  if err > 0, error( 'cropData test failed' ); end
   disp('cropData test passed');
 
+  %%
+  dworkLib
+  
   %% evlautePoly
   c = [1 2 3];  x = [4 5 6];
   p1 = evaluatePoly( c, x );
@@ -72,7 +75,7 @@ function testDworkLib
     disp( 'fista test 1 passed' );
   else
     error( 'fista test 1 failed' );
-  end;
+  end
 
   %% fista test 2
   lambda = 50;
@@ -603,6 +606,21 @@ function testDworkLib
   %% showLibFiles
   fprintf('\nTesting showLibFiles: \n');
   showLibFiles( 'dworkLib' );
+
+  %% smoothImg
+  rng(1);
+  x = rand(50);
+  y = rand(50);
+  Ax = smoothImg( x, [5 6] );
+  ATy = smoothImg( y, [5 6], 'op', 'transp' );
+  tmp1 = dotP( x, ATy );
+  tmp2 = dotP( Ax, y );
+  err = abs( tmp1 - tmp2 );
+  if err < 1d-10
+    disp( 'smoothImg passed' );
+  else
+    error([ 'smoothImg failed with an error of ', num2str(err) ]);
+  end
 
   %% vecVolMatrixProd
   v = rand(1,5);
