@@ -8,7 +8,8 @@ function out = smoothImg( in, varargin )
   %   if op is 'transp' then adjoint is applied to in
   %
   % Optional Inputs:
-  % N - the size of each dimension of the smoothing kernel
+  % N - either a scalar or a 1D array specifying the size of each dimension of the
+  %     smoothing kernel
   % sigma - by default, the smoothing operator is a box car filter.
   %         if sigma is provided, then the smoothing operator is a Gaussian filter
   % op - either 'notransp' (default, meaning filter), or 'transp' (meaning return the
@@ -52,26 +53,39 @@ function out = smoothImg( in, varargin )
   out = zeros( size(in) );
 
   if strcmp( op, 'transp' )
-    if mod( N(1), 2 ) == 0, error('N must be odd'); end
-    if mod( N(2), 2 ) == 0, error('N must be odd'); end
+
+    if mod( N(1), 2 ) == 0
+      halfN1 = N(1)/2;
+    else
+      halfN1 = ceil( N(1)/2 );
+    end
+    
+    if mod( N(2), 2 ) == 0
+      halfN2 = N(2)/2;
+    else
+      halfN2 = ceil( N(2)/2 );
+    end
 
     for i=1:N(2)
-      shiftI = i - floor(N(2)/2) - 1;
+      shiftI = i - halfN2;
 
       for j=1:N(1)
-        shiftJ = j - floor(N(1)/2) - 1;
+        shiftJ = j - halfN1;
 
+        shifted = shiftImg( in, [ shiftJ shiftI 0 ] );
         for ch=1:nChannels
-          shifted = shiftImg( in, [ shiftJ shiftI 0 ] );
           out(:,:,ch) = out + h(j,i) * shifted;
         end
       end
     end
 
   else
-    for ch=1:nChannels
-      out(:,:,ch) = imfilter( in(:,:,ch), h, 'same' );
+
+    outCells = cell( 1, 1, nChannels );
+    parfor ch=1:nChannels
+      outCells{ch} = imfilter( in(:,:,ch), h, 'same' );
     end
+    out = cell2mat( outCells );
 
   end
 end
