@@ -608,11 +608,10 @@ function testDworkLib
   showLibFiles( 'dworkLib' );
 
   %% smoothImg
-  rng(1);
   x = rand(50);
   y = rand(50);
-  Ax = smoothImg( x, [5 6] );
-  ATy = smoothImg( y, [5 6], 'op', 'transp' );
+  Ax = smoothImg( x, [6 5] );
+  ATy = smoothImg( y, [6 5], 'op', 'transp' );
   tmp1 = dotP( x, ATy );
   tmp2 = dotP( Ax, y );
   err = abs( tmp1 - tmp2 );
