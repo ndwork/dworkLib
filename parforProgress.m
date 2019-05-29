@@ -67,27 +67,42 @@ classdef parforProgress
     end
 
     % Member functions
-    function clean( obj )
-      delete( obj.tmpFile );
+    function clean( obj, varargin )
+      p = inputParser;
+      p.addOptional( 'type', [], @(x) true );
+      p.parse( varargin{:} );
+      type = p.Results.type;
+
+      if strcmp( type, 'all' )
+        parforProgressFiles = dir( './parforProgress*.txt' );
+        for fileIndx = 1 : numel( parforProgressFiles )
+          delete( parforProgressFiles(fileIndx).name );
+        end
+      end
+
+      if exist( obj.tmpFile, 'file' )
+        delete( obj.tmpFile );
+      end
     end
 
     function progress( obj, n, varargin )
       p = inputParser;
       p.addOptional( 'downsample', 1, @isnumeric );
+      p.addParameter( 'msgHdr', [], @(x) true );
       p.parse( varargin{:} );
       downsample = p.Results.downsample;
+      moreMsgHdr = p.Results.msgHdr;
 
       fid = fopen( obj.tmpFile, 'a' );
-      if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end;
+      if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end
       nowTime = datestr( now, 'yyyy-mm-dd HH:MM:SS.FFF');
       fprintf( fid, [ '%d: ', nowTime, '\n' ], n );
         % n is the index of the current iteration
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
       if mod( n, downsample )==0
-        disp([obj.msgHdr, 'Working on ', num2str(n), ' of ', ...
-          num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), ...
-          '%' ]);
+        disp([obj.msgHdr, moreMsgHdr, 'Working on ', num2str(n), ' of ', ...
+          num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
         drawnow( 'update' );
       end
     end
