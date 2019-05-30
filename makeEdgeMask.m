@@ -16,7 +16,7 @@ function mask = makeEdgeMask( sz, edge )
   % implied warranties of merchantability or fitness for a particular 
   % purpose.
 
-  if edge < 1, error('Edge must be >= 1'); end;
+  if edge < 1, error('Edge must be >= 1'); end
 
   mask = zeros( sz );
   mask(1:edge,:) = 1;
