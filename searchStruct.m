@@ -13,6 +13,7 @@ function matches = searchStruct( in, el2Match, varargin )
   %   Can either be 'fieldnames' or 'values'.
   %
   % Written by Nicholas - Copyright 2019
+  % This file is part of dworkLib located at www.github.com/ndwork/dworkLib
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
