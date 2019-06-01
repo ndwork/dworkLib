@@ -30,7 +30,7 @@ function [ offResMap, phaseOffsetMap ] = mri_mapOffRes( dataCube, TEs, varargin 
   mask = p.Results.mask;
 
   sData = size( dataCube );
-  if numel( mask ) == 0, mask=ones( sData(1:2) ); end;
+  if numel( mask ) == 0, mask=ones( sData(1:2) ); end
   %showImageCube( mask.*abs(dataCube), showScale );  titlenice('t1 ir Data');
 
   sData = size( dataCube );
@@ -40,7 +40,7 @@ function [ offResMap, phaseOffsetMap ] = mri_mapOffRes( dataCube, TEs, varargin 
   phaseOffsetMap = zeros( sData(1:2) );
   for i=1:sData(2)
     for j=1:sData(1)
-      if mask(j,i) == 0, continue; end;
+      if mask(j,i) == 0, continue; end
       unwrapped = squeeze( unwrap( squeeze( angles(j,i,:) ) ) );
       coeffs = fitPolyToData( 1, TEs, unwrapped );
       phaseOffsetMap(j,i) = coeffs(1);
