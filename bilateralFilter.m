@@ -1,6 +1,7 @@
 
 function out = bilateralFilter( img, varargin )
-  % out = bilateralFilter( img, [ 'S', S, 'sigmaD', sigmaD, 'sigmaR', sigmaR ] );
+  % out = bilateralFilter( img, [ 'S', S, 'sigmaD', sigmaD, ...
+  %   'sigmaR', sigmaR, 'verbose', verbose ] );
   %
   % Inputs
   %   img: the input image to be denoised
@@ -10,6 +11,7 @@ function out = bilateralFilter( img, varargin )
   %   S: the length of each side of the kernel (must be odd)
   %   sigmaD: euclidean distance spread parameter
   %   sigmaR: photometric distance spread parameter
+  %   verbose: displays status
   %
   % Outputs
   %   out: the denoised image
@@ -25,41 +27,45 @@ function out = bilateralFilter( img, varargin )
   p.addParameter( 'S', defaultS, isPositiveAndOdd );
   p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
   p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( img, varargin{:} );
   s = p.Results.S;
   sigmaD = p.Results.sigmaD;
   sigmaR = p.Results.sigmaR;
+  verbose = p.Results.verbose;
   
   if ismatrix(img)
-    out = bilateralFilter_2D( img, s, sigmaD, sigmaR );
+    out = bilateralFilter_2D( img, s, sigmaD, sigmaR, verbose );
   elseif ndims(img)==3
-    out = bilateralFilter_3D( img, s, sigmaD, sigmaR );
+    out = bilateralFilter_3D( img, s, sigmaD, sigmaR, verbose );
   end
 end
 
 
-function out = bilateralFilter_2D( img, s, sigmaD, sigmaR )
+function out = bilateralFilter_2D( img, s, sigmaD, sigmaR, verbose )
 
   dKernel = fspecial( 'gaussian', s, sigmaD );
   halfS = floor(s/2);
   varR = sigmaR * sigmaR;
 
   sImg = size( img );
-  jCells = cell( sImg(1), 1 );
-  firstJ = ceil(s/2);
-  lastJ = sImg(1)-floor(s/2);
-  for j=1:sImg(1), jCells{j}=zeros(1,sImg(2)); end;
+
+  firstJ = ceil(s/2);   lastJ = sImg(1)-floor(s/2);
+  firstI = ceil(s/2);   lastI = sImg(2)-floor(s/2);
+  jCells = cell( lastJ - firstJ + 1, 1 );
+
   p = parforProgress( lastJ-firstJ+1 );
-  parfor j=firstJ:lastJ
-    p.progress( j-firstJ+1, 50 );                                                                   %#ok<PFBNS>
-    tmp = zeros( 1, sImg(2) );                                                             %#ok<PFBNS>
-    imgLine = img( j-halfS:j+halfS, : );                                                   %#ok<PFBNS>
+  parfor j=1:lastJ-firstJ+1
+    if verbose == true, p.progress( j, 50 ); end
 
-    for i=ceil(s/2):sImg(2)-floor(s/2)
+    tmp = zeros( 1, lastI-firstI+1 );
+    imgLine = img( j+firstJ-1-halfS:j+firstJ-1+halfS, : );   %#ok<PFBNS>
+
+    for i=1:lastI-firstI+1
       %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS );
-      subImg = imgLine( :, i-halfS : i+halfS );
+      subImg = imgLine( :, i+firstI-1-halfS : i+firstI-1+halfS );
 
-      pKernel = exp( -( img(j,i) - subImg ).^2 / ( 2 * varR ) );
+      pKernel = exp( -( img(j+firstJ-1,i+firstI-1) - subImg ).^2 / ( 2 * varR ) );
 
       weights = pKernel .* dKernel;
       weights = weights / sum( weights(:) );
@@ -68,32 +74,36 @@ function out = bilateralFilter_2D( img, s, sigmaD, sigmaR )
     end
     jCells{j} = tmp;
   end
-  out = cell2mat( jCells );
   p.clean;
+  out = img;
+  out(firstJ:lastJ,firstI:lastI) = cell2mat( jCells );
 end
 
 
-function out = bilateralFilter_3D( img, s, sigmaD, sigmaR )
+function out = bilateralFilter_3D( img, s, sigmaD, sigmaR, verbose )
 
   dKernel = fspecial3d( 'gaussian', s, sigmaD );
   halfS = floor(s/2);
   varR = sigmaR * sigmaR;
 
   sImg = size( img );
-  sliceCells = cell(1,1,sImg(3));
-  firstK = ceil(s/2);
-  lastK = sImg(3)-floor(s/2);
-  for k=1:lastK, sliceCells{k} = zeros( sImg(1:2) ); end;
-  p = parforProgress( lastK-firstK+1 );
-  parfor k=firstK:lastK
-    p.progress( k-firstK+1 );                                                              %#ok<PFBNS>
-    tmp = zeros( sImg(1:2) );                                                              %#ok<PFBNS>
-    kImg = img(:,:,k-halfS:k+halfS);                                                       %#ok<PFBNS>
+  firstJ = ceil(s/2);   lastJ = sImg(1)-floor(s/2);
+  firstI = ceil(s/2);   lastI = sImg(2)-floor(s/2);
+  firstK = ceil(s/2);   lastK = sImg(3)-floor(s/2);
+  sliceCells = cell(1,1,lastK-firstK+1);
 
-    for j=ceil(s/2):sImg(1)-floor(s/2)
-      for i=ceil(s/2):sImg(2)-floor(s/2)
-        %subImg = img( j-halfS:j+halfS, i-halfS:i+halfS, k-halfS:k+halfS );
-        subImg = kImg( j-halfS:j+halfS, i-halfS:i+halfS, : );
+  p = parforProgress( lastK-firstK+1 );
+  parfor k=1:lastK-firstK+1
+    if verbose == true, p.progress( k ); end   %#ok<PFBNS>
+
+    tmp = zeros( sImg(1:2) );   %#ok<PFBNS>
+    kImg = img(:,:,k+firstK-1-halfS:k+firstK-1+halfS);   %#ok<PFBNS>
+
+    for j=1:lastJ-firstJ+1
+      for i=1:lastI-firstI+1
+
+        subImg = kImg( j+firstJ-1-halfS:j+firstJ-1+halfS, ...
+                       i+firstI-1-halfS:i+firstI-1+halfS, : );
 
         pKernel = exp( -( img(j,i,k) - subImg ).^2 / ( 2 * varR ) );
 
@@ -106,7 +116,8 @@ function out = bilateralFilter_3D( img, s, sigmaD, sigmaR )
     sliceCells{1,1,k} = tmp;
   end
   p.clean;
-  out = cell2mat( sliceCells );
+  out = img;
+  out(firstJ:lastJ,firstI:lastI,firstK:lastK) = cell2mat( sliceCells );
 end
 
 
