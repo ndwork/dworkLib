@@ -1,6 +1,7 @@
 
 function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
-  % b1ScaleMap = mri_mapB1( dataCube [, angles, 'mask', mask, 'simple', simple, 'verbose', verbose' ] )
+  % b1ScaleMap = mri_mapB1( dataCube [, angles, 'mask', mask, 'alg', alg, ...
+  %   'verbose', verbose' ] )
   %
   % Performs double angle B1 mapping
   %
@@ -30,18 +31,18 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
   p = inputParser;
   p.addOptional( 'angles', [60 120], @isnumeric );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) );
-  p.addParameter( 'simple', 1, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'alg', [], @(x) true );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   angles = p.Results.angles;
   mask = p.Results.mask;
-  simple = p.Results.simple;
+  alg = p.Results.alg;
   verbose = p.Results.verbose;
 
   if size( dataCube, 3 ) ~= 2, error('mri_mapB1: must supply two images'); end
   if numel( angles ) ~= 2, error('mri_mapB1: must supply two angles'); end
 
-  if simple == 1
+  if strcmp( alg, 'simple' )
 
     singleAngleImg = abs( dataCube(:,:,1) );
     doubleAngleImg = abs( dataCube(:,:,2) );
