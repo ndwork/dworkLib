@@ -43,13 +43,15 @@ function [scaling,imH] = imshownice( img, varargin )
   sdevScale = p.Results.sdevScale;
   border = p.Results.border;
 
-  meanImg = mean( real(img(:)) );
+  if numel( sdevScale ) == 0, sdevScale = defaultSDevScale; end
+  
+  medianImg = median( real(img(:)) );
   sdevImg = std( real(img(:)) );
 
   if ismatrix( img )
     % Grayscale image
     tmp = imresize( img, scale, method );
-    scaling = [ meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg ];
+    scaling = [ medianImg - sdevScale*sdevImg, medianImg + sdevScale*sdevImg ];
     imH = imshow( tmp, scaling );
   else
     % Color image
@@ -58,8 +60,8 @@ function [scaling,imH] = imshownice( img, varargin )
     for i=1:sImg(end)
       tmp(:,:,i) = imresize( img(:,:,i), scale, method );
     end
-    inMin = meanImg - sdevScale*sdevImg;
-    inMax = meanImg + sdevScale*sdevImg;
+    inMin = medianImg - sdevScale*sdevImg;
+    inMax = medianImg + sdevScale*sdevImg;
     scaling = [inMin inMax];
     scaled = scaleImg( tmp, scaling, [0 1] );
     imH = imshow( scaled );
