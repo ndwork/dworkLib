@@ -7,10 +7,10 @@ function newParams = updateScaleShifts( g, gPrime, xs, ys, beta, alpha, ...
   %   'findBeta', findBeta, 'findAlpha', findAlpha, 'findGamma', findGamma ] )
   %
   % Compute a projected (sub)gradient descent update on the scaling and shifting
-  % parameters to minimize
+  % parameters to minimize || ys - beta * g( alpha * xs - domainShift ) ||_2
   %
   % The parameters are beta, alpha, and gamma
-  % ts - the domain values of the gamma variate function
+  % xs - the domain values of the gamma variate function
   % ys - the noisy outputs of the shifted and scaled gamma variate function
   %
   % Inputs:
