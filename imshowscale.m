@@ -26,7 +26,7 @@ function imH = imshowscale( img, varargin )
   %   either 'noBorder' or a value in pixels (default is 10) or an array
   %   with four elements [ left bottom right top ]
   %
-  % Written by Nicholas - Copyright 2017
+  % Written by Nicholas Dwork - Copyright 2017
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
