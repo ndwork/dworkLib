@@ -39,7 +39,7 @@ function [out,error] = isEven1D( data, thresh )
   end
 
   error = norm( mirrorData(:) - data(:), 2 ) / norm( data(:), 2 );
-  if error > thresh, out = false; else out = true; end;
+  if error > thresh, out = false; else out = true; end   %#ok<SEPEX>
 end
 
 
@@ -55,6 +55,6 @@ function [out,error] = isEven2D( img, thresh )
   end
 
   error = norm( mirrorImg(:) - img(:), 2 ) / norm( img(:), 2 );
-  if error > thresh, out = false; else out = true; end;
+  if error > thresh, out = false; else out = true; end   %#ok<SEPEX>
 end
 
