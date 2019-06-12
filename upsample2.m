@@ -17,11 +17,8 @@ function out = upsample2( img, n )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel(n)==1
-    n = n * ones(ndims(img),1);
-  end
+  if numel(n)==1, n = n * ones(ndims(img),1); end
 
   tmp = upsample( img, n(1) );
-  tmp2 = upsample( tmp', n(2) );
-  out = tmp2';
+  out = upsample( tmp', n(2) )';
 end
