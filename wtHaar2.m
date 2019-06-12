@@ -26,9 +26,6 @@ function wt = wtHaar2( img, varargin )
   p.parse( varargin{:} );
   split = p.Results.split;
 
-  % H/L - High / Low pass filter
-  % h/v - horizontal / vertical direction
-
   wt1 = img(1:2:end-1,:) + img(2:2:end,:);
   wt11 = wt1(:,1:2:end-1) + wt1(:,2:2:end);
   wt12 = wt1(:,1:2:end-1) - wt1(:,2:2:end);
