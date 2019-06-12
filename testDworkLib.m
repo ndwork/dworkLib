@@ -38,9 +38,34 @@ function testDworkLib
   if err > 0, error( 'cropData test failed' ); end
   disp('cropData test passed');
 
-  %%
+  %% deaubechies
+  sig = rand(8,1);
+  split = [1 0];
+  wt = wtDeaubechies( sig, split );
+  sigHat = iwtDeaubechies( wt, split );
+  err = norm( sig - sigHat, 2 );
+  if err > 1d-12
+    error( ['wtDeaubechies error: ', num2str(err,2)] );
+  else
+    disp('wtDeaubechies test passed');
+  end
+
+  %% deaubechies adjoint
+  x = rand(8,1);
+  y = rand(8,1);
+  split = [ 1 0 ];
+  wtx = wtDeaubechies( x, split );
+  iwty = iwtDeaubechies( y, split );
+  err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
+  if err > 1d-12
+    error( 'wtHaar is not orthogonal' );
+  else
+    disp('wtHaar looks to be orthogonal');
+  end
+
+  %% dworkLib
   dworkLib
-  
+
   %% evlautePoly
   c = [1 2 3];  x = [4 5 6];
   p1 = evaluatePoly( c, x );
@@ -167,7 +192,7 @@ function testDworkLib
   end
 
   %% haar
-  sig = rand(1,8);
+  sig = rand(8,1);
   split = [1 0];
   wt = wtHaar( sig, split );
   sigHat = iwtHaar( wt, split );
@@ -179,8 +204,8 @@ function testDworkLib
   end
 
   %% haar adjoint
-  x = rand(1,8);
-  y = rand(1,8);
+  x = rand(8,1);
+  y = rand(8,1);
   split = [ 1 0 ];
   wtx = wtHaar( x, split );
   iwty = iwtHaar( y, split );
@@ -188,7 +213,7 @@ function testDworkLib
   if err > 1d-12
     error( 'wtHaar is not orthogonal' );
   else
-    disp('wtHaar is orthogonal');
+    disp('wtHaar looks to be orthogonal');
   end
 
   %% haar2

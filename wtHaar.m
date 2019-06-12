@@ -43,5 +43,5 @@ function wt = wtHaar( sig, varargin )
     end
   end
 
-  wt = [wt1 wt2];
+  wt = [wt1; wt2;];
 end

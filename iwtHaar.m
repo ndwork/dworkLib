@@ -47,7 +47,7 @@ function sig = iwtHaar( wt, varargin )
   sig1(2:2:end) = wt1;
 
   sig2 = upsample( wt2, 2 );
-  sig2 = [sig2(1) sig2(2:end) - sig2(1:end-1)];
+  sig2 = [ sig2(1); sig2(2:end) - sig2(1:end-1); ];
 
   sig = 1/sqrt(2) * ( sig1 + sig2 );
 end
