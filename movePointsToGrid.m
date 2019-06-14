@@ -41,7 +41,7 @@ function [griddedPts,samples] = movePointsToGrid( pts, mins, maxs, Ns )
 
     minIndxs = cell(nDims,1);
     for j=1:nDims
-      disp([ '(j,i): ', num2str(j), ', ', num2str(i) ]);
+      %disp([ '(j,i): ', num2str(j), ', ', num2str(i) ]);
 
       theseCoords = griddedCoords{j};
       [~,minIndx] = min( abs( pts(j,i) - theseCoords ) );
