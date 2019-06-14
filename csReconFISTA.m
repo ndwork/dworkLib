@@ -16,26 +16,30 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
-  p.addParameter( 'debug', 1, @(x) isnumeric(x) || islogical(x) );
-  p.addParameter( 'polish', true, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'debug', false, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'waveletType', 'Haar', @(x) true );
   p.parse( varargin{:} );
   debug = p.Results.debug;
   polish = p.Results.polish;
+  waveletType = p.Results.waveletType;
+  verbose = p.Results.verbose;
 
   M = ( samples ~= 0 );
-  nIter = numel( samples );  % Note that A is square
+  nSamples = numel( samples );  % Note that A is square
 
   % A = M F Re , A' = Re * F' * M
   % A' * A = Re * F' * M * F * Re
   % gGrad = A'*A*x - A'*b;
 
   function out = F( x )
-    Fx = 1/sqrt(nIter) .* fftshift( fft2( x(:,:,1) + 1i * x(:,:,2) ) );
+    Fx = 1/sqrt(nSamples) .* fftshift( fft2( x(:,:,1) + 1i * x(:,:,2) ) );
     out = cat( 3, real(Fx), imag(Fx) );
   end
 
   function out = Fadj( y )
-    Fadjy = sqrt(nIter) * ifft2( ifftshift( y(:,:,1) + 1i * y(:,:,2) ) );
+    Fadjy = sqrt(nSamples) * ifft2( ifftshift( y(:,:,1) + 1i * y(:,:,2) ) );
     out = cat( 3, real(Fadjy), imag(Fadjy) );
   end
 
@@ -66,8 +70,18 @@ function recon = csReconFISTA( samples, lambda, varargin )
   split = zeros(4);  split(1,1) = 1;
   %split = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
   %split = [ 1 0; 0 0; ];
-  W = @(x) wtHaar2( x, split );
-  WT = @(y) iwtHaar2( y, split );
+
+  if strcmp( waveletType, 'Deaubechies' )
+    W = @(x) wtDeaubechies2( x, split );
+    WT = @(y) iwtDeaubechies2( y, split );
+
+  elseif strcmp( waveletType, 'Haar' )
+    W = @(x) wtHaar2( x, split );
+    WT = @(y) iwtHaar2( y, split );
+
+  else
+    error( 'Unrecognized wavelet type' );
+  end
 
   proxth = @(x,t) WT( softThresh( W(x), t*lambda ) );
     % The proximal operator of || W x ||_1 was determined using
@@ -84,19 +98,19 @@ function recon = csReconFISTA( samples, lambda, varargin )
 
   t = 1;
   if debug
-    nIter = 30;
+    nIter = 100;
     %[recon,oValues] = fista( x0, @g, gGrad, proxth, 'h', @h, 'verbose', verbose );                            %#ok<ASGLU>
     [recon,oValues] = fista_wLS( x0, @g, gGrad, proxth, 'h', @h, ...
-      't0', t, 'N', nIter, 'verbose', 1 );                                                                     %#ok<ASGLU>
+      't0', t, 'N', nIter, 'verbose', verbose );                                                                     %#ok<ASGLU>
   else
     nIter = 100;
     %recon = fista( x0, @g, gGrad, proxth );                                                                   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter );
+    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter, 'verbose', verbose );
   end
 
   if polish
     maskW = softThresh( W(recon), t*lambda ) ~= 0;
-    proxth = @(x,t) WT( maskW.*W(x) );
+    proxth = @(x,t) WT( maskW .* W(x) );
     if debug
       [recon,oValues2] = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, ...
         'N', nIter, 't0', t, 'verbose', 1 );                                                                   %#ok<ASGLU>
