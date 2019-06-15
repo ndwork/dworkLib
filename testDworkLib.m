@@ -12,6 +12,19 @@ function testDworkLib
   figure; imshowscale( [noisyImg, denoisedImg], 3 );
   title('Bilateral Filter Result');
 
+  %% binarySearch
+  fprintf( '\nTesting binarySearch: \n' );
+  trueRoot = 3;
+  f = @(x) 2 * ( x - trueRoot );
+  xLB = -10;  xUB = 10;
+  tol = 1d-4;
+  xRoot = binarySearch( f, xLB, xUB, 'tol', tol, 'nMax', 10000 );
+  if abs( xRoot - trueRoot ) < tol
+    disp( 'binarySearch passed' );
+  else
+    error( 'binarySearch failed' );
+  end
+
   %% bisection method
   fprintf('\nTesting bisection method: \n');
   myFunc = @(x) x^2 - 80;
