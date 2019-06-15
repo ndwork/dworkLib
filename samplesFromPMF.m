@@ -1,6 +1,6 @@
 
-function pmfSamples = samplesFromPMF( values, pmf, varargin )
-  % pmfSamples = samplesFromPMF( values, pdf [, N ] )
+function pmfSamples = samplesFromPMF( pmf, values, varargin )
+  % pmfSamples = samplesFromPMF( pmf, values [, N ] )
   %
   % Samples from a specified probability mass function
   %
@@ -36,5 +36,5 @@ function pmfSamples = samplesFromPMF( values, pmf, varargin )
 
   uSamples = rand( N, 1 );  % uniform samples
 
-  pmfSamples = interp1( cmf, values, uSamples, 'nearest' );
+  pmfSamples = interp1( cmf, values, uSamples, 'nearest', 'extrap' );
 end
