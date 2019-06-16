@@ -204,6 +204,19 @@ function testDworkLib
     error('findTransWithPCC failed');
   end
 
+  %% goldenSectionSearch
+  fprintf( '\nTesting goldenSectionSearch: \n' );
+  trueMin = 3;
+  f = @(x) (x-trueMin)^2+8;
+  xLB = -10;  xUB = 10;
+  tol = 1d-4;
+  xMin = goldenSectionSearch( f, xLB, xUB, 'tol', tol, 'nMax', 10000 );
+  if abs( xMin - trueMin ) < tol
+    disp( 'goldenSectionSearch passed' );
+  else
+    error( 'goldenSectionSearch failed' );
+  end
+
   %% haar
   sig = rand(8,1);
   split = [1 0];
