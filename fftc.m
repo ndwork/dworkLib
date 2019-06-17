@@ -1,11 +1,17 @@
 
 function out = fftc( in, varargin )
-  % out = fftc( in, varargin )
+  % out = fftc( in [, n, dim, 'unitary', true/false ] )
   %
-  % Compute the cenetered fft
+  % Compute the centered fft
   %
   % Inputs:
   % in - an array (of any number of dimensions)
+  %
+  % Optional Inputs:
+  % n - zero pads to this number of elements and then perform an fft
+  % dim - if supplied, only does an fft along this dimension
+  % m,n - if a two dimensional fft, the zero pads to size [m n] and performs fft
+  % sz - zero pads to array of this size and then performs multi-dimensional fft
   %
   % Written by Nicholas Dwork, Copyright 2019
   %
@@ -15,20 +21,39 @@ function out = fftc( in, varargin )
   % purpose.
 
   p = inputParser;
-  p.addOptional( 'type', [], @(x) true )
+  p.addOptional( 'n', [], @(x) numel(x) == 0 || ispositive(x) );
+  p.addOptional( 'dim', [], @isnumeric );
+  p.addParameter( 'unitary', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
-  type = p.Results.type;
+  dim = p.Results.dim;
+  n = p.Results.n;
+  unitary = p.Results.unitary;
 
-  switch ndims( in )
-    case 1
-      out = fftshift( fft( in ) );
-    case 2
-      out = fftshift( fft2( in ) );
-    otherwise
-      out = fftshift( fftn( in ) );
+  if numel( dim ) > 0
+    out = fftshift( fft( in, n, dim ) );
+
+  else
+
+    switch ndims( in )
+      case 1
+        out = fftshift( fft( in, n ) );
+
+      case 2
+        if numel( n ) > 0 && numel( n ) ~= 2
+          error( 'sz has the wrong number of elements' );
+        end
+        out = fftshift( fft2( in, n(1), n(2) ) );
+
+      otherwise
+        if numel( sz ) ~= ndims( in )
+          error( 'sz has the wrong number of elements' );
+        end
+        out = fftshift( fftn( in, n ) );
+    end
+
   end
 
-  if strcmp( type, 'unitary' )
+  if unitary == true
     out = out / sqrt( numel(in) );
   end
 
