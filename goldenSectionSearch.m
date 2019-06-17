@@ -1,9 +1,10 @@
 
-
 function out = goldenSectionSearch( f, LB, UB, varargin )
   % out = goldenSectionSearch( f, LB, UB [, 'tol', tol, 'nMax', nMax ] )
   %
   % finds the minimal point of the function f using a binary search
+  % Written according to the notes written by Wotao Yin at
+  % http://www.math.ucla.edu/~wotaoyin/math273a/slides/Lec3a_1d_search_273a_2015_f.pdf
   %
   % Inputs:
   % f - function handle
@@ -29,37 +30,37 @@ function out = goldenSectionSearch( f, LB, UB, varargin )
   nMax = p.Results.nMax;
   tol = p.Results.tol;
 
-  R = 1.61803398874989484;  % golden ratio
+  R = 0.61803398874989484;  % golden ratio
 
-  xL = LB;  fL = f( thisLB );
-  xU = UB;  fU = f( thisUB );
+  a0 = LB;  b0 = UB;
+  D = R * ( b0 - a0 );
+  a1 = b0 - D;  fa = f( a1 );
+  b1 = a0 + D;  fb = f( b1 );
 
-  D = R * ( xU - xL );
-  x1 = xU - D;  f1 = f( x1 );
-  x2 = xL + D;  f2 = f( x2 );
+  iterationIndx = 1;  % 1 iteration already done above
+  while iterationIndx < nMax
+    if b0 - a0 < tol, break; end
 
-  i = 1;  % 1 iteration already done above
-  while i < nMax
-    if xU - xL < tol, break; end
-
-    if f1 < f2
-      xU = x2;
-      x2 = x1;
-      f2 = f1;
-      x1 = xU - R * ( xU - xL )
-      f1 = f( x1 );
+    if fa <= fb
+      % the minimal point is in [a0, b1]
+      b0 = b1;
+      b1 = a1;
+      fb = fa;
+      a1 = b0 - R * ( b0 - a0 );
+      fa = f( a1 );
     else
-      xL = x1;
-      x1 = x2;
-      f1 = f2;
-      x2 = xL + R * ( xU - xL );
-      f2 = f( x2 );
+      % the minimal point is in [a1, b0]
+      a0 = a1;
+      a1 = b1;
+      fa = fb;
+      b1 = a0 + R * ( b0 - a0 );
+      fb = f( b1 );
     end
 
-    i = i + 1;
+    iterationIndx = iterationIndx + 1;
   end
 
-  mid = 0.5 * ( xL + xB );
+  mid = 0.5 * ( a0 + b0 );
   out = mid;
 end
 
