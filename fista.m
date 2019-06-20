@@ -36,11 +36,13 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   p = inputParser;
   p.addParameter( 'h', [] );
   p.addParameter( 'N', 100, @isnumeric );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
+  printEvery = p.Results.printEvery;  % display result printEvery iterations
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
@@ -60,14 +62,13 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   y = 0;
 
   for k=0:N-1
-
     x = z - t * gGrad( z );
 
     lastY = y;
     y = proxth( x, t );
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
 
-    if verbose
+    if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'FISTA Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0

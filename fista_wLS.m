@@ -42,14 +42,16 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
   p = inputParser;
   p.addParameter( 'h', [] );
-  p.addParameter( 'N', 100, @isnumeric );
-  p.addParameter( 'r', 0.5, @isnumeric );
-  p.addParameter( 's', 1.25, @isnumeric );
-  p.addParameter( 't0', 1, @isnumeric );
-  p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'N', 100, @ispositive );
+  p.addParameter( 'printEvery', 1, @ispositive );
+  p.addParameter( 'r', 0.5, @ispositive );
+  p.addParameter( 's', 1.25, @ispositive );
+  p.addParameter( 't0', 1, @ispositive );
+  p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
+  printEvery = p.Results.printEvery;  % display result printEvery iterations
   r = p.Results.r;  % r must be between 0 and 1
   s = p.Results.s;  % s must be greater than 1
   t0 = p.Results.t0;  % t0 must be greater than 0
@@ -73,10 +75,10 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   t = t0;
   v = x;
   theta = 1;
-  
+
   for k=0:N-1
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
-    if verbose
+    if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0
@@ -104,7 +106,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t))*norm(x(:)-y(:),2)^2;
       if g(x) <= breakThresh, break; end
       t = r*t;
-      if verbose, disp([ '  Step size change to: ', num2str(t) ]); end
+      if verbose>1 && mod( k, printEvery ) == 0
+        disp([ '  Step size change to: ', num2str(t) ]);
+      end
     end
 
     v = x + (1/theta) * ( x - lastX );
