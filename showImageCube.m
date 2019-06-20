@@ -12,8 +12,8 @@ function showImageCube( cube, varargin )
   % Optional Inputs:
   % border - specifies a border to place between images (default is 0)
   % borderValue - specifies the value to place in between images
-  %   If set to 'max' then the maximum value of the cube is specified as the
-  %     border value (making the border white with grayscale)
+  %   If set to 'max' then the maximum value of the cube and the range is specified
+  %     as the border value (making the border white with grayscale)
   %   If set to 'mean' then the mean value of the cube is specified as the
   %     border value.
   % scale - the amount to scale each image for display (default is 1)
@@ -62,18 +62,20 @@ function showImageCube( cube, varargin )
 
   maxCube = max( cube(:) );
   tmpBorderValue = maxCube + 1;
+
   outImg = inplaceImg( cube(:,:,1), nSubRows, nSubCols, 1, ...
     'border', border, 'borderValue', tmpBorderValue );
   for i=2:nImgs
     outImg = inplaceImg( cube(:,:,i), nSubRows, nSubCols, i, outImg, ...
     'border', border, 'borderValue', tmpBorderValue );
   end
+
   if border > 0
     if isnumeric( borderValue )
       outImg( outImg == tmpBorderValue ) = borderValue;
     else
       if strcmp( borderValue, 'max' )
-        outImg( outImg == tmpBorderValue ) = maxCube;
+        outImg( outImg == tmpBorderValue ) = max([ maxCube; range(:); ]);
       elseif strcmp( borderValue, 'mean' )
         outImg( outImg == tmpBorderValue ) = mean( cube(:) );
       else
@@ -84,7 +86,7 @@ function showImageCube( cube, varargin )
     if isnumeric( borderValue )
       outImg( outImg == tmpBorderValue ) = borderValue;
     else
-      outImg( outImg == tmpBorderValue ) = maxCube;
+      outImg( outImg == tmpBorderValue ) = max([ maxCube; range(:); ]);
     end
   end
 
