@@ -39,7 +39,7 @@ function out = imColorResize( img, newSize, varargin )
     end
 
   else
-    out = cells( 1, 1, nChannels );
+    out = cell( 1, 1, nChannels );
     parfor ch = 1 : nChannels
       out{ch} = imresize( img(:,:,ch), newChannelSize, varargin{:} );   %#ok<PFBNS>
     end
