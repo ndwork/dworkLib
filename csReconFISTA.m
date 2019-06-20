@@ -17,14 +17,26 @@ function recon = csReconFISTA( samples, lambda, varargin )
 
   p = inputParser;
   p.addParameter( 'debug', false, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'waveletType', 'Haar', @(x) true );
   p.parse( varargin{:} );
   debug = p.Results.debug;
+  nIter = p.Results.nIter;
   polish = p.Results.polish;
+  printEvery = p.Results.printEvery;
   waveletType = p.Results.waveletType;
   verbose = p.Results.verbose;
+
+  if numel( nIter ) == 0
+    if debug == true
+      nIter = 30;
+    else
+      nIter = 100;
+    end
+  end
 
   M = ( samples ~= 0 );
   nSamples = numel( samples );  % Note that A is square
@@ -49,7 +61,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
     Fx = F( cat( 3, x, zeros(size(x)) ) );
     out = M2 .* Fx;
   end
-  
+
   function out = Aadj( y )
     tmp = Fadj( M2 .* y );
     out = tmp(:,:,1);
@@ -92,20 +104,18 @@ function recon = csReconFISTA( samples, lambda, varargin )
     out = sum( abs( Wx(:) ) );
   end
 
-
   x0 = real( ifft2( ifftshift( samples ) ) );
-  % Could make this better with inverse gridding
+    % Could possibly make this better with inverse gridding
 
   t = 1;
   if debug
-    nIter = 100;
-    %[recon,oValues] = fista( x0, @g, gGrad, proxth, 'h', @h, 'verbose', verbose );                            %#ok<ASGLU>
+    %[recon,oValues] = fista( x0, @g, gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
     [recon,oValues] = fista_wLS( x0, @g, gGrad, proxth, 'h', @h, ...
-      't0', t, 'N', nIter, 'verbose', verbose );                                                                     %#ok<ASGLU>
+      't0', t, 'N', nIter, 'verbose', true, 'printEvery', printEvery );                                                                     %#ok<ASGLU>
   else
-    nIter = 100;
-    %recon = fista( x0, @g, gGrad, proxth );                                                                   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter, 'verbose', verbose );
+    %recon = fista( x0, @g, gGrad, proxth );   %#ok<UNRCH>
+    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter, ...
+      'verbose', verbose, 'printEvery', printEvery );
   end
 
   if polish
@@ -113,9 +123,10 @@ function recon = csReconFISTA( samples, lambda, varargin )
     proxth = @(x,t) WT( maskW .* W(x) );
     if debug
       [recon,oValues2] = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, ...
-        'N', nIter, 't0', t, 'verbose', 1 );                                                                   %#ok<ASGLU>
+        'N', nIter, 't0', t, 'verbose', verbose, 'printEvery', printEvery );   %#ok<ASGLU>
     else
-      recon = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, 'N', nIter, 't0', t );
+      recon = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, 'N', nIter, 't0', t, ...
+        'verbose', verbose, 'printEvery', printEvery );
     end
   end
 end
