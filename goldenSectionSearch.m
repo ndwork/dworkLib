@@ -1,6 +1,7 @@
 
-function out = goldenSectionSearch( f, LB, UB, varargin )
-  % out = goldenSectionSearch( f, LB, UB [, 'tol', tol, 'nMax', nMax ] )
+function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
+  % [out,iterationIndx] = goldenSectionSearch( f, LB, UB [, ...
+  %   'tol', tol, 'nMax', nMax ] )
   %
   % finds the minimal point of the function f using a binary search
   % Written according to the notes written by Wotao Yin at
@@ -15,6 +16,12 @@ function out = goldenSectionSearch( f, LB, UB, varargin )
   % tol - the tolerance to use when finding the root (default is 1d-6)
   % nMax - the maximum number of iterations (default is 1000)
   %   Note: nMax can equal Inf
+  %
+  % Outputs:
+  % out - result of optimization parameter
+  %
+  % Optional output:
+  % iterationIndx - the iteration index when the optimization ended
   %
   % Written by Nicholas Dwork, Copyright 2019
   %
@@ -38,7 +45,7 @@ function out = goldenSectionSearch( f, LB, UB, varargin )
   b1 = a0 + D;  fb = f( b1 );
 
   iterationIndx = 1;  % 1 iteration already done above
-  while iterationIndx < nMax
+  while iterationIndx <= nMax
     if b0 - a0 < tol, break; end
 
     if fa <= fb
@@ -60,6 +67,7 @@ function out = goldenSectionSearch( f, LB, UB, varargin )
     iterationIndx = iterationIndx + 1;
   end
 
+  iterationIndx = iterationIndx - 1;
   mid = 0.5 * ( a0 + b0 );
   out = mid;
 end
