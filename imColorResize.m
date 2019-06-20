@@ -19,16 +19,32 @@ function out = imColorResize( img, newSize, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  sImg = size(img);
   if numel( newSize ) == 1
-    sImg = size(img);
     newChannelSize = sImg(1:2) * newSize;
   else
     newChannelSize = newSize(1:2);
   end
 
-  out = zeros( [newChannelSize 3] );
-  out(:,:,1) = imresize( img(:,:,1), newChannelSize, varargin{:} );
-  out(:,:,2) = imresize( img(:,:,2), newChannelSize, varargin{:} );
-  out(:,:,3) = imresize( img(:,:,3), newChannelSize, varargin{:} );
+  if ismatrix( img )
+    nChannels = 1;
+  else
+    nChannels = sImg(3);
+  end
+
+  if isempty( gcp( 'nocreate' ) )
+    out = zeros( [newChannelSize nChannels] );
+    for ch = 1 : nChannels
+      out(:,:,ch) = imresize( img(:,:,ch), newChannelSize, varargin{:} );
+    end
+
+  else
+    out = cells( 1, 1, nChannels );
+    parfor ch = 1 : nChannels
+      out{ch} = imresize( img(:,:,ch), newChannelSize, varargin{:} );   %#ok<PFBNS>
+    end
+    out = cell2mat( out );
+
+  end
 end
 
