@@ -39,14 +39,16 @@ function out = fftc( in, varargin )
         out = fftshift( fft( in, n ) );
 
       case 2
-        if numel( n ) > 0 && numel( n ) ~= 2
-          error( 'sz has the wrong number of elements' );
+        if numel( n ) > 0
+          if numel( n ) ~= 2, error( 'sz has the wrong number of elements' ); end
+          out = fftshift( fft2( in, n(1), n(2) ) );
+        else
+          out = fftshift( fft2( in ) );
         end
-        out = fftshift( fft2( in, n(1), n(2) ) );
 
       otherwise
-        if numel( sz ) ~= ndims( in )
-          error( 'sz has the wrong number of elements' );
+        if numel( n ) ~= 0 && numel( n ) ~= ndims( in )
+          error( 'n has the wrong number of elements' );
         end
         out = fftshift( fftn( in, n ) );
     end
