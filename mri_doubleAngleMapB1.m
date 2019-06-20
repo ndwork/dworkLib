@@ -10,7 +10,7 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
   %   single / double angle data.
   %
   % Optional Inputs:
-  % flipAngle - specifies the slice selective flip angle of the RF pulse when simple is 1
+  % angles - two element array specifying the flip angles of the data (radians)
   % mask - a 2D array of size MxN.  Only map pixels with nonzero mask values.
   % simple - Either 0 or 1
   %   If 0, fits an exponential decay to the data
@@ -29,7 +29,7 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
 
 
   p = inputParser;
-  p.addOptional( 'angles', [60 120], @isnumeric );
+  p.addOptional( 'angles', [pi/3 2*pi/3], @isnumeric );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'alg', [], @(x) true );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
@@ -39,8 +39,8 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
   alg = p.Results.alg;
   verbose = p.Results.verbose;
 
-  if size( dataCube, 3 ) ~= 2, error('mri_mapB1: must supply two images'); end
-  if numel( angles ) ~= 2, error('mri_mapB1: must supply two angles'); end
+  if size( dataCube, 3 ) ~= 2, error('mri_doubleAngleMapB1: must supply two images'); end
+  if numel( angles ) ~= 2, error('mri_doubleAngleMapB1: must supply two angles'); end
 
   if strcmp( alg, 'simple' )
 
@@ -48,20 +48,20 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
     doubleAngleImg = abs( dataCube(:,:,2) );
     tmp = doubleAngleImg ./ ( 2 * singleAngleImg );
     angleMap = acos( max( min( tmp, 1 ), -1 ) );
-    b1ScaleMap = angleMap * 180/pi / 60;
+    b1ScaleMap = angleMap / angles(1);
 
   else
 
     tbw = 8;
     rfDuration = 1.28;  % ms
     sliceThickness = 0.5; % cm
-    b1s = 0.0:0.01:1.5;
+    b1s = 0.01:0.01:1.5;
     B0 = 0;  % residual B0 offset
 
     nRF = tbw * 100 + 1;
     rf = real( dzrf( nRF, tbw, 'ex', 'ms' ) )';  % Hamming windowed sinc function
-    rfLarge = rf / sum( rf ) * angles(2) * pi/180;
-    rfSmall = rf / sum( rf ) * angles(1) * pi/180;
+    rfSmall = rf / sum( rf ) * angles(1);
+    rfLarge = rf / sum( rf ) * angles(2);
 
     dtRF = rfDuration / (nRF-1);  % dtRf is time between samples of pulse
     nVoxLayers = tbw * 10 + 1;  % Number of layers to break the voxel up into
@@ -86,8 +86,8 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
     simSigsSmall = cell( numel(b1s), 1 );
     simSigsLarge = cell( numel(b1s), 1 );
     parfor b1Indx=1:numel( b1s )
-    layerSigsSmall = zeros( nVoxLayers, 1 );
-    layerSigsLarge = zeros( nVoxLayers, 1 );
+      layerSigsSmall = zeros( nVoxLayers, 1 );
+      layerSigsLarge = zeros( nVoxLayers, 1 );
       if verbose ~= 0 && mod( b1Indx, 10 ) == 0
         disp([ 'Working on ', num2str(b1Indx), ' of ', numel( b1s ) ]);
       end
