@@ -82,7 +82,7 @@ function out = smoothImg( in, varargin )
   else
 
     outCells = cell( 1, 1, nChannels );
-    parfor ch=1:nChannels
+    parfor ch = 1 : nChannels
       outCells{ch} = imfilter( in(:,:,ch), h, 'same' );
     end
     out = cell2mat( outCells );
