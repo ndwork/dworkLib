@@ -32,10 +32,12 @@ function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
 
   p = inputParser;
   p.addParameter( 'nMax', 1000, @ispositive );
-  p.addParameter( 'tol', 1d-6, @ispositive );
+  p.addParameter( 'tol', 1d-4, @ispositive );
+  p.addParameter( 'verbose', 0, @(x) ispositive(x) || islogical(x) );
   p.parse( varargin{:} );
   nMax = p.Results.nMax;
   tol = p.Results.tol;
+  verbose = p.Results.verbose;
 
   R = 0.61803398874989484;  % golden ratio
 
@@ -46,7 +48,11 @@ function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
 
   iterationIndx = 1;  % 1 iteration already done above
   while iterationIndx <= nMax
-    if b0 - a0 < tol, break; end
+    if 0.5 * ( b0 - a0 ) < tol, break; end
+    if verbose ~= false
+      disp([ 'goldenSectionSearch: Working on iteration ', num2str(iterationIndx), ...
+        ',  current error: ', num2str( 0.5 * ( b0 - a0 ) ) ]);
+    end
 
     if fa <= fb
       % the minimal point is in [a0, b1]
@@ -68,6 +74,11 @@ function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
   end
 
   iterationIndx = iterationIndx - 1;
+  if verbose ~= false
+    disp([ 'goldenSectionSearch has completed in ', num2str(iterationIndx), ...
+      ' iterations.' ]);
+  end
+
   mid = 0.5 * ( a0 + b0 );
   out = mid;
 end
