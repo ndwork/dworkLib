@@ -13,21 +13,27 @@ function pts = poissonDisc2( r, varargin )
   % k - the number of points before rejection (default is 30)
   % incSize - vector memory allocation increment size (default is 5000)
   %
-  %
   % Outputs:
   % pts - a 2D array of size Num Points x 2
   %   each column represents the corresponding coordinate of the point
   %
   % Written by Nicholas Dwork, Copyright 2019
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   p = inputParser;
   p.addRequired( 'r', @ispositive );
   p.addParameter( 'nK', 30, @ispositive );
   p.addParameter( 'incSize', 5000, @ispositive );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( r, varargin{:} );
   r = p.Results.r;
   nK = p.Results.nK;
   incSize = p.Results.incSize;
+  verbose = p.Results.verbose;
 
   b = [ [ -0.5, 0.5 ];     % vertical bounds
         [ -0.5, 0.5 ]; ];  % horizontal bounds
@@ -90,6 +96,9 @@ function pts = poissonDisc2( r, varargin )
       % add this point to the list of points
       nPts = nPts + 1;
       if size(pts,1) < nPts
+        if verbose ~= false
+          disp([ 'poissonDisc2: made ', num2str(nPts-1), ' points.' ]);
+        end
         pts = [ pts; zeros(incSize,nd) ];   %#ok<AGROW>
       end
       pts( nPts, : ) = kPt;
