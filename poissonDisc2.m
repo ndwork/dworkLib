@@ -1,17 +1,21 @@
 
 function pts = poissonDisc2( r, varargin )
-  % pts = poissonDisc2( r [, 'nK', nK, 'incSize', incSize ] )
+  % pts = poissonDisc2( r [, 'nK', nK, 'incSize', incSize, 'min_r', min_r ] )
   %
   % Written according to "Fast Poisson Disk Sampling in Arbitrary Dimensions" by Robert Bridson
   % and "Poisson Disk Sampling" written by Herman Tulleken located at
   % http://devmag.org.za/2009/05/03/poisson-disk-sampling/
   %
   % Inputs:
-  % r - the minimum size between points
+  % r - a scalar specifying the minimum size between points
+  %     or a function handle for a function that accepts a point and returns a value
   %
   % Optional Inputs:
   % k - the number of points before rejection (default is 30)
   % incSize - vector memory allocation increment size (default is 5000)
+  % min_r - if r is a function handle, then the user must also supply the minimum possible 
+  %   r (must be positive)
+  % verbose - if true, displays informative statements
   %
   % Outputs:
   % pts - a 2D array of size Num Points x 2
@@ -25,14 +29,16 @@ function pts = poissonDisc2( r, varargin )
   % purpose.
 
   p = inputParser;
-  p.addRequired( 'r', @ispositive );
+  p.addRequired( 'r' );
   p.addParameter( 'nK', 30, @ispositive );
   p.addParameter( 'incSize', 5000, @ispositive );
+  p.addParameter( 'min_r', -1, @ispositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( r, varargin{:} );
   r = p.Results.r;
   nK = p.Results.nK;
   incSize = p.Results.incSize;
+  min_r = p.Results.min_r;
   verbose = p.Results.verbose;
 
   b = [ [ -0.5, 0.5 ];     % vertical bounds
@@ -45,11 +51,14 @@ function pts = poissonDisc2( r, varargin )
   nPts = 1;
   pts(nPts,:) = rand(1,nd) .* bDists' + b(:,1)';
 
-  cellSize = min(r(:)) / sqrt(nd);
-  bGrid = zeros( ceil( bDists' ./ cellSize ) );  % background grid
+  if ispositive( r )
+    min_r = min( r(:) );
+  end
+  cellSize = min_r / sqrt(nd);
+  bGrid = cell( ceil( bDists' ./ cellSize ) );  % background grid
 
   gc = getGridCoordinate( pts(1,:), b, cellSize );
-  bGrid( gc(1), gc(2) ) = 1;
+  bGrid{ gc(1), gc(2) } = 1;
 
   pList = zeros( incSize, 1 );  % processing list
   nProcPts = 1;
@@ -63,7 +72,12 @@ function pts = poissonDisc2( r, varargin )
     aPt = pts( aIndx, : );
 
     %-- Make k random points in the annulus between r and 2r from the active point
-    kDists = rand(nK,1) * r + r;
+    if ispositive( r )
+      active_r = r;
+    else
+      active_r = r( aPt );
+    end
+    kDists = active_r + active_r * rand(nK,1);
     kAngles = rand(nK,1) * 2*pi;
     kPts = [ aPt(1) + kDists .* cos( kAngles ),  ...
              aPt(2) + kDists .* sin( kAngles ) ];
@@ -75,20 +89,21 @@ function pts = poissonDisc2( r, varargin )
       if kPt(1) < b(1,1) || kPt(1) > b(1,2) || ...
          kPt(2) < b(2,1) || kPt(2) > b(2,2), continue; end
 
+      if ispositive( r )
+        this_r = r;
+      else
+        this_r = r( kPt );
+      end
+
       % find the minimum distance to other points
       gc = getGridCoordinate( kPt, b, cellSize );
-      nNearCells = ceil( r / cellSize );
-      nearbyGrid = bGrid( ...
-        max( gc(1) - nNearCells, 1 ) : min( gc(1) + nNearCells, size(bGrid,1) ), ...
-        max( gc(2) - nNearCells, 1 ) : min( gc(2) + nNearCells, size(bGrid,2) )  ...
-      );
-      nearbyIndxs = nearbyGrid( nearbyGrid > 0 );
+      nearbyIndxs = bGrid{ gc(1), gc(2) };
       nNearbyPts = numel( nearbyIndxs );
       if nNearbyPts > 0
         nearbyPts = pts( nearbyIndxs, : );
         tmp = nearbyPts - repmat( kPt, [ nNearbyPts 1 ] );
         dists2NearbyPts = sqrt( sum( tmp .* tmp, 2 ) );
-        if min( dists2NearbyPts ) < r, continue; end
+        if min( dists2NearbyPts ) < this_r, continue; end
       end
 
       validPointFound = true;
@@ -110,8 +125,14 @@ function pts = poissonDisc2( r, varargin )
       end
       pList( nProcPts ) = nPts;
 
-      % add this point into the background grid
-      bGrid( gc(1), gc(2) ) = nPts;
+      % add this point to the grid in all squares within r distance
+      gc = getGridCoordinate( kPt, b, cellSize );
+      nNearCells = ceil( active_r / cellSize );
+      for vIndx = max( gc(1) - nNearCells, 1 ) : min( gc(1) + nNearCells, size(bGrid,1) )
+        for uIndx = max( gc(2) - nNearCells, 1 ) : min( gc(2) + nNearCells, size(bGrid,2) )
+          bGrid{ vIndx, uIndx } = [ bGrid{ vIndx, uIndx }; nPts; ];
+        end
+      end
     end
 
     if validPointFound == false
