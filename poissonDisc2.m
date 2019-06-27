@@ -84,6 +84,10 @@ function pts = poissonDisc2( r, varargin )
     kPts = [ aPt(1) + kDists .* cos( kAngles ),  ...
              aPt(2) + kDists .* sin( kAngles ) ];
 
+    if ~ispositive( r )
+      krs = r( kPts );
+    end
+
     %-- Check to see if each candidate point is valid
     validPointFound = false;
     for kIndx = 1 : nK
@@ -94,7 +98,7 @@ function pts = poissonDisc2( r, varargin )
       if ispositive( r )
         this_r = r;
       else
-        this_r = r( kPt );
+        this_r = krs( kIndx );
       end
 
       % find the minimum distance to other points
