@@ -48,8 +48,14 @@ function pts = poissonDisc2( r, varargin )
   bDists = b(:,2) - b(:,1);
 
   pts = zeros( incSize, nd );
+  pts_r = zeros( incSize, 1 );
   nPts = 1;
   pts(nPts,:) = rand(1,nd) .* bDists' + b(:,1)';
+  if ispositive( r )
+    pts_r(nPts) = r;
+  else
+    pts_r(nPts) = r( pts(1,:) );
+  end
 
   if ispositive( r )
     min_r = min( r(:) );
@@ -72,11 +78,7 @@ function pts = poissonDisc2( r, varargin )
     aPt = pts( aIndx, : );
 
     %-- Make k random points in the annulus between r and 2r from the active point
-    if ispositive( r )
-      active_r = r;
-    else
-      active_r = r( aPt );
-    end
+    active_r = pts_r( aIndx );
     kDists = active_r + active_r * rand(nK,1);
     kAngles = rand(nK,1) * 2*pi;
     kPts = [ aPt(1) + kDists .* cos( kAngles ),  ...
@@ -115,8 +117,10 @@ function pts = poissonDisc2( r, varargin )
           disp([ 'poissonDisc2: made ', num2str(nPts-1), ' points.' ]);
         end
         pts = [ pts; zeros(incSize,nd) ];   %#ok<AGROW>
+        pts_r = [ pts_r; zeros(incSize,1) ];   %#ok<AGROW>
       end
       pts( nPts, : ) = kPt;
+      pts_r( nPts ) = this_r;
 
       % add this point to the processing list
       nProcPts = nProcPts + 1;
