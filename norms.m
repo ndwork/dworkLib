@@ -1,5 +1,5 @@
 
-function out = norms( A, varargin )
+function out = norms( A, p, dim )
   % out = norms( A [, p, dim ] )
   %
   % Calculates the p norm of A along dimension dim
@@ -18,12 +18,13 @@ function out = norms( A, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  par = inputParser;
-  par.addOptional( 'p', 2, @isnumeric );
-  par.addOptional( 'dim', ndims(A), @isnumeric );
-  par.parse( varargin{:} );
-  p = par.Results.p;
-  dim = par.Results.dim;
+  if nargin < 3
+    dim = ndims(A);
+  end
+  
+  if nargin < 2
+    p = 2;
+  end
 
   absA = abs( A );
 
