@@ -76,9 +76,9 @@ function pts = poissonDisc2( r, varargin )
     pIndx = ceil( rand() * nProcPts );  % index into the processing list
     aIndx = pList( pIndx );  % active point index
     aPt = pts( aIndx, : );
+    active_r = pts_r( aIndx );
 
     %-- Make k random points in the annulus between r and 2r from the active point
-    active_r = pts_r( aIndx );
     kDists = active_r + active_r * rand(nK,1);
     kAngles = rand(nK,1) * 2*pi;
     kPts = [ aPt(1) + kDists .* cos( kAngles ),  ...
@@ -98,8 +98,8 @@ function pts = poissonDisc2( r, varargin )
       end
 
       % find the minimum distance to other points
-      gc = getGridCoordinate( kPt, b, cellSize );
-      nearbyIndxs = bGrid{ gc(1), gc(2) };
+      kgc = getGridCoordinate( kPt, b, cellSize );
+      nearbyIndxs = bGrid{ kgc(1), kgc(2) };
       nNearbyPts = numel( nearbyIndxs );
       if nNearbyPts > 0
         nearbyPts = pts( nearbyIndxs, : );
@@ -130,10 +130,9 @@ function pts = poissonDisc2( r, varargin )
       pList( nProcPts ) = nPts;
 
       % add this point to the grid in all squares within r distance
-      gc = getGridCoordinate( kPt, b, cellSize );
       nNearCells = ceil( active_r / cellSize );
-      for vIndx = max( gc(1) - nNearCells, 1 ) : min( gc(1) + nNearCells, size(bGrid,1) )
-        for uIndx = max( gc(2) - nNearCells, 1 ) : min( gc(2) + nNearCells, size(bGrid,2) )
+      for vIndx = max( kgc(1) - nNearCells, 1 ) : min( kgc(1) + nNearCells, size(bGrid,1) )
+        for uIndx = max( kgc(2) - nNearCells, 1 ) : min( kgc(2) + nNearCells, size(bGrid,2) )
           bGrid{ vIndx, uIndx } = [ bGrid{ vIndx, uIndx }; nPts; ];
         end
       end
