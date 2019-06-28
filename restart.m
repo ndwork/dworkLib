@@ -1,9 +1,12 @@
 
 function restart( varargin )
-  % restart
+  % restart( [ 'all' ] )
   %
-  % closes all windows, clears variables, clears the command window, and
-  % removes the parforProgress.txt file (if it exists)
+  % closes all windows, clears variables, clears the command window and
+  % any parforProgess files that were created by the current instance of Matlab
+  %
+  % Optional Inputs:
+  % if 'all' is supplied, restart removes any parforProgress.txt files that exist
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
