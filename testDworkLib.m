@@ -2,207 +2,207 @@
 function testDworkLib
   clear; close all; rng(2);
 
-%   %% bilateralFilter
-%   fprintf('\nTesting bilateralFilter: \n');
-%   img = phantom();  sImg = size(img);
-%   noiseSig = 0.1;
-%   noise = normrnd( 0, noiseSig, sImg(1), sImg(2) );
-%   noisyImg = img + noise;
-%   denoisedImg = bilateralFilter( img, 'sigmaR', 0.1 );
-%   figure; imshowscale( [noisyImg, denoisedImg], 3 );
-%   title('Bilateral Filter Result');
-% 
-%   %% binarySearch
-%   fprintf( '\nTesting binarySearch: \n' );
-%   trueRoot = 3;
-%   f = @(x) 2 * ( x - trueRoot );
-%   xLB = -10;  xUB = 10;
-%   tol = 1d-4;
-%   xRoot = binarySearch( f, xLB, xUB, 'tol', tol, 'nMax', 10000 );
-%   if abs( xRoot - trueRoot ) < tol
-%     disp( 'binarySearch passed' );
-%   else
-%     error( 'binarySearch failed' );
-%   end
-% 
-%   %% bisection method
-%   fprintf('\nTesting bisection method: \n');
-%   myFunc = @(x) x^2 - 80;
-%   myFuncRoot = bisectionMethod( myFunc, 0, 100, 'nMax', 10000 );
-%   if myFunc( myFuncRoot ) < 1d-12
-%     disp( 'bisection passed' );
-%   else
-%     error( 'bisection failed' );
-%   end
-% 
-%   %% cropData
-%   fprintf('\nTesting cropData: \n');
-%   cropped = cropData( 1:10, 5 );
-%   err = norm( cropped - [4 5 6 7 8], 2 );
-%   if err > 0, error( 'cropData test failed' ); end
-%   cropped = cropData( 1:5, 4 );
-%   err = norm( cropped - [1 2 3 4], 2 );
-%   if err > 0, error( 'cropData test failed' ); end
-%   cropped = cropData( 1:6, 4 );
-%   err = norm( cropped - [2 3 4 5] );
-%   if err > 0, error( 'cropData test failed' ); end
-%   cropped = cropData( 1:5, 3 );
-%   err = norm( cropped - [2 3 4] );
-%   if err > 0, error( 'cropData test failed' ); end
-%   disp('cropData test passed');
-% 
-%   %% deaubechies
-%   sig = rand(8,1);
-%   split = [1 0];
-%   wt = wtDeaubechies( sig, split );
-%   sigHat = iwtDeaubechies( wt, split );
-%   err = norm( sig - sigHat, 2 );
-%   if err > 1d-12
-%     error( ['wtDeaubechies error: ', num2str(err,2)] );
-%   else
-%     disp('wtDeaubechies test passed');
-%   end
-% 
-%   %% deaubechies adjoint
-%   x = rand(8,1);
-%   y = rand(8,1);
-%   split = [ 1 0 ];
-%   wtx = wtDeaubechies( x, split );
-%   iwty = iwtDeaubechies( y, split );
-%   err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
-%   if err > 1d-12
-%     error( 'wtHaar is not orthogonal' );
-%   else
-%     disp('wtHaar looks to be orthogonal');
-%   end
-% 
-%   %% dworkLib
-%   dworkLib
-% 
-%   %% evlautePoly
-%   c = [1 2 3];  x = [4 5 6];
-%   p1 = evaluatePoly( c, x );
-%   [p2,dp] = evaluatePoly( c, x );
-%   rightP = c(1) + c(2)*x + c(3)*x.^2;
-%   rightDp = c(2) + 2*c(3)*x;
-%   err1 = norm( p1 - rightP );
-%   err2 = norm( p2 - rightP );
-%   err3 = norm( dp - rightDp );
-%   if err1 + err2 + err3 < 1d-8
-%     disp( 'evlautePoly passed' );
-%   else
-%     error( 'evlautePoly failed' );
-%   end
-% 
-%   %% fista test 1
-%   M = 300;
-%   N = 20;
-%   A = rand(M,N);
-%   b = rand(M,1);
-% 
-%   bestX = A\b;
-% 
-%   g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
-%   gGrad = @(x) A'*A*x - A'*b;
-%   proxth = @(x,t) x;  % Least squares
-%   x0 = zeros(N,1);
-%   xHat_leastSquares = fista( x0, g, gGrad, proxth );
-% 
-%   err = norm( xHat_leastSquares - bestX ) / M;
-%   if err < 1d-7
-%     disp( 'fista test 1 passed' );
-%   else
-%     error( 'fista test 1 failed' );
-%   end
-% 
-%   %% fista test 2
-%   lambda = 50;
-%   M = 300;
-%   N = 30;
-%   A = rand(M,N);
-%   x = zeros(N,1);
-%   x(3)=5; x(2)=8;  x(22)=2;
-%   %b = A*x + rand(M,1);
-%   b = A*x + rand(M,1)/10;
-% 
-%   g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
-%   h = @(y) norm( y, 1 );
-%   gGrad = @(x) A'*A*x - A'*b;
-%   x0 = rand(N,1);
-% 
-%   proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
-%   [xHat_lasso,objValues] = fista( x0, g, gGrad, proxth, 'h', h );                          %#ok<ASGLU>
-%   err = norm( xHat_lasso - x, 1 ) / N;
-%   if err < 0.1
-%     disp( 'fista passed' );
-%   else
-%     error( 'fista failed' );
-%   end
-%   
-%   %% findDoGFeatures2D
-%   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
-%   img = double( imread( imgFile ) );
-%   features = findDoGFeatures2D( img, 'nFeatures', 10 );
-%   figure;
-%   showFeaturesOnImg( features, img );
-% 
-%   %% findRotAndTransFromPts
-%   nPts = 5;
-%   theta = pi/4;
-%   pts1 = 10*rand(nPts,2) - 5;
-%   R = [ cos(theta) -sin(theta); sin(theta) cos(theta) ];
-%   t = [ 5.2; -4.1 ];
-%   pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);
-%   [R2,t2] = findRotAndTransFromPts( pts1, pts2 );
-%   error1 = norm( R2(:) - R(:), 2 );
-%   error2 = norm( t - t2, 2 );
-%   if error1 + error2 < 1d-7
-%     disp('findRotAndTransFromPts passed');
-%   else
-%     error('findRotAndTransFromPts failed');
-%   end
-% 
-%   %% findRotWithPCC
-%   rotation = -30;  % degrees
-%   img1 = padData( imread( 'cameraman.tif' ), [356 356] );
-%   img2 = imrotate( img1, rotation, 'crop' );
-%   rotation = findRotWithPCC( img1, img2 );
-%   rotated1 = imrotate( img1, rotation*180/pi, 'crop' );
-%   err = norm( img2(:) - rotated1(:) );
-%   if err < 1d-7
-%     disp('findRotWithPCC passed');
-%   else
-%     error('findRotWithPCC failed');
-%   end
-% 
-%   %% findTransRotWithPCC
-%   trans = [10 50];  % pixels
-%   rotation = -30;  % degrees
-%   img1 = padData( imread( 'cameraman.tif' ), [600 600] );
-%   tmp = circshift( img1, trans );
-%   img2 = imrotate( tmp, rotation, 'crop' );
-%   [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 );
-%   trans1 = imrotate( circshift( img1, [vShift hShift] ), rotation * 180/pi, ...
-%     'crop' );
-%   err = norm( img2(:) - trans1(:) );
-%   if err < 1d-7
-%     disp('findTransRotWithPCC passed');
-%   else
-%     error('findTransRotWithPCC failed');
-%   end
-% 
-%   %% findTransWithPCC
-%   trans = [10 200];  % pixels
-%   img1 = padData( imread( 'cameraman.tif' ), [356 356] );
-%   img2 = circshift( img1, trans );
-%   [vShift,hShift] = findTransWithPCC( img1, img2 );
-%   shifted1 = circshift( img1, [vShift hShift] );
-%   err = norm( img2(:) - shifted1(:) );
-%   if err < 1d-7
-%     disp('findTransWithPCC passed');
-%   else
-%     error('findTransWithPCC failed');
-%   end
+  %% bilateralFilter
+  fprintf('\nTesting bilateralFilter: \n');
+  img = phantom();  sImg = size(img);
+  noiseSig = 0.1;
+  noise = normrnd( 0, noiseSig, sImg(1), sImg(2) );
+  noisyImg = img + noise;
+  denoisedImg = bilateralFilter( img, 'sigmaR', 0.1 );
+  figure; imshowscale( [noisyImg, denoisedImg], 3 );
+  title('Bilateral Filter Result');
+
+  %% binarySearch
+  fprintf( '\nTesting binarySearch: \n' );
+  trueRoot = 3;
+  f = @(x) 2 * ( x - trueRoot );
+  xLB = -10;  xUB = 10;
+  tol = 1d-4;
+  xRoot = binarySearch( f, xLB, xUB, 'tol', tol, 'nMax', 10000 );
+  if abs( xRoot - trueRoot ) < tol
+    disp( 'binarySearch passed' );
+  else
+    error( 'binarySearch failed' );
+  end
+
+  %% bisection method
+  fprintf('\nTesting bisection method: \n');
+  myFunc = @(x) x^2 - 80;
+  myFuncRoot = bisectionMethod( myFunc, 0, 100, 'nMax', 10000 );
+  if myFunc( myFuncRoot ) < 1d-12
+    disp( 'bisection passed' );
+  else
+    error( 'bisection failed' );
+  end
+
+  %% cropData
+  fprintf('\nTesting cropData: \n');
+  cropped = cropData( 1:10, 5 );
+  err = norm( cropped - [4 5 6 7 8], 2 );
+  if err > 0, error( 'cropData test failed' ); end
+  cropped = cropData( 1:5, 4 );
+  err = norm( cropped - [1 2 3 4], 2 );
+  if err > 0, error( 'cropData test failed' ); end
+  cropped = cropData( 1:6, 4 );
+  err = norm( cropped - [2 3 4 5] );
+  if err > 0, error( 'cropData test failed' ); end
+  cropped = cropData( 1:5, 3 );
+  err = norm( cropped - [2 3 4] );
+  if err > 0, error( 'cropData test failed' ); end
+  disp('cropData test passed');
+
+  %% deaubechies
+  sig = rand(8,1);
+  split = [1 0];
+  wt = wtDeaubechies( sig, split );
+  sigHat = iwtDeaubechies( wt, split );
+  err = norm( sig - sigHat, 2 );
+  if err > 1d-12
+    error( ['wtDeaubechies error: ', num2str(err,2)] );
+  else
+    disp('wtDeaubechies test passed');
+  end
+
+  %% deaubechies adjoint
+  x = rand(8,1);
+  y = rand(8,1);
+  split = [ 1 0 ];
+  wtx = wtDeaubechies( x, split );
+  iwty = iwtDeaubechies( y, split );
+  err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
+  if err > 1d-12
+    error( 'wtHaar is not orthogonal' );
+  else
+    disp('wtHaar looks to be orthogonal');
+  end
+
+  %% dworkLib
+  dworkLib
+
+  %% evlautePoly
+  c = [1 2 3];  x = [4 5 6];
+  p1 = evaluatePoly( c, x );
+  [p2,dp] = evaluatePoly( c, x );
+  rightP = c(1) + c(2)*x + c(3)*x.^2;
+  rightDp = c(2) + 2*c(3)*x;
+  err1 = norm( p1 - rightP );
+  err2 = norm( p2 - rightP );
+  err3 = norm( dp - rightDp );
+  if err1 + err2 + err3 < 1d-8
+    disp( 'evlautePoly passed' );
+  else
+    error( 'evlautePoly failed' );
+  end
+
+  %% fista test 1
+  M = 300;
+  N = 20;
+  A = rand(M,N);
+  b = rand(M,1);
+
+  bestX = A\b;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  gGrad = @(x) A'*A*x - A'*b;
+  proxth = @(x,t) x;  % Least squares
+  x0 = zeros(N,1);
+  xHat_leastSquares = fista( x0, g, gGrad, proxth );
+
+  err = norm( xHat_leastSquares - bestX ) / M;
+  if err < 1d-7
+    disp( 'fista test 1 passed' );
+  else
+    error( 'fista test 1 failed' );
+  end
+
+  %% fista test 2
+  lambda = 50;
+  M = 300;
+  N = 30;
+  A = rand(M,N);
+  x = zeros(N,1);
+  x(3)=5; x(2)=8;  x(22)=2;
+  %b = A*x + rand(M,1);
+  b = A*x + rand(M,1)/10;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  h = @(y) norm( y, 1 );
+  gGrad = @(x) A'*A*x - A'*b;
+  x0 = rand(N,1);
+
+  proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
+  [xHat_lasso,objValues] = fista( x0, g, gGrad, proxth, 'h', h );                          %#ok<ASGLU>
+  err = norm( xHat_lasso - x, 1 ) / N;
+  if err < 0.1
+    disp( 'fista passed' );
+  else
+    error( 'fista failed' );
+  end
+  
+  %% findDoGFeatures2D
+  imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
+  img = double( imread( imgFile ) );
+  features = findDoGFeatures2D( img, 'nFeatures', 10 );
+  figure;
+  showFeaturesOnImg( features, img );
+
+  %% findRotAndTransFromPts
+  nPts = 5;
+  theta = pi/4;
+  pts1 = 10*rand(nPts,2) - 5;
+  R = [ cos(theta) -sin(theta); sin(theta) cos(theta) ];
+  t = [ 5.2; -4.1 ];
+  pts2 = transpose( R*transpose(pts1) ) + repmat(t', [nPts 1]);
+  [R2,t2] = findRotAndTransFromPts( pts1, pts2 );
+  error1 = norm( R2(:) - R(:), 2 );
+  error2 = norm( t - t2, 2 );
+  if error1 + error2 < 1d-7
+    disp('findRotAndTransFromPts passed');
+  else
+    error('findRotAndTransFromPts failed');
+  end
+
+  %% findRotWithPCC
+  rotation = -30;  % degrees
+  img1 = padData( imread( 'cameraman.tif' ), [356 356] );
+  img2 = imrotate( img1, rotation, 'crop' );
+  rotation = findRotWithPCC( img1, img2 );
+  rotated1 = imrotate( img1, rotation*180/pi, 'crop' );
+  err = norm( img2(:) - rotated1(:) );
+  if err < 1d-7
+    disp('findRotWithPCC passed');
+  else
+    error('findRotWithPCC failed');
+  end
+
+  %% findTransRotWithPCC
+  trans = [10 50];  % pixels
+  rotation = -30;  % degrees
+  img1 = padData( imread( 'cameraman.tif' ), [600 600] );
+  tmp = circshift( img1, trans );
+  img2 = imrotate( tmp, rotation, 'crop' );
+  [vShift, hShift, rotation] = findTransRotWithPCC( img1, img2 );
+  trans1 = imrotate( circshift( img1, [vShift hShift] ), rotation * 180/pi, ...
+    'crop' );
+  err = norm( img2(:) - trans1(:) );
+  if err < 1d-7
+    disp('findTransRotWithPCC passed');
+  else
+    error('findTransRotWithPCC failed');
+  end
+
+  %% findTransWithPCC
+  trans = [10 200];  % pixels
+  img1 = padData( imread( 'cameraman.tif' ), [356 356] );
+  img2 = circshift( img1, trans );
+  [vShift,hShift] = findTransWithPCC( img1, img2 );
+  shifted1 = circshift( img1, [vShift hShift] );
+  err = norm( img2(:) - shifted1(:) );
+  if err < 1d-7
+    disp('findTransWithPCC passed');
+  else
+    error('findTransWithPCC failed');
+  end
 
   %% goldenSectionSearch
   fprintf( '\nTesting goldenSectionSearch: \n' );
