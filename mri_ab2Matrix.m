@@ -17,7 +17,7 @@ function M = mri_ab2Matrix( a, b )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel(a) ~= numel(b), error('a and b must be the same size'); end;
+  if numel(a) ~= numel(b), error('a and b must be the same size'); end
 
   ca = conj(a);
   cb = conj(b);
