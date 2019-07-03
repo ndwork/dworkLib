@@ -38,7 +38,7 @@ function pts = poissonDisc2( r, varargin )
   p.addRequired( 'r' );
   p.addParameter( 'bounds', [], @ispositive );
   p.addParameter( 'bIncSize', 20, @ispositive );
-  p.addParameter( 'nK', 30, @ispositive );
+  p.addParameter( 'nK', 10, @ispositive );
   p.addParameter( 'incSize', 5000, @ispositive );
   p.addParameter( 'min_r', -1, @ispositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
@@ -92,8 +92,12 @@ function pts = poissonDisc2( r, varargin )
 
   gc = getGridCoordinate( pts(1,:), bounds, cellSize );
   nNearCells = ceil( pts_r(nPts) / cellSize );
-  for uIndx = max( gc(2) - nNearCells, 1 ) : min( gc(2) + nNearCells, size(bGrid,2) )
-    for vIndx = max( gc(1) - nNearCells, 1 ) : min( gc(1) + nNearCells, size(bGrid,1) )
+  cL = gc(2) - nNearCells;  % left corner index
+  cR = gc(2) + nNearCells;  % right corner index
+  cB = gc(1) - nNearCells;  % bottom corner index
+  cT = gc(1) + nNearCells;  % top corner index
+  for uIndx = max( cL, 1 ) : min( cR, size(bGrid,2) )
+    for vIndx = max( cB, 1 ) : min( cT, size(bGrid,1) )
       if nBPts( vIndx, uIndx ) == numel( bGrid{ vIndx, uIndx } )
         bGrid{ vIndx, uIndx } = [ bGrid{ vIndx, uIndx }; zeros( bIncSize, 1 ); ];
       end
@@ -145,7 +149,7 @@ function pts = poissonDisc2( r, varargin )
         nearbyPts = pts( nearbyIndxs, : );
         nearbyPts(:,1) = nearbyPts(:,1) - kPt(1);
         nearbyPts(:,2) = nearbyPts(:,2) - kPt(2);
-        dists2NearbyPtsSq = sum( nearbyPts .* nearbyPts, 2 );
+        dists2NearbyPtsSq = sum( nearbyPts.^2, 2 );
         if min( dists2NearbyPtsSq ) < this_r * this_r, continue; end
       end
 
@@ -172,8 +176,16 @@ function pts = poissonDisc2( r, varargin )
 
       % add this point to the grid in all squares within r distance
       nNearCells = ceil( active_r / cellSize );
-      for uIndx = max( kgc(2) - nNearCells, 1 ) : min( kgc(2) + nNearCells, size(bGrid,2) )
-        for vIndx = max( kgc(1) - nNearCells, 1 ) : min( kgc(1) + nNearCells, size(bGrid,1) )
+      cL = kgc(2) - nNearCells;  % left corner index
+      cR = kgc(2) + nNearCells;  % right corner index
+      cB = kgc(1) - nNearCells;  % bottom corner index
+      cT = kgc(1) + nNearCells;  % top corner index
+      for uIndx = max( cL, 1 ) : min( cR, size(bGrid,2) )
+        for vIndx = max( cB, 1 ) : min( cT, size(bGrid,1) )
+          if ( uIndx == cL || uIndx == cR ) && ( vIndx == cB || vIndx == cT )
+            continue
+          end
+
           if nBPts( vIndx, uIndx ) == numel( bGrid{ vIndx, uIndx } )
             bGrid{ vIndx, uIndx } = [ bGrid{ vIndx, uIndx }; zeros( bIncSize, 1 ); ];
           end
