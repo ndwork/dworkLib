@@ -1,6 +1,9 @@
 
 function recon = csReconFISTA( samples, lambda, varargin )
-  % recon = csReconFISTA2( samples, lambda [, 'polish', polish ] )
+  % recon = csReconFISTA2( samples, lambda [, 'debug', debug, 'nIter', nIter, ...
+  %   'polish', polish, 'printEvery', printEvery, 'verbose', verbose, ...
+  %   'waveletType', waveletType ] )
+  %
   % This routine minimizes 0.5 * || Ax - b ||_2^2 + lambda || W x ||_1
   %   where A is sampleMask * Fourier Transform * real part, and
   %   W is the Haar wavelet transform.
@@ -9,6 +12,15 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % samples - a 2D array that is zero wherever a sample wasn't acquired
   % lambda - regularization parameter
   %
+  % Optional Inputs:
+  % debug - if true, reduces the default number of iterations to 30 and forces verbose
+  %         statements during optimization
+  % nIter - the number of iterations that FISTA will perform (default is 100)
+  % polish - if set to true, adds a polishing step (default is false)
+  % printEvery - FISTA prints a verbose statement every printEvery iterations
+  % verbose - if true, prints informative statements
+  % waveletType - either 'Deaubechies' (default) or 'Haar'
+  %
   % Written by Nicholas Dwork - Copyright 2017
   %
   % This software is offered under the GNU General Public License 3.0.  It
@@ -16,13 +28,15 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
+  p.addParameter( 'checkAdjoints', false, @islogical );
   p.addParameter( 'debug', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
-  p.addParameter( 'waveletType', 'Haar', @(x) true );
+  p.addParameter( 'waveletType', 'Deaubechies', @(x) true );
   p.parse( varargin{:} );
+  checkAdjoints = p.Results.checkAdjoints;
   debug = p.Results.debug;
   nIter = p.Results.nIter;
   polish = p.Results.polish;
@@ -67,7 +81,10 @@ function recon = csReconFISTA( samples, lambda, varargin )
     out = tmp(:,:,1);
   end
 
-  %csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj )
+  if checkAdjoints == true
+    % Variable used during debugging of this routine
+    csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj )
+  end
 
   b = cat( 3, real(samples), imag(samples) );
   function out = g( x )
@@ -135,24 +152,14 @@ end
 function csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
   % Check to make sure that Fadj is the adjoint of F
   x1 = rand( [size(samples) 2] );
-  y1 = rand( [size(samples) 2] );
-  Fx = F(x1);
-  Fadjy = Fadj(y1);
-  Fxy = dotP( Fx, y1 );
-  xFadjy = dotP( x1, Fadjy );
-  if abs( Fxy - xFadjy ) > 1d-7
-    error('FT is not the transpose of F');
+
+  if checkAdjoint( x1, F, Fadj ) ~= true
+    error( 'Fadj is not the transpose of F' );
   end
 
-  % Test to make sure that Aadj is the adjoint of A
   x2 = rand( size(samples) );
-  y2 = rand( [size(samples) 2] );
-  Ax = A(x2);
-  Aadjy = Aadj(y2);
-  Axy = dotP( Ax, y2 );
-  xAadjy = dotP( x2, Aadjy );
-  if abs( Axy - xAadjy ) > 1d-7
-    error('Aadj is not the adjoing of A');
+  if checkAdjoint( x2, A, Aadj ) ~= true
+    error( 'Aadj is not the transpose of A' );
   end
 end
 
