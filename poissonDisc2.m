@@ -1,7 +1,10 @@
 
+
 function pts = poissonDisc2( r, varargin )
-  % pts = poissonDisc2( r [, 'bIncSize', bIncSize, 'nK', nK, 'incSize', incSize, 'min_r', min_r ] )
+  % pts = poissonDisc2( r [, 'bounds', bounds, 'bIncSize', bIncSize, 'nK', nK, ...
+  %   'incSize', incSize, 'min_r', min_r ] )
   %
+  % For scalar (constant) $r$, the algorithm implemented 
   % Written according to "Fast Poisson Disk Sampling in Arbitrary Dimensions" by Robert Bridson
   % and "Poisson Disk Sampling" written by Herman Tulleken located at
   % http://devmag.org.za/2009/05/03/poisson-disk-sampling/
@@ -36,10 +39,11 @@ function pts = poissonDisc2( r, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+
   p = inputParser;
   p.addRequired( 'r' );
   p.addParameter( 'bounds', [], @isnumeric );
-  p.addParameter( 'bIncSize', 20, @ispositive );
+  p.addParameter( 'bIncSize', 50, @ispositive );
   p.addParameter( 'nK', 10, @ispositive );
   p.addParameter( 'incSize', 5000, @ispositive );
   p.addParameter( 'min_r', -1, @ispositive );
@@ -53,30 +57,143 @@ function pts = poissonDisc2( r, varargin )
   min_r = p.Results.min_r;
   verbose = p.Results.verbose;
 
+  if numel( bounds ) == 0
+    bounds = [ [ -0.5, 0.5 ];     % vertical bounds
+               [ -0.5, 0.5 ]; ];  % horizontal bounds
+  end
+
+  if ispositive( r ) && numel( r ) == 1
+    pts = poissonDisc2_bridson( r, bounds, nK, incSize, verbose );
+  else
+    pts = poissonDisc2_dwork( r, bounds, bIncSize, nK, incSize, min_r, verbose );
+  end
+
+end
+
+
+function out = ispositive( x )
+  out = isnumeric(x) && min( x(:) > 0 );
+end
+
+
+function gc = getGridCoordinate( pts, bounds, cellSize )
+  gc = ceil( [ ( pts(:,1) - bounds(1,1) ) , ...
+               ( pts(:,2) - bounds(2,1) ) ] / cellSize );
+end
+
+
+function pts = poissonDisc2_bridson( r, bounds, nK, incSize, verbose )
+  %
+  % Written according to "Fast Poisson Disk Sampling in Arbitrary Dimensions" by Robert Bridson
+  % and "Poisson Disk Sampling" written by Herman Tulleken located at
+  % http://devmag.org.za/2009/05/03/poisson-disk-sampling/
+
+  nd = 2;  % Number of dimensions
+  bDists = bounds(:,2) - bounds(:,1);
+
+  pts = zeros( incSize, nd );
+  nPts = 1;
+  pts(nPts,:) = rand(1,nd) .* bDists' + bounds(:,1)';
+
+  cellSize = r / sqrt(nd);
+  bGrid = zeros( ceil( bDists' ./ cellSize ) );  % background grid
+
+  gc = getGridCoordinate( pts(1,:), bounds, cellSize );
+  bGrid( gc(1), gc(2) ) = 1;
+
+  pList = zeros( incSize, 1 );  % processing list
+  nProcPts = 1;
+  pList( nProcPts ) = 1;
+  
+  while nProcPts > 0
+
+    %-- Choose a point at random from the processing list
+    pIndx = ceil( rand() * nProcPts );  % index into the processing list
+    aIndx = pList( pIndx );  % active point index
+    aPt = pts( aIndx, : );
+
+    %-- Make k random points in the annulus between r and 2r from the active point
+    kDists = rand(nK,1) * r + r;
+    kAngles = rand(nK,1) * 2*pi;
+    kPts = [ aPt(1) + kDists .* cos( kAngles ),  ...
+             aPt(2) + kDists .* sin( kAngles ) ];
+
+    %-- Check to see if each candidate point is valid
+    validPointFound = false;
+    for kIndx = 1 : nK
+      kPt = kPts( kIndx, : );
+      if kPt(1) < bounds(1,1) || kPt(1) > bounds(1,2) || ...
+         kPt(2) < bounds(2,1) || kPt(2) > bounds(2,2), continue; end
+
+      % find the minimum distance to other points
+      gc = getGridCoordinate( kPt, bounds, cellSize );
+      nNearCells = ceil( r / cellSize );
+      nearbyGrid = bGrid( ...
+        max( gc(1) - nNearCells, 1 ) : min( gc(1) + nNearCells, size(bGrid,1) ), ...
+        max( gc(2) - nNearCells, 1 ) : min( gc(2) + nNearCells, size(bGrid,2) )  ...
+      );
+      nearbyIndxs = nearbyGrid( nearbyGrid > 0 );
+      nNearbyPts = numel( nearbyIndxs );
+      if nNearbyPts > 0
+        nearbyPts = pts( nearbyIndxs, : );
+        tmp = nearbyPts - repmat( kPt, [ nNearbyPts 1 ] );
+        dists2NearbyPts = sqrt( sum( tmp .* tmp, 2 ) );
+        if min( dists2NearbyPts ) < r, continue; end
+      end
+
+      validPointFound = true;
+
+      % add this point to the list of points
+      nPts = nPts + 1;
+      if size(pts,1) < nPts
+        if verbose ~= false
+          disp([ 'poissonDisc2: made ', num2str(nPts-1), ' points.' ]);
+        end
+        pts = [ pts; zeros(incSize,nd) ];   %#ok<AGROW>
+      end
+      pts( nPts, : ) = kPt;
+
+      % add this point to the processing list
+      nProcPts = nProcPts + 1;
+      if numel( pList ) < nProcPts
+        pList = [ pList; zeros(incSize,1); ];   %#ok<AGROW>
+      end
+      pList( nProcPts ) = nPts;
+
+      % add this point into the background grid
+      bGrid( gc(1), gc(2) ) = nPts;
+    end
+
+    if validPointFound == false
+      pList( pIndx ) = pList( nProcPts );
+      nProcPts = nProcPts - 1;
+    end
+  end
+
+  pts = pts( 1 : nPts, : );
+end
+
+
+function pts = poissonDisc2_dwork( r, bounds, bIncSize, nK, incSize, min_r, verbose )
+
   nd = 2;  % Number of dimensions
 
-  rIsFunction = true;
   if ispositive( r )
-    min_r = min( r(:) );
-    if numel( r ) > 1
-      rImg = r;
-      sImg = size( rImg );
+    rImg = r;
+    sImg = size( rImg );
 
-      if numel( bounds ) > 0
-        oldBounds = bounds;
-        oldBDists = oldBounds(:,2) - oldBounds(:,1);
-      end
-      bounds = [ [ 1, sImg(2) ]; ...   % horizontal bounds
-                 [ 1, sImg(1) ]; ];    % vertical bounds
-
-      rScaling = mean( sImg(:) ./ oldBDists(:) );
-      rImg = rImg * rScaling;
-
-      min_r = min( rImg(:) );
-      r = @(pts) rImg( round(pts(:,1)) + round( pts(:,2) - 1 ) * sImg(1) );
-    else
-      rIsFunction = false;
+    if numel( bounds ) > 0
+      oldBounds = bounds;
+      oldBDists = oldBounds(:,2) - oldBounds(:,1);
     end
+    bounds = [ [ 1, sImg(2) ]; ...   % horizontal bounds
+               [ 1, sImg(1) ]; ];    % vertical bounds
+
+    rScaling = mean( sImg(:) ./ oldBDists(:) );
+    rImg = rImg * rScaling;
+    min_r = min( rImg(:) );
+
+    r = @(pts) rImg( round(pts(:,1)) + round( pts(:,2) - 1 ) * sImg(1) );
   end
 
   if numel( bounds ) == 0
@@ -86,22 +203,19 @@ function pts = poissonDisc2( r, varargin )
   bDists = bounds(:,2) - bounds(:,1);
 
   cellSize = min_r / sqrt(nd);
-  bGrid = cell( ceil( bDists' ./ cellSize ) );  % background grid
-  nBPts = zeros( ceil( bDists' ./ cellSize ) );  % number of points in each background grid cell
+  sBGrid = ceil( bDists' ./ cellSize );
+  bGrid = cell( sBGrid );  % background grid
   tmp = zeros( bIncSize, 1 );
-  for bIndx = 1 : numel( bGrid )
-    bGrid{ bIndx } = tmp;
-  end
+  bGrid(:) = {tmp};
+  nBEls = bIncSize * ones( sBGrid );  % number of elements in each background grid cell
+  nBPts = zeros( sBGrid );  % number of points in each background grid cell
 
   pts = zeros( incSize, nd );
-  pts_r = zeros( incSize, 1 );
   nPts = 1;
   pts(nPts,:) = rand(1,nd) .* bDists' + bounds(:,1)';
-  if rIsFunction
-    pts_r(nPts) = r( pts(1,:) );
-  else
-    pts_r(nPts) = r;
-  end
+
+  pts_r = zeros( incSize, 1 );
+  pts_r(nPts) = r( pts(1,:) );
 
   gc = getGridCoordinate( pts(1,:), bounds, cellSize );
   nNearCells = ceil( pts_r(nPts) / cellSize );
@@ -109,8 +223,8 @@ function pts = poissonDisc2( r, varargin )
   cR = gc(2) + nNearCells;  % right corner index
   cB = gc(1) - nNearCells;  % bottom corner index
   cT = gc(1) + nNearCells;  % top corner index
-  for uIndx = max( cL, 1 ) : min( cR, size(bGrid,2) )
-    for vIndx = max( cB, 1 ) : min( cT, size(bGrid,1) )
+  for uIndx = max( cL, 1 ) : min( cR, sBGrid(2) )
+    for vIndx = max( cB, 1 ) : min( cT, sBGrid(1) )
       if ( uIndx == cL || uIndx == cR ) && ( vIndx == cB || vIndx == cT )
        continue
       end
@@ -118,16 +232,10 @@ function pts = poissonDisc2( r, varargin )
       nBPts( vIndx, uIndx ) = 1;
     end
   end
-  maxNBPts = 1;  % Maximum number of points in any bGrid cell
 
   pList = zeros( incSize, 1 );  % processing list
   nProcPts = 1;
   pList( nProcPts ) = 1;
-
-  if ~rIsFunction
-    this_r = r;
-    distThresh = this_r * this_r;
-  end
 
   while nProcPts > 0
 
@@ -143,23 +251,19 @@ function pts = poissonDisc2( r, varargin )
     kDists = active_r + active_r * rand(nK,1);
     kAngles = rand(nK,1) * 2*pi;
     kPts = [ aPt(1) + kDists .* cos( kAngles ),  ...
-            aPt(2) + kDists .* sin( kAngles ) ];
+             aPt(2) + kDists .* sin( kAngles ) ];
     kPts = kPts( kPts(:,1) > bounds(1,1) & kPts(:,1) < bounds(1,2) & ...
                  kPts(:,2) > bounds(2,1) & kPts(:,2) < bounds(2,2), : );
 
     if numel( kPts ) > 0
       kgcs = getGridCoordinate( kPts, bounds, cellSize );
-      if rIsFunction
-        krs = r( kPts );
-      end
+      krs = r( kPts );
 
       %-- Check to see if each candidate point is valid
       for kIndx = 1 : size( kPts, 1 )
         kPt = kPts( kIndx, : );
-        if rIsFunction
-          this_r = krs( kIndx );
-          distThresh = this_r * this_r;
-        end
+        this_r = krs( kIndx );
+        distSqThresh = this_r * this_r;
 
         % find the minimum distance to other points
         kgc = kgcs( kIndx, : );
@@ -170,7 +274,7 @@ function pts = poissonDisc2( r, varargin )
           nearbyPts(:,1) = nearbyPts(:,1) - kPt(1);
           nearbyPts(:,2) = nearbyPts(:,2) - kPt(2);
           dists2NearbyPtsSq = nearbyPts(:,1).^2 + nearbyPts(:,2).^2;
-          if min( dists2NearbyPtsSq ) < distThresh, continue; end
+          if min( dists2NearbyPtsSq ) < distSqThresh, continue; end
         end
 
         validPointFound = true;
@@ -201,22 +305,20 @@ function pts = poissonDisc2( r, varargin )
         cB = kgc(1) - nNearCells;  % bottom corner index
         cT = kgc(1) + nNearCells;  % top corner index
 
-        for uIndx = max( cL, 1 ) : min( cR, size(bGrid,2) )
-          for vIndx = max( cB, 1 ) : min( cT, size(bGrid,1) )          
-            if ( uIndx == cL || uIndx == cR ) && ( vIndx == cB || vIndx == cT )
-             continue
-            end
+        for uIndx = max( cL, 1 ) : min( cR, sBGrid(2) )
+          for vIndx = max( cB, 1 ) : min( cT, sBGrid(1) )
+            if ( uIndx == cL || uIndx == cR ) && ( vIndx == cB || vIndx == cT ), continue; end
 
-            thisNBPts = nBPts( vIndx, uIndx );
-            if maxNBPts >= bIncSize
-              if thisNBPts == numel( bGrid{ vIndx, uIndx } )
-                bGrid{ vIndx, uIndx } = [ bGrid{ vIndx, uIndx }; zeros( bIncSize, 1 ); ];
-              end
+            thisNBPts = nBPts( vIndx, uIndx ) + 1;
+            if thisNBPts >= nBEls( vIndx, uIndx )
+              tmp = [ bGrid{ vIndx, uIndx }; zeros( bIncSize, 1 ); ];
+              tmp( thisNBPts ) = nPts;
+              bGrid{ vIndx, uIndx } = tmp;
+              nBEls( vIndx, uIndx ) = nBEls( vIndx, uIndx ) + bIncSize;
+            else
+              bGrid{ vIndx, uIndx }( thisNBPts ) = nPts;
             end
-            thisNBPts = thisNBPts + 1;
-            bGrid{ vIndx, uIndx }( thisNBPts ) = nPts;
             nBPts( vIndx, uIndx ) = thisNBPts;
-            maxNBPts = max( maxNBPts, thisNBPts );
           end
         end
       end
@@ -234,16 +336,5 @@ function pts = poissonDisc2( r, varargin )
   end
 
   pts = pts( 1 : nPts, : );
-end
-
-
-function out = ispositive( x )
-  out = isnumeric(x) && min( x(:) > 0 );
-end
-
-
-function gc = getGridCoordinate( pts, bounds, cellSize )
-  gc = ceil( [ ( pts(:,1) - bounds(1,1) ) , ...
-               ( pts(:,2) - bounds(2,1) ) ] / cellSize );
 end
 
