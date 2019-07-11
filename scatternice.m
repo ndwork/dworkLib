@@ -1,5 +1,5 @@
 
-function scatternice( in1, in2, varargin )
+function out = scatternice( in1, in2, varargin )
   % scatternice( in1, in2  [, 'ax', ax, options ] )
   %
   % Inputs:
@@ -28,14 +28,14 @@ function scatternice( in1, in2, varargin )
   end
 
   if numel( varargin ) > 0
-    scatter( in1, in2, 'filled', 'LineWidth', 1.5, varargin{:} );
+    out = scatter( in1, in2, varargin{:}, 'filled' );
   else
-    scatter( in1, in2, 'filled', 'LineWidth', 1.5 );
+    out = scatter( in1, in2, 'filled' );
   end
 
   if numel( ax ) > 0
-    set( ax, 'fontsize', 14, 'LineWidth', 1.5 );
+    set( ax, 'fontsize', 14 );
   else
-    set( gca, 'fontsize', 14, 'LineWidth', 1.5 );
+    set( gca, 'fontsize', 14 );
   end
 end
