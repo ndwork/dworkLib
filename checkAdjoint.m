@@ -48,10 +48,19 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
 
   out = true;
 
+  if min( isreal(x) ) == 0
+    dataIsComplex = true;
+  else
+    dataIsComplex = false;
+  end
+  
   err = 0;
   fx = f(x);
   if numel(y) == 0
     y = rand( size(fx) );
+    if dataIsComplex
+      y = y + 1i * rand( size(fx) );
+    end
   else
     fTy1s = fAdj( y );
     err = abs( dotP( fx, y ) - dotP( x, fTy1s ) );
@@ -78,8 +87,10 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   % Try random vectors
   for rIndx = 1 : nRand
     rx = rand( size( x ) );
+    if dataIsComplex, rx = rx + 1i * rand( size( x ) ); end
     frx = f( rx );
     ry = rand( size ( y ) );
+    if dataIsComplex, ry = ry + 1i * rand( size( x ) ); end
     fTry = fAdj( ry );
     dp1 = dotP ( frx, ry );
     dp2 = dotP( rx, fTry );
