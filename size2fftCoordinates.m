@@ -19,6 +19,15 @@ function ks = size2fftCoordinates( N )
   %       each column of fftImg
   %     kx is a vector of size( img, 2 ) with the k-space location of
   %       each row of fftImg
+  %
+  % Written by Nicholas Dwork - Copyright 2018
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
 
   if N(1)==1 && numel(N) > 1

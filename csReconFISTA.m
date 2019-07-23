@@ -23,6 +23,8 @@ function recon = csReconFISTA( samples, lambda, varargin )
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
+  % https://github.com/ndwork/dworkLib.git
+  %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
@@ -72,18 +74,19 @@ function recon = csReconFISTA( samples, lambda, varargin )
   M2 = cat( 3, M, M );
 
   function out = A( x )
-    Fx = F( cat( 3, x, zeros(size(x)) ) );
+    x = cat( 3, real(x), imag(x) );
+    Fx = F( x );
     out = M2 .* Fx;
   end
 
   function out = Aadj( y )
-    tmp = Fadj( M2 .* y );
-    out = tmp(:,:,1);
+    out = Fadj( M2 .* y );
   end
 
   if checkAdjoints == true
     % Variable used during debugging of this routine
-    csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj )
+    checkResult = csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj );
+    if checkResult ~= false, disp([ 'Adjoints test passed' ]); end
   end
 
   b = cat( 3, real(samples), imag(samples) );
@@ -94,7 +97,10 @@ function recon = csReconFISTA( samples, lambda, varargin )
   end
 
   Aadjb = Aadj(b);
-  gGrad = @(x) Aadj( A(x) ) - Aadjb;
+  function out = gGrad( x )
+    out = Aadj( A(x) ) - Aadjb;
+    out = out(:,:,1) + 1i * out(:,:,2);
+  end
 
   split = zeros(4);  split(1,1) = 1;
   %split = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
@@ -121,17 +127,17 @@ function recon = csReconFISTA( samples, lambda, varargin )
     out = sum( abs( Wx(:) ) );
   end
 
-  x0 = real( ifft2( ifftshift( samples ) ) );
+  x0 = ifft2( ifftshift( samples ) );
     % Could possibly make this better with inverse gridding
 
   t = 1;
   if debug
-    %[recon,oValues] = fista( x0, @g, gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
-    [recon,oValues] = fista_wLS( x0, @g, gGrad, proxth, 'h', @h, ...
+    %[recon,oValues] = fista( x0, @g, @gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
+    [recon,oValues] = fista_wLS( x0, @g, @gGrad, proxth, 'h', @h, ...
       't0', t, 'N', nIter, 'verbose', true, 'printEvery', printEvery );                                                                     %#ok<ASGLU>
   else
-    %recon = fista( x0, @g, gGrad, proxth );   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, gGrad, proxth, 't0', t, 'N', nIter, ...
+    %recon = fista( x0, @g, @gGrad, proxth );   %#ok<UNRCH>
+    recon = fista_wLS( x0, @g, @gGrad, proxth, 't0', t, 'N', nIter, ...
       'verbose', verbose, 'printEvery', printEvery );
   end
 
@@ -149,7 +155,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
 end
 
 
-function csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
+function out = csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
   % Check to make sure that Fadj is the adjoint of F
   x1 = rand( [size(samples) 2] );
 
@@ -157,9 +163,11 @@ function csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
     error( 'Fadj is not the transpose of F' );
   end
 
-  x2 = rand( size(samples) );
+  x2 = rand( [size(samples) 2] );
   if checkAdjoint( x2, A, Aadj ) ~= true
     error( 'Aadj is not the transpose of A' );
   end
+  
+  out = true;
 end
 

@@ -1,6 +1,6 @@
 
 function out = fftc( in, varargin )
-  % out = fftc( in [, n, dim, 'unitary', true/false ] )
+  % out = fftc( in [, n, dim, true/false ] )
   %
   % Compute the centered fft
   %
@@ -9,11 +9,12 @@ function out = fftc( in, varargin )
   %
   % Optional Inputs:
   % n - zero pads to this number of elements and then perform an fft
+  %     if a two dimensional fft, the zero pads to size [n(1) n(2)] and performs fft
   % dim - if supplied, only does an fft along this dimension
-  % m,n - if a two dimensional fft, the zero pads to size [m n] and performs fft
-  % sz - zero pads to array of this size and then performs multi-dimensional fft
   %
   % Written by Nicholas Dwork, Copyright 2019
+  %
+  % https://github.com/ndwork/dworkLib.git
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
@@ -23,7 +24,7 @@ function out = fftc( in, varargin )
   p = inputParser;
   p.addOptional( 'n', [], @(x) numel(x) == 0 || ispositive(x) );
   p.addOptional( 'dim', [], @isnumeric );
-  p.addParameter( 'unitary', false, @(x) islogical(x) || isnumeric(x) );
+  p.addOptional( 'unitary', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   dim = p.Results.dim;
   n = p.Results.n;
