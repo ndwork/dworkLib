@@ -32,8 +32,10 @@ function c = fitPolyToData2( xOrder, yOrder, x, y, z )
   A = ones( Nx, (xOrder+1) * (yOrder+1) );
   colIndx = 1;
   for u = 0 : xOrder
+    xTou = x(:).^u;
+
     for v = 0 : yOrder
-      A(:,colIndx) = x(:).^u .* y(:).^v;
+      A(:,colIndx) = xTou .* y(:).^v;
       colIndx = colIndx + 1;
     end
   end
