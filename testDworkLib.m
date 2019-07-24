@@ -94,50 +94,6 @@ function testDworkLib
     error( 'evlautePoly failed' );
   end
 
-  %% fista test 1
-  M = 300;
-  N = 20;
-  A = rand(M,N);
-  b = rand(M,1);
-
-  bestX = A\b;
-
-  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
-  gGrad = @(x) A'*A*x - A'*b;
-  proxth = @(x,t) x;  % Least squares
-  x0 = zeros(N,1);
-  xHat_leastSquares = fista( x0, g, gGrad, proxth );
-
-  err = norm( xHat_leastSquares - bestX ) / M;
-  if err < 1d-7
-    disp( 'fista test 1 passed' );
-  else
-    error( 'fista test 1 failed' );
-  end
-
-  %% fista test 2
-  lambda = 50;
-  M = 300;
-  N = 30;
-  A = rand(M,N);
-  x = zeros(N,1);
-  x(3)=5; x(2)=8;  x(22)=2;
-  %b = A*x + rand(M,1);
-  b = A*x + rand(M,1)/10;
-
-  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
-  h = @(y) norm( y, 1 );
-  gGrad = @(x) A'*A*x - A'*b;
-  x0 = rand(N,1);
-
-  proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
-  [xHat_lasso,objValues] = fista( x0, g, gGrad, proxth, 'h', h );                          %#ok<ASGLU>
-  err = norm( xHat_lasso - x, 1 ) / N;
-  if err < 0.1
-    disp( 'fista passed' );
-  else
-    error( 'fista failed' );
-  end
   
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
@@ -202,6 +158,74 @@ function testDworkLib
     disp('findTransWithPCC passed');
   else
     error('findTransWithPCC failed');
+  end
+
+  %% fista test 1
+  M = 300;
+  N = 20;
+  A = rand(M,N);
+  b = rand(M,1);
+
+  bestX = A\b;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  gGrad = @(x) A'*A*x - A'*b;
+  proxth = @(x,t) x;  % Least squares
+  x0 = zeros(N,1);
+  xHat_leastSquares = fista( x0, g, gGrad, proxth );
+
+  err = norm( xHat_leastSquares - bestX ) / M;
+  if err < 1d-7
+    disp( 'fista test 1 passed' );
+  else
+    error( 'fista test 1 failed' );
+  end
+
+  %% fista test 2
+  lambda = 50;
+  M = 300;
+  N = 30;
+  A = rand(M,N);
+  x = zeros(N,1);
+  x(3)=5; x(2)=8;  x(22)=2;
+  %b = A*x + rand(M,1);
+  b = A*x + rand(M,1)/10;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  h = @(y) norm( y, 1 );
+  gGrad = @(x) A'*A*x - A'*b;
+  x0 = rand(N,1);
+
+  proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
+  [xHat_lasso,objValues] = fista( x0, g, gGrad, proxth, 'h', h );                          %#ok<ASGLU>
+  err = norm( xHat_lasso - x, 1 ) / N;
+  if err < 0.1
+    disp( 'fista passed' );
+  else
+    error( 'fista failed' );
+  end
+
+  %% fitPolyToData2
+  xOrder = 3;
+  yOrder = 2;
+  nPtsX = 5;
+  nPtsY = 3;
+
+  c = rand( yOrder+1, xOrder+1 ) * 10;
+
+  x = linspace( 1, 10, nPtsX );
+  y = linspace( 1, 10, nPtsY );
+  [x,y] = meshgrid( x, y );
+  x = x(:);  y = y(:);
+
+  z = evaluatePoly2( c, x, y );
+  cFit = fitPolyToData2( xOrder, yOrder, x(:), y(:), z );
+
+  err = norm( c(:) - cFit(:) );
+  if err > 1d-8
+    error([ 'fitPolyToData2 failed with error ', num2str(err) ]);
+  else
+    disp( 'fitPolyToData2 passed' );
   end
 
   %% goldenSectionSearch
