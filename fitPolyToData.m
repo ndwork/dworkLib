@@ -3,7 +3,7 @@ function v = fitPolyToData( N, x, y )
   % v = fitPolyToData( N, x, y ) or
   % v = fitPolyToData( N, y )
   %
-  % This function finds a polynomial p so that ||y-p(x)||_2 is minimized
+  % This function finds a polynomial p so that || y - p(x) ||_2 is minimized
   %
   % Inputs:
   % N - the order of the polynomial

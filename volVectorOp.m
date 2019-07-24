@@ -14,7 +14,7 @@ function out = volVectorOp( volume, vector, varargin )
   % dim - Dimension along which to perform the volume-vector product
   %   (default is last dimension)
   % op - The operation to be performed
-  %      Options: 'multiplication', 'subtraction'
+  %      Options: 'multiplication', 'subtraction', 'power'
   %
   % Written by Nicholas Dwork, Copyright 2017
   %
@@ -39,6 +39,8 @@ function out = volVectorOp( volume, vector, varargin )
       out = bsxfun( @minus, volume, newVec );
     case 'multiplication'
       out = bsxfun( @times, volume, newVec );
+    case 'power'
+      out = bsxfun( @power, volume, newVec ):
     otherwise
       error('Operation wasn''t recognized');
   end
