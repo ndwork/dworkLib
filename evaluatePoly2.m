@@ -25,9 +25,11 @@ function p = evaluatePoly2( c, x, y )
   yOrder = size( c, 1 ) - 1;
 
   p = zeros( nPts, 1 );
-  for u=0:xOrder
-    for v=0:yOrder
-      p = p + c(v+1,u+1) * x.^u .* y.^v;
+  for u = 0:xOrder
+    xTou = x(:).^u;
+
+    for v = 0:yOrder
+      p = p + c(v+1,u+1) * xTou .* y(:).^v;
     end
   end
 end
