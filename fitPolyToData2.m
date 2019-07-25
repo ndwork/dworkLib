@@ -13,7 +13,7 @@ function c = fitPolyToData2( xOrder, yOrder, x, y, z )
   % z - range values
   %
   % Outputs:
-  % v = a 2 dimensional array of polynomial coefficients.
+  % c = a 2 dimensional array of polynomial coefficients.
   %   p(x,y) = \sum_{u=0,v=0}^{xOrder,yOrder} c_{u,v} x^u y^v
   %
   % Written by Nicholas Dwork - Copyright 2019
