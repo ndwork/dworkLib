@@ -31,7 +31,7 @@ function out = fftc( in, varargin )
   unitary = p.Results.unitary;
 
   if numel( dim ) > 0
-    out = fftshift( fft( in, n, dim ) );
+    out = fftshift( fft( in, n, dim ), dim );
 
   else
 
