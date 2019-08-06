@@ -5,6 +5,13 @@ function H = homographyFromPts2D( pts1, pts2 )
   % Determine the homography that projects pts1 onto pts2 with the Direct
   %   Linear Transformation.
   %
+  % Inputs:
+  % pts1 - An Nx2 array where N is the number of points
+  % pts2 - An Nx2 array where N is the number of points
+  %
+  % Outputs:
+  % H - a 3x3 matrix representing the homography
+  %
   % Written by Nicholas Dwork - Copyright 2016
   %
   % This software is offered under the GNU General Public License 3.0.  It
