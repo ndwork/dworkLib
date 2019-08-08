@@ -3,7 +3,7 @@ function recons = mri_fftRecon( kData )
   % Performs an inverse FFT of each coil
   %
   % Inputs:
-  % kData is an array of size (Ny,Nx,nSlices,nPhases,nCoils)
+  % kData is an array of size (Ny,Nx,nSlices,...,nCoils)
   %
   % Output:
   % recons is the reconstructed image, an array of the same size as the input
@@ -15,7 +15,12 @@ function recons = mri_fftRecon( kData )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  recons = fftshift( fftshift( ifft2( ifftshift( ifftshift( ...
-    kData, 1 ), 2) ), 1 ), 2 );
+  recons = fftshift( ifftc( ...
+      fftshift( ifftc( kData, [], 1 ), 1 ), ...
+    [], 2 ), 2 );
+
+  if ~ismatrix( kData )
+    recons = fftshift( ifftc( recons, [], 3 ), 3 );
+  end
 
 end
