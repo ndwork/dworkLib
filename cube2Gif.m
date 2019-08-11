@@ -35,14 +35,14 @@ function cube2Gif( cube, varargin )
   delayTime = p.Results.delayTime;
   loopCount = p.Results.loopCount;
 
-  if ndims( cube ) ~= 3, error('cube must be a 3D array'); end;
+  if ndims( cube ) ~= 3, error('cube must be a 3D array'); end
 
   first = 1;
   for i=1:size( cube, 3 )
     img = double( cube( :, :, i ) );
     img = uint8( img * 255 );
 
-    if first == 1;
+    if first == 1
       imwrite(img,outFile,'gif','LoopCount',loopCount,'DelayTime',delayTime);
       first = 0;
     else
