@@ -1,12 +1,15 @@
 
-function [ outLine, matchIndx ] = findLineInFile( file, exp )
-  % [ outLine, matchIndx ] = findLineInFile( file, exp )
+function [ out, matchIndx ] = findLineInFile( file, exp, varargin )
+  % [ outLine, matchIndx ] = findLineInFile( file, exp [, 'nLines', nLines ] )
   %
   % Finds the first line in the file that matches expression
   %
   % Inputs:
   % file - a string with the file to open
   % exp - the experession to match
+  %
+  % Optional Inputs:
+  % nLines - the number of lines to acquire
   %
   % Outputs:
   % outLine - the line that matched expression
@@ -23,15 +26,33 @@ function [ outLine, matchIndx ] = findLineInFile( file, exp )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  p = inputParser;
+  p.addParameter( 'nLines', 1, @ispositive );
+  p.parse( varargin{:} );
+  nLines = p.Results.nLines;
+  
   fp = fopen( file, 'r' );
 
-  outLine = [];
+  if nLines > 1
+    out = cell( nLines, 1 );
+  else
+    out = [];
+  end
+
   while feof( fp ) == 0
     thisLine = fgetl( fp );
     matchIndx = regexp( thisLine, exp );
     if matchIndx
-      outLine = thisLine;
-      fclose( fp );
+      if nLines > 1
+        out{1} = thisLine;
+        for lineIndx = 2:nLines
+          if feof( fp ), break; end
+          thisLine = fgetl( fp );
+          out{ lineIndx } = thisLine;
+        end
+      else
+        out = thisLine;
+      end
       break;
     end
   end
