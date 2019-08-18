@@ -2,8 +2,9 @@
 function restart( varargin )
   % restart( [ 'all' ] )
   %
-  % closes all windows, clears variables, clears the command window and
-  % any parforProgess files that were created by the current instance of Matlab
+  % closes all windows, clears variables, clears the command window, ends debug
+  % mode, and deletes any parforProgess files that were created by the current
+  % instance of Matlab
   %
   % Optional Inputs:
   % if 'all' is supplied, restart removes any parforProgress.txt files that exist
@@ -14,10 +15,10 @@ function restart( varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
-
+  
   type = [];
   if nargin > 0, type = varargin{1}; end
-
+  
   if strcmp( type, 'all' )
     clear all;  %#ok<CLALL>
 
@@ -25,7 +26,7 @@ function restart( varargin )
     for fileIndx = 1 : numel( parforFiles )
       delete( parforFiles(fileIndx).name );
     end
-    
+
   else
 
     pid = feature('getpid');
@@ -37,4 +38,23 @@ function restart( varargin )
   end
 
   close all;  clear;  clc;
+
+  % I would like to be able to call 'dbquit' here, but Matlab
+  % prevents it.  So instead, I must simulate keyboard commands,
+  % which is what is done here:
+  pressShiftF5;
 end
+
+
+function pressShiftF5
+  import java.awt.Robot;
+  import java.awt.event.KeyEvent;
+
+  rob = Robot;  %Create a Robot-object to do the key-pressing
+  rob.keyPress( KeyEvent.VK_SHIFT );
+  rob.keyPress( KeyEvent.VK_F5 );
+  rob.keyRelease( KeyEvent.VK_SHIFT );
+  rob.keyRelease( KeyEvent.VK_F5 );
+end
+
+
