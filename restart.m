@@ -23,7 +23,7 @@ function restart( varargin )
   
   if strcmp( type, 'all' )
     clear all;  %#ok<CLALL>
-    evalin( 'base', 'clear all' )
+    evalin( 'base', 'clear all' );  % delete all variables in global scope
 
     parforFiles = dir( 'parforProgress*.txt' );
     for fileIndx = 1 : numel( parforFiles )
