@@ -23,6 +23,7 @@ function restart( varargin )
   
   if strcmp( type, 'all' )
     clear all;  %#ok<CLALL>
+    evalin( 'base', 'clear all' )
 
     parforFiles = dir( 'parforProgress*.txt' );
     for fileIndx = 1 : numel( parforFiles )
