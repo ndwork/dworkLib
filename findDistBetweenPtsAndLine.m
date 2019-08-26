@@ -1,17 +1,18 @@
 
-function dist = findDistBetweenPtAndLine( pt, line )
-  % dist = findDistBetweenPtAndLine( pt, line )
+function dists = findDistBetweenPtsAndLine( pts, line )
+  % dist = findDistBetweenPtsAndLine( pts, line )
   %
   % Inputs:
-  % pt - a 1D array specifying the coordinate of the point
+  % pts - a MxN real array specifying the coordinates of the points
+  %   M is the dimension of the space; N is the number of points
   % line - a structure containing two elements: pt and vec
   %   line.pt is a point on the line
   %   line.vec is a vector that points in the direction of the line
   %
   % Outputs:
-  % dist - a scalar representing the shortest distance between the point and the line
+  % dists - a 1D array representing the shortest distance between the points and the line
   %
-  % Written by Nicholas Dwork - Copyright 2016
+  % Written by Nicholas Dwork - Copyright 2019
   %
   % https://github.com/ndwork/dworkLib.git
   %
@@ -22,7 +23,8 @@ function dist = findDistBetweenPtAndLine( pt, line )
 
   a = line.pt;
   n = line.vec;
-  aMinusP = a - pt;
-  dist = norm( aMinusP - dotP( aMinusP, n ) * n );
 
+  aMinusP = bsxfun( @minus, a, pts );
+  tmp = bsxfun( @times, ( aMinusP' * n )', n );
+  dists = norms( aMinusP - tmp, 2, 1 );
 end
