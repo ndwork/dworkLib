@@ -1,6 +1,6 @@
 
 function M = mri_ab2Matrix( a, b )
-  % Converts the Cayley-Klein parameters into a matrix Matrix so that
+  % Converts the Cayley-Klein parameters into a matrix so that
   % next([ Mxy; conj(Mxy); Mz]) = Matrix * [ Mxy; conj(Mxy); Mz ]
   %
   % Inputs
