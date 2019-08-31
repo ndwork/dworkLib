@@ -45,6 +45,8 @@ function showImageCube( cube, varargin )
   range = p.Results.range;
   sdevScale = p.Results.sdevScale;
 
+  cube = squeeze( cube );
+
   sCube = size( cube );
   if ismatrix( cube )
     nImgs = 1;
