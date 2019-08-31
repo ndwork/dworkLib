@@ -26,16 +26,20 @@ function [p,dp] = evaluatePoly( c, x )
   p = c(end);
 
   if nargout > 1
+
     % evaluate the polynomial and its derivatve
     dp = 0;
     for i = numel(c)-1:-1:1
       dp = p + dp.*x;
       p = p.*x + c(i);
     end
+
   else
+
     for i = numel(c)-1:-1:1
       p = p.*x + c(i);
     end
+
   end
 end
 

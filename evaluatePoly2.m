@@ -1,3 +1,4 @@
+
 function p = evaluatePoly2( c, x, y )
   % p = evaluatePoly2( c, x, y )
   %
@@ -20,16 +21,22 @@ function p = evaluatePoly2( c, x, y )
   % purpose.
 
   nPts = numel( x );
+  if numel(y) ~= nPts, error( 'x and y must have the same number of elements' ); end
 
   xOrder = size( c, 2 ) - 1;
   yOrder = size( c, 1 ) - 1;
 
   p = zeros( nPts, 1 );
-  for u = 0:xOrder
-    xTou = x(:).^u;
 
-    for v = 0:yOrder
-      p = p + c(v+1,u+1) * xTou .* y(:).^v;
+  xtou = ones( nPts, 1 );
+  for u = 0 : xOrder
+
+    ytov = ones( nPts, 1 );
+    for v = 0 : yOrder
+      p = p + c(v+1,u+1) * xtou .* ytov;
+      ytov = ytov .* y(:);
     end
+
+    xtou = xtou .* x(:);
   end
 end
