@@ -19,4 +19,3 @@ function out = isnonnegative( x )
 
   out = isnumeric(x) && min( x(:) >= 0 );
 end
-
