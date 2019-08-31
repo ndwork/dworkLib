@@ -94,6 +94,23 @@ function testDworkLib
     error( 'evlautePoly failed' );
   end
 
+  %% evlautePoly2
+  x = 4;
+  y = 5;
+  c = reshape( 1:4, [2 2] );
+  p = evaluatePoly2( c, x, y );
+  rightP = 0;
+  for i = 1:size(c,2)
+    for j = 1:size(c,1)
+      rightP = rightP + c(j,i) * x.^(i-1) * y.^(j-1);
+    end
+  end
+  err = norm( p - rightP );
+  if err < 1d-8
+    disp( 'evlautePoly2 passed' );
+  else
+    error([ 'evlautePoly2 failed with error, ', num2str(err) ]);
+  end
   
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
@@ -549,19 +566,33 @@ function testDworkLib
   subplot(4,1,4); plotnice( x, y, 'g+', 'MarkerSize', 20 );
   disp('Plotnice passed');
 
+  %% polyFit2
+  x = 1:10;  y = 1:10;
+  [xs,ys] = meshgrid( x, y );
+  xOrder = 2;  yOrder = 2;
+  c = rand( xOrder+1, yOrder+1 );
+  p = evaluatePoly2( c, xs, ys );
+  cFit = polyFit2( xs, ys, p, xOrder, yOrder );
+  err = norm( c(:) - cFit(:) );
+  if err > 1d-6
+    error([ 'polyFit2 failed with error ', num2str(err) ]);
+  else
+    disp('polyFit2 passed');
+  end
+
   %% powerIteration
   fprintf('\nTesting powerIteration: \n');
   M = rand(3);
   est = powerIteration( M, false );
   normM = norm( M );
   err = abs( est - normM ) / normM;
-  if err > 1d-5, error('Power Iteration failed'); end;
+  if err > 1d-5, error('Power Iteration failed'); end
 
   symmM = M + M';
-  [est,flag] = powerIteration( symmM, true );                                              %#ok<ASGLU>
+  [est,flag] = powerIteration( symmM, true );  %#ok<ASGLU>
   normSymmM = norm( symmM );
   err = abs( est - normSymmM ) / normM;
-  if err > 1d-5, error('Power Iteration failed'); end;
+  if err > 1d-5, error('powerIteration failed'); end
 
   function out = applyM( x, type )
     if (nargin>1) && strcmp( type, 'transp')
@@ -573,7 +604,7 @@ function testDworkLib
   x0 = rand( size(M,2), 1 );
   est = powerIteration( @applyM, false, x0 );
   err = abs( est - normM ) / normM;
-  if err > 1d-5, error('Power Iteration failed'); end;
+  if err > 1d-5, error('Power Iteration failed'); end
   disp('powerIteration passed');
 
   function out = applyMsymm( x )
@@ -582,7 +613,7 @@ function testDworkLib
   x0 = rand( size(symmM,2), 1 );
   est = powerIteration( @applyMsymm, true, x0 );
   err = abs( est - normSymmM ) / normSymmM;
-  if err > 1d-5, error('Power Iteration failed'); end;
+  if err > 1d-5, error('Power Iteration failed'); end
 
   disp('powerIteration passed');
 
