@@ -36,6 +36,6 @@ function showFeaturesOnImg( features, varargin )
   end
   hold on
   rFeatures = round( scale * features );
-  plot( rFeatures(:,1), rFeatures(:,2), [color,'*']);
+  plot( rFeatures(:,1), rFeatures(:,2), [color,'x']);
   drawnow;
 end

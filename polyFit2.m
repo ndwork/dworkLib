@@ -54,8 +54,10 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
   end
 
   if numel( w ) == 0
+    %c = lsqminnorm( A, z(:) );
     c = A \ z(:);
   else
+    %c = lsqminnorm( diag(w(:)) * A, w(:) .* z(:) );
     c = ( diag(w(:)) * A ) \ ( w(:) .* z(:) );
   end
 

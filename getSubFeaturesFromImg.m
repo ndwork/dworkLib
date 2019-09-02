@@ -52,9 +52,9 @@ function [features,values] = getSubFeaturesFromImg( img, n, varargin )
 
   if nargout > 1
     values = zeros( n, size(img,3) );
-    roundedFeatures = round( features );
+    ceiledFeatures = ceil( features );
     for fIndx = 1:n
-      values(fIndx,:) = img( roundedFeatures(fIndx,2), roundedFeatures(fIndx,1), : );
+      values(fIndx,:) = img( ceiledFeatures(fIndx,2), ceiledFeatures(fIndx,1), : );
     end
   end
 end
