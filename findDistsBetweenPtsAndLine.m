@@ -1,5 +1,5 @@
 
-function dists = findDistBetweenPtsAndLine( pts, line )
+function dists = findDistsBetweenPtsAndLine( pts, line )
   % dist = findDistBetweenPtsAndLine( pts, line )
   %
   % Inputs:
@@ -21,8 +21,8 @@ function dists = findDistBetweenPtsAndLine( pts, line )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  a = line.pt;
-  n = line.vec;
+  a = line.pt;   a = a(:);
+  n = line.vec;  n = n(:);
 
   aMinusP = bsxfun( @minus, a, pts );
   tmp = bsxfun( @times, ( aMinusP' * n )', n );
