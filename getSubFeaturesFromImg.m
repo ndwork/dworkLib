@@ -22,7 +22,7 @@ function [features,values] = getSubFeaturesFromImg( img, n, varargin )
   % purpose.
 
   p = inputParser;
-  p.addRequired( 'img', @(x) isnumeric(x) && ismatrix(x) );
+  p.addRequired( 'img', @(x) isnumeric(x) );
   p.addRequired( 'n', @(x) isnumeric(x) && x > 0 );
   p.addOptional( 'scale', 1, @isnumeric );
   p.parse( img, n, varargin{:} );
@@ -34,7 +34,7 @@ function [features,values] = getSubFeaturesFromImg( img, n, varargin )
   features = zeros( n, 2 );
   subF = figure;
   for pt = 1 : n
-    figure( mainF );
+    figure( mainF );  title([ 'Select point: ', num2str(pt) ]);
     grossPt = round( ginput( 1 ) / scale );
     hL = max( grossPt(1) - 10, 1 );
     vL = max( grossPt(2) - 10, 1 );
@@ -42,6 +42,8 @@ function [features,values] = getSubFeaturesFromImg( img, n, varargin )
     vU = min( grossPt(2) + 10, size(img,1) );
     subImg = img( vL : vU, hL : hU, : );
     figure( subF );
+    subImg = subImg - min( subImg(:) );
+    subImg = subImg / max( subImg(:) );
     imshowscale( subImg, scale*10 );
     features(pt,:) = double( ginput(1) ) / ( scale * 10 );
     features(pt,:) = features(pt,:) + [ hL-1 vL-1 ];
