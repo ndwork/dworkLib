@@ -1,6 +1,6 @@
 
-function showImageCube( cube, varargin )
-  % showImageCube( cube [, scale, 'border', border, 'borderValue', borderValue, ...
+function imH = showImageCube( cube, varargin )
+  % imH = showImageCube( cube [, scale, 'border', border, 'borderValue', borderValue, ...
   %   'nImgsPerRow', nImgsPerRow, 'range', range, 'sdevScale', sdevScale ] )
   %
   % Given an MxNxK array, shows each slice as a separate image on a single
@@ -20,6 +20,9 @@ function showImageCube( cube, varargin )
   % sdevscale - passed into underlying imshowscale call
   %   (Not used if range is specified)
   % nImgsPerRow - ( default is ceil(sqrt(K)) )
+  %
+  % Outputs:
+  % imH - a handle to the image object
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
@@ -94,6 +97,6 @@ function showImageCube( cube, varargin )
     end
   end
 
-  imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
+  imH = imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
   drawnow;
 end
