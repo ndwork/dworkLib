@@ -43,8 +43,8 @@ function out = applyRadialDistortion( img, ks, varargin )
     if kIndx < numel( ks ), rPower = rPower .* rs; end
   end
 
-  xTildes = c(1) + ( xs - c(1) ) ./ Ls;
-  yTildes = c(2) + ( ys - c(2) ) ./ Ls;
+  xTildes = c(1) + ( xs - c(1) ) .* Ls;
+  yTildes = c(2) + ( ys - c(2) ) .* Ls;
 
   out = zeros( sImg );
   for colorIndx = 1 : size( img, 3 )

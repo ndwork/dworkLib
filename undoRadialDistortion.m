@@ -46,11 +46,14 @@ function out = undoRadialDistortion( img, ks, varargin )
   xTildes = c(1) + ( xs - c(1) ) .* Ls;
   yTildes = c(2) + ( ys - c(2) ) .* Ls;
 
+  sImg = size(img);
   out = zeros( sImg );
   for colorIndx = 1 : size( img, 3 )
-    colorChannel = img(:,:,colorIndx);
-    tmp = interp2( xs, ys, colorChannel, xTildes, yTildes, 'linear', 0 );
-    out(:,:,colorIndx) = reshape( tmp, sImg(1:2) );
+   colorChannel = img(:,:,colorIndx);
+   F = scatteredInterpolant( xTildes(:), yTildes(:), colorChannel(:) );
+   tmp = F( xs(:), ys(:) );
+   %tmp = griddata( xTildes(:), yTildes(:), colorChannel(:), xs(:), ys(:), 'linear' );
+   out(:,:,colorIndx) = reshape( tmp, sImg(1:2) );
   end
 
 end
