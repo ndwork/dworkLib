@@ -34,17 +34,10 @@ function out = applyRadialDistortion( img, ks, varargin )
   coords = size2imgCoordinates( sImg(1:2) );
 
   [xs,ys] = meshgrid( coords{2}, coords{1} );
-  rs = sqrt( xs .* xs + ys .* ys );
-
-  Ls = ones( sImg(1:2) );
-  rPower = rs;
-  for kIndx = 1 : numel( ks )
-    Ls = Ls + ks(kIndx) .* rPower;
-    if kIndx < numel( ks ), rPower = rPower .* rs; end
-  end
-
-  xTildes = c(1) + ( xs - c(1) ) .* Ls;
-  yTildes = c(2) + ( ys - c(2) ) .* Ls;
+  
+  distortedPts = applyRadialDistortion2Pts( [ xs(:) ys(:) ], ks, c );
+  xTildes = distortedPts( :, 1 );
+  yTildes = distortedPts( :, 2 );
 
   out = zeros( sImg );
   for colorIndx = 1 : size( img, 3 )

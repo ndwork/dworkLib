@@ -40,7 +40,7 @@ function restart( varargin )
 
   end
 
-  close all;  clear;  clc;
+  close all;  clc;  clear;  clear global;
 
   % I would like to be able to call 'dbquit' here, but Matlab
   % prevents it.  So instead, I must simulate keyboard commands,
