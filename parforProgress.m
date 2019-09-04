@@ -40,7 +40,7 @@ classdef parforProgress
     % Constructor
     function obj = parforProgress( nTotal, varargin )
       % nTotal is the total number of iterations for completion
-      if nargin < 1, error('Must supply total number of iterations.'); end;
+      if nargin < 1, error('Must supply total number of iterations.'); end
 
       pid = feature('getpid');
       defaultTmpFile = ['parforProgress_', num2str(pid), '.txt'];
