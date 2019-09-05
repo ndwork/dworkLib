@@ -12,7 +12,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % Outputs:
   % senseMaps - the sensitivity maps
   %
-  % Written by Nicholas Dwork - Copyright 2016
+  % Written by Nicholas Dwork - Copyright 2019
   %
   % https://github.com/ndwork/dworkLib.git
   %
