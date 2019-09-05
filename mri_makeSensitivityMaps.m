@@ -24,11 +24,13 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   p = inputParser;
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) );  
-  p.addParameter( 'sigma', 7, @ispositive );
+  p.addParameter( 'sigma', 3, @ispositive );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   L = p.Results.L;
   mask = p.Results.mask;
   sigma = p.Results.sigma;
+  verbose = p.Results.verbose;
 
   if numel( mask ) == 0, mask = ones( size( kData ) ); end
   
@@ -48,18 +50,18 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   [ nCols, nRows, nSlices, nCoils ] = size( coilRecons );
 
   senseMaps0 = bsxfun( @rdivide, abs( coilRecons ), ssqRecon );
-  
   senseMapCols = cell( 1, nCols, 1, 1 );
-
   senseMaps = zeros( size( senseMaps0 ) );
 
-  %for slice = 1 : nSlices
-for slice = 10
+  if verbose == true, pfObj = parforProgress( nSlices * nCols ); end
+
+  for slice = 1 : nSlices
     for i=1:nCols, senseMapCols{i} = zeros(nRows,1,nCoils); end
 
     parfor x0 = hSize : nCols-hSize
-      disp([ 'Working on slice/col ', num2str(slice), '/', num2str(x0), ' of ', ...
-        num2str(size(coilRecons,3)), '/', num2str( size( coilRecons, 2 ) ) ]);
+      if verbose == true && mod( x0, 20 ) == 0
+        pfObj.progress( (nSlices-1)*nCols + x0 );   %#ok<PFBNS>
+      end
 
       senseMapRowCoils = zeros( nRows, 1, nCoils );
       for y0 = hSize : nRows-hSize
@@ -74,18 +76,17 @@ for slice = 10
 
         thisAbsRecon = abs( ...
           coilRecons( y0 - floor(hSize/2) : y0 + floor(hSize/2) , ...
-                      x0 - floor(hSize/2) : x0 + floor(hSize/2), slice, : ) ...
-        );
+                      x0 - floor(hSize/2) : x0 + floor(hSize/2), slice, : ) );   %#ok<PFBNS>
 
         for coil = 1 : nCoils
           thisMap = thisMap0( :, :, :, coil );
+          thisAbsCoilRecon = thisAbsRecon( :, :, :, coil );
 
-          w = thisMask .* gFilt .* thisAbsRecon ./ abs( thisMap );
-          
-          c = polyFit2( xs, ys, thisMap, L, L, 'w', gFilt .* thisMask );
+          w = thisMask .* gFilt .* thisAbsCoilRecon ./ thisMap;
+
+          c = polyFit2( xs, ys, thisMap, L, L, 'w', w );
 
           senseMapRowCoils( y0, 1, coil ) = c(1,1);  % evalPoly2( c, 0, 0 );
-          %senseMaps(y0,x0) = c(1,1);  % evalPoly2( c, 0, 0 );
         end
       end
 
@@ -94,6 +95,7 @@ for slice = 10
 
     senseMaps(:,:,slice,:) = cell2mat( senseMapCols );
   end
+  if verbose == true, pfObj.clean; end
 
   senseMaps = max( min( senseMaps, 1 ), 0 );
   
