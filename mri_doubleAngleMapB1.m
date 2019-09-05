@@ -1,13 +1,14 @@
 
-function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
-  % b1ScaleMap = mri_mapB1( dataCube [, angles, 'mask', mask, 'alg', alg, ...
+function b1ScaleMap = mri_doubleAngleMapB1( dataCube, sliceThickness, varargin )
+  % b1ScaleMap = mri_doubleAngleMapB1( dataCube, sliceThickness [, angles, 'mask', mask, 'alg', alg, ...
   %   'verbose', verbose' ] )
   %
   % Performs double angle B1 mapping
   %
   % Inputs:
-  % dataCube - a 3D array of size MxNx2.  The first / second slice is the 
+  % dataCube - a 3D array of size MxNx2.  The first / second slice is the
   %   single / double angle data.
+  % sliceThickness - used when designing RF pulse (in cm)
   %
   % Optional Inputs:
   % angles - two element array specifying the flip angles of the data (radians)
@@ -54,7 +55,6 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, varargin )
 
     tbw = 8;
     rfDuration = 1.28;  % ms
-    sliceThickness = 0.5; % cm
     b1s = 0.01:0.01:1.5;
     B0 = 0;  % residual B0 offset
 
