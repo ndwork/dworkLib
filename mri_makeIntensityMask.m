@@ -33,8 +33,10 @@ function mask = mri_makeIntensityMask( kData, varargin )
   ssqRecon = ssqRecon / max( ssqRecon(:) );
   mask = ssqRecon > thresh;
 
+  closation = strel( 'disk', floor(m/2), 0 );
   for slice = 1 : size( mask, 3 )
     mask(:,:,slice) = ordfilt2( mask(:,:,slice), 1, ones(m) );
       % minimum neighborhood filtering
+    mask(:,:,slice) = imclose( mask(:,:,slice), closation );
   end
 end
