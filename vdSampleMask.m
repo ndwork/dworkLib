@@ -52,7 +52,7 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
     dimSamples{dimIndx} = theseSamples - min( theseCoordinates ) + 1;
   end
 
-  samples1D = sub2ind( sMask, dimSamples{1}, dimSamples{2} );
+  samples1D = sub2ind( sMask, dimSamples{:} );
 
   mask = zeros( sMask );
   mask( samples1D ) = 1;
