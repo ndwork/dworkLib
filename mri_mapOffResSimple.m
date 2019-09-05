@@ -30,7 +30,7 @@ function [ offResMap, phaseOffsetMap ] = mri_mapOffResSimple( dataCube, TEs, var
   mask = p.Results.mask;
 
   sData = size( dataCube );
-  if numel( mask ) == 0, mask=ones( sData(1:2) ); end;
+  if numel( mask ) == 0, mask=ones( sData(1:2) ); end
 
   angleOffset = angle( dataCube(:,:,2) .* conj( dataCube(:,:,1) ) );
   offResMap = angleOffset / ( TEs(2) - TEs(1) );
