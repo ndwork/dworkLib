@@ -1,13 +1,20 @@
 
 function senseMaps = mri_makeSensitivityMaps( kData, varargin )
+  % senseMaps = mri_makeSensitivityMaps( kData [, 'L', L, ...
+  %   'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
+  %
   % Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
   % Pruessmann et al., 1999
   %
   % Inputs:
-  % kData - the k-space data collected from the MRI machine
+  % kData - the k-space data collected from the MRI machine ( kx, ky, slice, coil )
   %
   % Optional Inputs:
   % L - the order of the polynomial to fit
+  % mask - an array of zeros and ones; the mask specifies those data points that have
+  %  valid data (and not just noise).  It has size ( kx, ky, slice )
+  % sigma - the standard deviation of the Gaussian weights to use when fitting a polynomial
+  % verbose - if set to true, displays informative statements
   %
   % Outputs:
   % senseMaps - the sensitivity maps
@@ -32,12 +39,16 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   sigma = p.Results.sigma;
   verbose = p.Results.verbose;
 
-  if numel( mask ) == 0, mask = ones( size( kData ) ); end
-  
   coilRecons = mri_fftRecon( kData );
+  sCoilRecons = size( coilRecons );
   ssqRecon = norms( coilRecons, 2, 4 );
 
-  if numel( mask ) == 0, mask = ones( size( coilRecons ) ); end
+  if numel( mask ) == 0
+    mask = ones( sCoilRecons(1:3) );
+    minMask = 1;
+  else
+    minMask = min( mask(:) );
+  end
 
   hSize = sigma * 5;
   if mod( hSize, 2 ) == 0, hSize = hSize + 1; end
@@ -49,18 +60,22 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   [ nCols, nRows, nSlices, nCoils ] = size( coilRecons );
 
-  senseMaps0 = bsxfun( @rdivide, abs( coilRecons ), ssqRecon );
+  senseMaps0 = bsxfun( @rdivide, coilRecons, ssqRecon );
   senseMapCols = cell( 1, nCols, 1, 1 );
   senseMaps = zeros( size( senseMaps0 ) );
 
-  if verbose == true, pfObj = parforProgress( nSlices * nCols ); end
+  if verbose == true
+    pfObj = parforProgress( nSlices * nCols );
+  end
 
   for slice = 1 : nSlices
+    if verbose == true, disp([ 'Working on slice ', num2str(slice), ' of ', ...
+      num2str(nSlices) ]); end
     for i=1:nCols, senseMapCols{i} = zeros(nRows,1,nCoils); end
 
     parfor x0 = hSize : nCols-hSize
-      if verbose == true && mod( x0, 20 ) == 0
-        pfObj.progress( (nSlices-1)*nCols + x0 );   %#ok<PFBNS>
+      if verbose == true
+        pfObj.progress( nCols*(slice-1) + x0, 20 );   %#ok<PFBNS>
       end
 
       senseMapRowCoils = zeros( nRows, 1, nCoils );
@@ -82,8 +97,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
           thisMap = thisMap0( :, :, :, coil );
           thisAbsCoilRecon = thisAbsRecon( :, :, :, coil );
 
-          w = thisMask .* gFilt .* thisAbsCoilRecon ./ thisMap;
-
+          w = thisMask .* gFilt .* thisAbsCoilRecon ./ abs( thisMap );
           c = polyFit2( xs, ys, thisMap, L, L, 'w', w );
 
           senseMapRowCoils( y0, 1, coil ) = c(1,1);  % evalPoly2( c, 0, 0 );
@@ -93,13 +107,29 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
       senseMapCols{x0} = senseMapRowCoils;
     end
 
-    senseMaps(:,:,slice,:) = cell2mat( senseMapCols );
+    maskedSenseMap = cell2mat( senseMapCols );
+    if minMask < 1
+      [ rMaskedIn,  cMaskedIn  ] = find( mask(:,:,slice) == 1 );
+      [ rMaskedOut, cMaskedOut ] = find( mask(:,:,slice) == 0 );
+      nMaskedIn = numel( rMaskedIn );
+      nMaskedOut = numel( rMaskedOut );
+
+      for coilIndx = 1 : nCoils
+        sMaskedSenseMap = size(maskedSenseMap);
+        theseIndxs = sub2ind( sMaskedSenseMap, rMaskedIn, cMaskedIn, ...
+          coilIndx*ones(nMaskedIn,1) );
+        theseSensed = maskedSenseMap( theseIndxs );
+        SI = scatteredInterpolant( cMaskedIn, rMaskedIn, theseSensed, 'linear', 'nearest' );
+
+        thoseIndxs = sub2ind( sMaskedSenseMap, rMaskedOut, cMaskedOut, coilIndx*ones(nMaskedOut,1) );
+        maskedSenseMap( thoseIndxs ) = SI( cMaskedOut, rMaskedOut );
+      end
+    end
+
+    senseMaps(:,:,slice,:) = maskedSenseMap;
   end
   if verbose == true, pfObj.clean; end
 
   senseMaps = max( min( senseMaps, 1 ), 0 );
-  
-  for coil = 1 : nCoils
-    senseMaps(:,:,:,coil) = mask .* senseMaps(:,:,:,coil);
-  end
+
 end
