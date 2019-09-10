@@ -23,7 +23,7 @@ function out = proxL2L1( in, thresh, weights )
   normsIn = norms( in, 2, nDimsIn );
 
   scalingFactors = thresh ./ normsIn;
-  scalingFactors( abs( normsIn ) <= thresh ) = 1;
+  scalingFactors( normsIn <= thresh ) = 1;
 
   repDims = ones( 1, nDimsIn );
   repDims( end ) = sIn( end );
