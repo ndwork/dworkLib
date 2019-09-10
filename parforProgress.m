@@ -10,13 +10,13 @@ classdef parforProgress
   % p = parforProgress( N, tmpFile );  % Note: if tmpFile is not supplied
   %                                    % then parforProgress.txt is used.
   % parfor n=1:N
-  %   p.progress( n );
+  %   p.progress( n, D );
   %   pause(rand*10); % Replace with real code
   % end
   % p.clean;
   %
   % Optional Inputs:
-  % N - downsampling input.
+  % D - downsampling input.
   %   Ex: p.progress( n, 10 );  % displays only when mod(n,10) == 0
   % tmpFile - the file to use to store progress information
   % msgHdr - a string to append to the beginning of progress statements.
