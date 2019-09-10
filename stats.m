@@ -11,19 +11,19 @@ function stats( data )
   % purpose.
 
   function arrayStats( data, preText )
-    if nargin < 2, preText = ''; end;
+    if nargin < 2, preText = ''; end
 
     subs = cell(1,ndims(data));
 
     [minData,minIndx] = min( data(:) );
     [subs{:}] = ind2sub(size(data),minIndx);
-    for i=1:numel(subs), subs{i} = num2str(subs{i}); end;
+    for i=1:numel(subs), subs{i} = num2str(subs{i}); end
     minLoc = [ '(', strjoin(subs, ', '), ')' ];
     disp([ preText, 'Min: ', num2str(minData), ' at ', minLoc ]);
 
     [maxData,maxIndx] = max( data(:) );
     [subs{:}] = ind2sub(size(data),maxIndx);
-    for i=1:numel(subs), subs{i} = num2str(subs{i}); end;
+    for i=1:numel(subs), subs{i} = num2str(subs{i}); end
     maxLoc = [ '(', strjoin(subs, ', '), ')' ];
     disp([ preText, 'Max: ', num2str(maxData), ' at ', maxLoc ]);
 
@@ -43,6 +43,8 @@ function stats( data )
     disp([ preText, 'L2 Norm: ', num2str(l2norm)]);
     disp([ preText, 'Mean L2 Norm: ', num2str(l2norm/numel(data)) ]);
   end
+
+  disp([ 'Size of Input: ', num2str(size(data)) ]);
 
   imagData = imag(data);
   if max( abs(imagData(:)) ~= 0 )
