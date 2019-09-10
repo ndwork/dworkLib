@@ -20,7 +20,7 @@ function recon = mri_ssqRecon( kData )
   coilRecons = mri_fftRecon( kData );
 
   tmpReconSq = coilRecons .* conj( coilRecons );
-  
+
   recon = sqrt( sum( tmpReconSq, ndims(kData) ) );
 
 end

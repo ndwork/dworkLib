@@ -1,11 +1,16 @@
 
 function mask = mri_makeIntensityMask( kData, varargin )
-  % mask = mri_makeIntensityMask( kData [, 'thresh', thresh, 'm', m ] )
+  % mask = mri_makeIntensityMask( kData [, 'thresh', thresh, ...
+  %   'm', m, 'morphScale', morphScale ] )
   %
   % Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
   % Pruessmann et al., 1999
   %
   % Inputs:
+  % kData - the k-space data collected from the MRI machine
+  %   ( kx, ky, slice, coil )
+  %
+  % Optional Inputs:
   % thresh - percentage of maximum intensity that is considered valid
   %   (default is 0.06)
   % m - the size of the minimum neighborhood filter
@@ -21,22 +26,36 @@ function mask = mri_makeIntensityMask( kData, varargin )
   % purpose.
 
   p = inputParser;
-  p.addParameter( 'thresh', 0.06, @ispositive );
-  p.addParameter( 'm', 5, @ispositive );
+  p.addParameter( 'morphScale', 0, @(x) x >= 0 );
+  p.addParameter( 'thresh', 0.04, @ispositive );
+  p.addParameter( 'm', 2, @ispositive );
   p.parse( varargin{:} );
+  morphScale = p.Results.morphScale;
   thresh = p.Results.thresh;
   m = p.Results.m;
-
-  if nargin < 2, thresh = 0.06; end
 
   ssqRecon = mri_ssqRecon( kData );
   ssqRecon = ssqRecon / max( ssqRecon(:) );
   mask = ssqRecon > thresh;
 
-  closation = strel( 'disk', floor(m/2), 0 );
-  for slice = 1 : size( mask, 3 )
-    mask(:,:,slice) = ordfilt2( mask(:,:,slice), 1, ones(m) );
-      % minimum neighborhood filtering
-    mask(:,:,slice) = imclose( mask(:,:,slice), closation );
+  if m > 0
+    morphation = strel( 'disk', floor( m * morphScale ), 0 );
+
+    nSlices = size( mask, 3 );
+    maskSlices = cell( 1, 1, nSlices );
+    parfor slice = 1 : nSlices
+
+      maskSlices{slice} = ordfilt2( mask(:,:,slice), 1, ones(m) );
+        % minimum neighborhood filtering
+
+      if morphScale > 0
+        maskSlices{slice} = imclose( maskSlices{slice}, morphation );
+
+        maskSlices{slice} = imdilate( maskSlices{slice}, morphation );
+      end    
+    end
+
+    mask = cell2mat( maskSlices );
   end
+
 end
