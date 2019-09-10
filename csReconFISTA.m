@@ -6,7 +6,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
   %
   % This routine minimizes 0.5 * || Ax - b ||_2^2 + lambda || W x ||_1
   %   where A is sampleMask * Fourier Transform * real part, and
-  %   W is the Haar wavelet transform.
+  %   W is the wavelet transform.
   %
   % Inputs:
   % samples - a 2D array that is zero wherever a sample wasn't acquired
@@ -19,7 +19,7 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % polish - if set to true, adds a polishing step (default is false)
   % printEvery - FISTA prints a verbose statement every printEvery iterations
   % verbose - if true, prints informative statements
-  % waveletType - either 'Deaubechies' (default) or 'Haar'
+  % waveletType - either 'Deaubechies' for Deaubechies-4 (default) or 'Haar'
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -57,8 +57,9 @@ function recon = csReconFISTA( samples, lambda, varargin )
   M = ( samples ~= 0 );
   nSamples = numel( samples );  % Note that A is square
 
-  % A = M F Re , A' = Re * F' * M
-  % A' * A = Re * F' * M * F * Re
+  % RI = [ Re; Im; ]
+  % A = M F RI , A' = (RI)' * F' * M
+  % A' * A = (RI)' * F' * M * F * RI
   % gGrad = A'*A*x - A'*b;
 
   function out = F( x )
@@ -167,7 +168,7 @@ function out = csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
   if checkAdjoint( x2, A, Aadj ) ~= true
     error( 'Aadj is not the transpose of A' );
   end
-  
+
   out = true;
 end
 
