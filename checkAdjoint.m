@@ -77,7 +77,7 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   fTy1s = fAdj( y1s );
   dp1 = dotP( fx1s, y1s );
   dp2 = dotP( x1s, fTy1s );
-  if dp1 > tol * 0.1
+  if abs(dp1) > tol * 0.1
     tmpErr = abs( dp1 - dp2 ) / abs( dp1 );
   else
     tmpErr = abs( dp1 - dp2 );
@@ -98,7 +98,7 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
     fTry = fAdj( ry );
     dp1 = dotP ( frx, ry );
     dp2 = dotP( rx, fTry );
-    if dp1 > tol * 0.1
+    if abs(dp1) > tol * 0.1
       tmpErr = abs( dp1 - dp2 ) / abs( dp1 );
     else
       tmpErr = abs( dp1 - dp2 );
