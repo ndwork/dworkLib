@@ -34,33 +34,32 @@ function wt = wtHaar2( img, varargin )
   wt21 = wt2(:,1:2:end-1) + wt2(:,2:2:end);
   wt22 = wt2(:,1:2:end-1) - wt2(:,2:2:end);
 
-  nSplit = numel(split);
-  if nSplit > 1
+  if numel( split ) > 1
     sSplit = size(split);
-    s11 = split(1:sSplit(1)/2,1:sSplit(2)/2);
-    s12 = split(1:sSplit(1)/2,sSplit(2)/2+1:end);
-    s21 = split(sSplit(2)/2+1:end,1:sSplit(1)/2);
-    s22 = split(sSplit(2)/2+1:end,sSplit(2)/2+1:end);
+    s11 = split( 1:sSplit(1)/2, 1:sSplit(2)/2 );
+    s12 = split( 1:sSplit(1)/2, sSplit(2)/2+1:end );
+    s21 = split( sSplit(2)/2+1:end, 1:sSplit(1)/2 );
+    s22 = split( sSplit(2)/2+1:end, sSplit(2)/2+1:end );
 
-    if sum(s11(:))>0
+    if sum( s11(:) ) > 0
       if max( mod(size(wt11),2) ) > 0
         error('wtHaar2: improper dimensions of image');
       end
       wt11 = wtHaar2( wt11, s11 );
     end
-    if sum(s12(:))>0
+    if sum( s12(:) ) > 0
       if max( mod(size(wt12),2) ) > 0
         error('wtHaar2: improper dimensions of image');
       end
       wt12 = wtHaar2( wt12, s12 );
     end
-    if sum(s21(:))>0
+    if sum( s21(:) ) > 0
       if max( mod(size(wt21),2) ) > 0
         error('wtHaar2: improper dimensions of image');
       end
       wt21 = wtHaar2( wt21, s21 );
     end
-    if sum(s22(:))>0
+    if sum( s22(:) ) > 0
       if max( mod(size(wt22),2) ) > 0
         error('wtHaar2: improper dimensions of image');
       end
