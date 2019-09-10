@@ -23,8 +23,8 @@ function out = proxL1Complex( in, thresh, weights )
   scalingFactors = thresh ./ magIn;
   scalingFactors( magIn <= thresh ) = 1;
 
-  projsOntoL2Ball = in .* scalingFactors;
+  projsOntoUnitMag = in .* scalingFactors;
 
-  out = in - projsOntoL2Ball;
+  out = in - projsOntoUnitMag;
 end
 
