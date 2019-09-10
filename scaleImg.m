@@ -30,12 +30,12 @@ function out = scaleImg( img, varargin )
   inMinMax = p.Results.inMinMax;
   outMinMax = p.Results.outMinMax;
 
-  if isempty( inMinMax ), inMinMax=[ min(img(:)) max(img(:)) ]; end;
+  if isempty( inMinMax ), inMinMax=[ min(img(:)) max(img(:)) ]; end
   inMin = inMinMax(1);  outMin = outMinMax(1);
   inMax = inMinMax(2);  outMax = outMinMax(2);
 
-  if inMax <= inMin, error('Max must be larger than min'); end;
-  if outMax <= outMin, error('Max must be larger than min'); end;
+  if inMax <= inMin, error('Max must be larger than min'); end
+  if outMax <= outMin, error('Max must be larger than min'); end
 
   tmp = (img - inMin) / ( inMax - inMin );
   out = tmp * (outMax - outMin) + outMin;
