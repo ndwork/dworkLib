@@ -62,23 +62,20 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   senseMaps0 = bsxfun( @rdivide, coilRecons, ssqRecon );
   senseMapCols = cell( 1, nCols, 1, 1 );
-  senseMaps = zeros( size( senseMaps0 ) );
+  senseMaps = senseMaps0;
 
-  if verbose == true
-    pfObj = parforProgress( nSlices * nCols );
-  end
+  if verbose == true, pfObj = parforProgress( nSlices * nCols ); end
 
   for slice = 1 : nSlices
+    thisSliceMap0 = squeeze( senseMaps0(:,:,slice,:) );
     if verbose == true, disp([ 'Working on slice ', num2str(slice), ' of ', ...
       num2str(nSlices) ]); end
-    for i=1:nCols, senseMapCols{i} = zeros(nRows,1,nCoils); end
+    for i = 1:nCols, senseMapCols{i} = thisSliceMap0(:,i,:); end
 
     parfor x0 = hSize : nCols-hSize
-      if verbose == true
-        pfObj.progress( nCols*(slice-1) + x0, 20 );   %#ok<PFBNS>
-      end
+      if verbose == true, pfObj.progress( nCols*(slice-1) + x0, 20 ); end   %#ok<PFBNS>
 
-      senseMapRowCoils = zeros( nRows, 1, nCoils );
+      senseMapRowCoils = thisSliceMap0( :, x0, : );
       for y0 = hSize : nRows-hSize
 
         thisMask = mask( y0 - floor(hSize/2) : y0 + floor(hSize/2), ...
