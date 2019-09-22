@@ -2,6 +2,22 @@
 function testDworkLib
   clear; close all; rng(2);
 
+  %% admm
+  fprintf('\nTesting admm: \n');
+  %minimize ||Ax - b||_2^2 + lambda ||x||+1fa
+  A = rand( 7, 3 ) * 100;
+  x = rand( 3, 1 ) * 100;
+  x0 = zeros( size( x ) );
+  b = A * x;
+  lambda = 15;
+  f = @(x) lambda * norm( x, 1 );
+  g = @(x) 0.5 * norm( x - b, 2 )^2;
+  proxf = @(x,t) softThresh( x, lambda + t );
+  proxg = @(y,t) proxL2Sq( y, 1, b );
+  t = 1d-3;  % admm step size
+  [xStar,objValues] = admm( x0, proxf, proxg, t, 'A', A, 'f', f, 'g', g );
+  %xStar = admm( x0, proxf, proxg, t, 'A', A, 'N', 3 );
+
   %% bilateralFilter
   fprintf('\nTesting bilateralFilter: \n');
   img = phantom();  sImg = size(img);
