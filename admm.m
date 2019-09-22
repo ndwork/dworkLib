@@ -39,21 +39,19 @@ function [xStar,objValues] = admm( x, proxf, proxg, t, varargin )
   if numel( A ) == 0
     applyA = @(x) x;
     applyAT = @(x) x;
+  elseif isnumeric( A )
+    applyA = @(x) A * x;
+    applyAT = @(y) A' * y;
   else
-    if isnumeric( A )
-      applyA = @(x) A * x;
-      applyAT = @(y) A' * y;
-    else
-      applyA = @(x) A( x, 'notransp' );
-      applyAT = @(x) A( x, 'transp' );
-    end
+    applyA = @(x) A( x, 'notransp' );
+    applyAT = @(x) A( x, 'transp' );
   end
 
   z1 = x;
   z2 = applyA( x );
 
   if nargout > 1, objValues = numel( N, 1 ); end
-  
+
   for optIter = 1 : N
     x1 = proxf( z1, t );
     x2 = proxg( z2, t );
