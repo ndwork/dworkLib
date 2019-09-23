@@ -45,9 +45,7 @@ function restart( varargin )
   % I would like to be able to call 'dbquit' here, but Matlab
   % prevents it.  So instead, I must simulate keyboard commands,
   % which is what is done here:
-  for i=1:5
-    pressShiftF5;  pause( 0.02 );
-  end
+  for i=1:5, pressShiftF5;  pause( 0.05 ); end
 end
 
 
