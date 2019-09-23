@@ -67,7 +67,7 @@ function imH = showImageCube( cube, varargin )
   nSubCols = min( nImgsPerRow, nImgs );
   nSubRows = ceil( nImgs / nImgsPerRow );
 
-  maxCube = max( cube(:) );
+  maxCube = max( real( cube(:) ) );
   tmpBorderValue = maxCube + 1;
 
   outImg = inplaceImg( cube(:,:,1), nSubRows, nSubCols, 1, ...
