@@ -1,5 +1,4 @@
 
-
 function pts = poissonDisc2( r, varargin )
   % pts = poissonDisc2( r [, 'bounds', bounds, 'bIncSize', bIncSize, 'nK', nK, ...
   %   'incSize', incSize, 'min_r', min_r ] )
