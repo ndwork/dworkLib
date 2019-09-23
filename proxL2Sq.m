@@ -1,6 +1,6 @@
 
 function out = proxL2Sq( v, t, b, A )
-  % out = proxL2Sq( v )
+  % out = proxL2Sq( v, t, b, A )
   %
   % Evaluate the proximal operator of tf where f(x) = t/2 || A x - b ||_2^2
   %
@@ -12,7 +12,7 @@ function out = proxL2Sq( v, t, b, A )
   % t - scaling of the L2 norm squared function
   %     Either a scalar or the same size as x
   % b - the shifting factor
-  % E - the matrix
+  % A - the matrix
   %
   % Output:
   % out - the result of the proximal operator
