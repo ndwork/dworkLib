@@ -1,14 +1,14 @@
 
 function out = scaleImg( img, varargin )
-  % out = scaleImg( img [, inMinMax, outMinMax ] )
+  % out = scaleImg( img [, outMinMax, inMinMax ] )
   %
   % Function scaled image affinely so that inMinMax is scaled to outMinMax
   %
   % Inputs:
-  % inMinMax - 2 element array specifying input min and max
-  %   If not specified, true image statistics are used
   % outMinMax - 2 element array specifying output min and max
   %   If not specified, default is [0 1]
+  % inMinMax - 2 element array specifying input min and max
+  %   If not specified, true image statistics are used
   %
   % Outputs:
   % out - output image
@@ -24,8 +24,8 @@ function out = scaleImg( img, varargin )
   defaultOutMinMax = [0 1];
 
   p = inputParser;
-  p.addOptional( 'inMinMax', defaultInMinMax );
   p.addOptional( 'outMinMax', defaultOutMinMax );
+  p.addOptional( 'inMinMax', defaultInMinMax );
   p.parse( varargin{:} );
   inMinMax = p.Results.inMinMax;
   outMinMax = p.Results.outMinMax;
