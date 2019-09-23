@@ -22,10 +22,10 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
   % purpose.
 
   p = inputParser;
-  p.addOptional( 'maskType', 'Laplacian', @(x) true );
+  p.addParameter( 'maskType', 'Laplacian', @(x) true );
   p.parse( varargin{:} );
   maskType = p.Results.maskType;
-  
+
   if numel( sigmas ) == 1, sigmas = sigmas * ones( numel(sMask), 1 ); end
 
   maskCoordinates = size2imgCoordinates( sMask );
