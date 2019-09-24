@@ -62,7 +62,7 @@ function testDworkLib
   f = @(x) lambda * norm( x, 1 );
   g = @(x) 0.5 * norm( x - b, 2 )^2;
   proxf = @(x,t) softThresh( x, lambda * t );
-  proxgConj = @(y,t) ( y - t * b )/( 1 + t );
+  proxgConj = @(x,t) ( x - t * b )/( 1 + t );
   xStar = chambollePockWLS( x0, proxf, proxgConj, 'A', A, 'N', 10000, 'f', f, 'g', g );   %#ok<NASGU>
   fprintf('\nchambollePockWLS ran to completion\n');
 
