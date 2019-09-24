@@ -1,12 +1,11 @@
 
-function [x,residuals] = lasso_CPwLS( K, b, gamma, varargin )
+function [x,residuals] = lassoCPwLS( K, b, gamma, varargin )
   % x = lasso_CPwLS( K, b, gamma [, 'nIter', nIter ] );
   %
   % Minimizes the Lasso problem:
   %   minimize (1/2)|| K x - b ||_2 + gamma || x ||_1
-  % Uses Chambolle-Pock (Primal-Dual Algorithm) with line search
-  %   based on A First-Order Primal-Dual Algorithm with Linesearch by 
-  %   Malitsky and Pock
+  % Uses Chambolle-Pock (Primal-Dual Algorithm) with line search based on A First-Order
+  % Primal-Dual Algorithm with Linesearch by Malitsky and Pock
   %
   % Inputs:
   % nIter - the number of iterations that CP will perform
@@ -15,7 +14,7 @@ function [x,residuals] = lasso_CPwLS( K, b, gamma, varargin )
   % x - the optimal x
   % res - optionally store the residual values
   %
-  % Written by Nicholas Dwork - Copyright 2016  
+  % Written by Nicholas Dwork - Copyright 2016
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
@@ -36,7 +35,7 @@ function [x,residuals] = lasso_CPwLS( K, b, gamma, varargin )
 
   x = rand( size(K,2), 1 );
   y = K*x;  % initializing z in this way makes sure it has the right shape
-  if nargout > 1, residuals=zeros(nIter,1); end;
+  if nargout > 1, residuals=zeros(nIter,1); end
   for i=1:nIter
     % step 1
     tmp = x - tau*K'*y;
@@ -45,16 +44,16 @@ function [x,residuals] = lasso_CPwLS( K, b, gamma, varargin )
 
     % step 2
     lastTau = tau;
-    tau = sqrt( 1 + theta );
+    tau = tau * sqrt( 1 + theta );
     lastY = y;
     dx = x - lastX;
     while true
       theta = tau / lastTau;
       xBar = x + theta * dx;
 
-      betaTau = beta*tau;
+      betaTau = beta * tau;
       tmp = lastY + betaTau*K*xBar;
-      y = ( tmp - betaTau*b )/( 1 + betaTau );
+      y = ( tmp - betaTau * b )/( 1 + betaTau );
 
       dy = y - lastY;
       tmp1 = sqrt(beta)*tau*norm(K'*dy,2);
@@ -66,9 +65,7 @@ function [x,residuals] = lasso_CPwLS( K, b, gamma, varargin )
       end
     end
 
-    if nargout > 1
-      residuals(i) = 0.5*norm( K*x - b ) + gamma * norm( x, 1 );
-    end
+    if nargout > 1, residuals(i) = 0.5*norm( K*x - b ) + gamma * norm( x, 1 ); end
   end
 
 end
