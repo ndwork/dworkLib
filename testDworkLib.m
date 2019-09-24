@@ -12,11 +12,11 @@ function testDworkLib
   lambda = 15;
   f = @(x) lambda * norm( x, 1 );
   g = @(x) 0.5 * norm( x - b, 2 )^2;
-  proxf = @(x,t) softThresh( x, lambda + t );
-  proxg = @(y,t) proxL2Sq( y, 1, b );
+  proxf = @(x,t) softThresh( x, lambda * t );
+  proxg = @(y,t) proxL2Sq( y, 1, b );  % TODO:  should there be a t input here?
   t = 1d-3;  % admm step size
-  [xStar,objValues] = admm( x0, proxf, proxg, t, 'A', A, 'f', f, 'g', g );
-  %xStar = admm( x0, proxf, proxg, t, 'A', A, 'N', 3 );
+  [xStar,objValues] = admm( x0, proxf, proxg, t, 'A', A, 'f', f, 'g', g, 'N', 1000 );   %#ok<ASGLU>
+  fprintf('\nadmm ran to completion. \n');
 
   %% bilateralFilter
   fprintf('\nTesting bilateralFilter: \n');
@@ -50,6 +50,21 @@ function testDworkLib
   else
     error( 'bisection failed' );
   end
+
+  %% chambollePockWLS
+  fprintf('\nTesting chambollePockWLS: \n');
+  %minimize ||Ax - b||_2^2 + lambda ||x||
+  A = rand( 7, 3 ) * 100;
+  x = rand( 3, 1 ) * 1;
+  x0 = rand( size( x ) );
+  b = A * x;
+  lambda = 0;
+  f = @(x) lambda * norm( x, 1 );
+  g = @(x) 0.5 * norm( x - b, 2 )^2;
+  proxf = @(x,t) softThresh( x, lambda * t );
+  proxgConj = @(y,t) ( y - t * b )/( 1 + t );
+  xStar = chambollePockWLS( x0, proxf, proxgConj, 'A', A, 'N', 10000, 'f', f, 'g', g );   %#ok<NASGU>
+  fprintf('\nchambollePockWLS ran to completion\n');
 
   %% cropData
   fprintf('\nTesting cropData: \n');
@@ -434,7 +449,7 @@ function testDworkLib
   [xHat,residuals] = lassoCP( K, b, gamma, 'nIter', nIter );
   [xHatLS,residualsLS] = lassoCP( K, b, gamma, 'nIter', nIter );
   err = norm(xHat-xHatLS,2);
-  if err > 1d-4, error( 'lassoCP failed'); end;
+  if err > 1d-4, error( 'lassoCP failed'); end
   disp('lassoCP passed');
   %semilogy( residuals, 'b', 'LineWidth', 2 );
   %hold on; semilogy( residualsLS, 'r', 'LineWidth', 2 );
