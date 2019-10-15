@@ -77,10 +77,10 @@ function out = wavScale( wt, split )
     end
   end
 
-  scaled11 = scaleImg( wt11, [], [0 1] );
-  scaled12 = scaleImg( wt12, [], [0 1] );
-  scaled21 = scaleImg( wt21, [], [0 1] );
-  scaled22 = scaleImg( wt22, [], [0 1] );
+  scaled11 = scaleImg( wt11, [0 1] );
+  scaled12 = scaleImg( wt12, [0 1] );
+  scaled21 = scaleImg( wt21, [0 1] );
+  scaled22 = scaleImg( wt22, [0 1] );
 
   out = [ scaled11 scaled12; scaled21 scaled22 ];
 end
