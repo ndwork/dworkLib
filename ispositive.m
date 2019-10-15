@@ -17,5 +17,9 @@ function out = ispositive( x )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  out = isnumeric(x) && min( x(:) > 0 );
+  if numel( x ) == 0
+    out = true;
+  else
+    out = isnumeric(x) && min( x(:) > 0 );
+  end
 end
