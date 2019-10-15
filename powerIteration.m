@@ -1,10 +1,9 @@
 
-
 function [nrm,flag] = powerIteration( M, varargin )
   % Determines an approximation for the norm of the matrix M
   %
-  % [nrm,flag] = powerIteration( M, symmetric [, x0, 'maxIters', ...
-  %    maxIters, 'tolerance', tolerance ])
+  % [nrm,flag] = powerIteration( M [, x0, 'maxIters', maxIters, 'symmetric', true/false, ...
+  %   'tolerance', tolerance ])
   %
   % Inputs:
   % M is either a matrix or a function handle.
@@ -37,13 +36,13 @@ function [nrm,flag] = powerIteration( M, varargin )
   defaultMaxIters = 1000;
   defaultTolerance = 1d-4;
   p = inputParser;
-  p.addRequired( 'symmetric' );
   p.addOptional( 'x0', [] );
   p.addParameter( 'maxIters', defaultMaxIters, @isnumeric );
+  p.addParameter( 'symmetric', false, @islogical );
   p.addParameter( 'tolerance', defaultTolerance, @isnumeric );
   p.parse( varargin{:} );
-  symmetric = p.Results.symmetric;
   maxIters = p.Results.maxIters;
+  symmetric = p.Results.symmetric;
   tolerance = p.Results.tolerance;
 
   if isa( M, 'function_handle' )
@@ -81,7 +80,7 @@ function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance )
     MtMx = applyM( applyM(x), 'transp' );
     lambdaPrev = lambda;
     lambda = norm(MtMx,'fro');
-    if lambda==0, break; end;
+    if lambda==0, break; end
 
     x = MtMx / lambda;
 
@@ -104,7 +103,7 @@ function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance )
     Mx = applyM(x);
     lambdaPrev = lambda;
     lambda = norm(Mx,'fro');
-    if lambda==0, break; end;
+    if lambda==0, break; end
 
     x = Mx / lambda;
 
@@ -127,7 +126,7 @@ function [nrm,flag] = pI_mat( M, x, maxIters, tolerance )
     MtMx = M'*M*x;
     lambdaPrev = lambda;
     lambda = norm(MtMx,2);
-    if lambda==0, break; end;
+    if lambda==0, break; end
 
     x = MtMx / lambda;
 
@@ -150,7 +149,7 @@ function [nrm,flag] = pI_matSymm( M, x, maxIters, tolerance )
     Mx = M*x;
     lambdaPrev = lambda;
     lambda = norm(Mx,2);
-    if lambda==0, break; end;
+    if lambda==0, break; end
 
     x = Mx / lambda;
 
