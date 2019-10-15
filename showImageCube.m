@@ -35,8 +35,8 @@ function imH = showImageCube( cube, varargin )
 
   p = inputParser;
   p.addOptional( 'scale', 1, @isnumeric );
-  p.addParameter( 'border', 0, @isnumeric );
-  p.addParameter( 'borderValue', 0, @(x) true);
+  p.addParameter( 'border', 1, @isnumeric );
+  p.addParameter( 'borderValue', 'max', @(x) true);
   p.addParameter( 'nImgsPerRow', [], @isnumeric );
   p.addParameter( 'range', [] );
   p.addParameter( 'sdevScale', [], @isnumeric );
