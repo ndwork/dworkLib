@@ -31,4 +31,3 @@ function out = proxL1Complex( in, thresh, weights )
 
   out = in - projsOntoUnitMag;
 end
-
