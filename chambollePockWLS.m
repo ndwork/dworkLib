@@ -72,16 +72,20 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   if nargout > 1,  objValues = zeros( N, 1 ); end
 
   for optIter = 1 : N
-    if verbose == true
-      disp([ 'chambollePockWLS: working on ', num2str(optIter), ' of ', num2str(N) ]);
-    end
-
     lastX = x;
     tmp = lastX - tau * applyAT( y );
     x = proxf( tmp, tau );
 
     if nargout > 1
       objValues( optIter ) = f( x ) + g( applyA( x ) );
+    end
+    if verbose == true
+      if nargout > 1
+        disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
+          'objective value: ', num2str( objValues( optIter ),'%15.13f' ) ]);
+      else
+        disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+      end
     end
 
     lastTau = tau;
