@@ -17,22 +17,23 @@ function out = proxConjL1( in, t )
   %
   % Written by Nicholas Dwork - Copyright 2019
   %
+  % https://github.com/ndwork/dworkLib.git
+  %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
   if nargin < 2, t=1; end
-  
+
   if isreal( in )
     out = min( in, t );
 
   else
     magIn = abs( in );
-    scaling = t / magIn;
+    scaling = t ./ magIn;
     out = in;
-    out( magIn > t ) = in( magIn > t ) .* scaling;
+    out( magIn > t ) = in( magIn > t ) .* scaling( magIn > t );
 
   end
-
 end
