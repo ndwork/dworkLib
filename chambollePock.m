@@ -1,6 +1,6 @@
 
-function [xStar,objValues] = chambollePock( x, proxf, proxgConj, sigma, tau, varargin )
-  % [xStar,objValues] = chambollePock( x, proxf, proxgConj, sigma, tau [, ...
+function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
+  % [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g ] )
   %
   % minimizes f( x ) + g( A x )
@@ -10,6 +10,9 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, sigma, tau, var
   % f - to determine the objective values, f must be provided
   % g - to determine the objective values, g must be provided
   % N - the number of iterations that ADMM will perform (default is 100)
+  % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
+  %   large sparse matries, estimated with normest or powerIteration.
+  % verbose - true or false
   %
   % Outputs:
   % xStar - the optimal point
@@ -29,12 +32,23 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, sigma, tau, var
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @ispositive );
+  p.addParameter( 'normA', [], @ispositive );
+  p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'theta', 1, @(x) x > 0 && x < 2 );
+  p.addParameter( 'verbose', false, @islogical );
+p.addParameter( 'Z', [] );
+p.addParameter( 'Fadj', [] );
   p.parse( varargin{:} );
   A = p.Results.A;
   f = p.Results.f;
   g = p.Results.g;
   N = p.Results.N;
+  normA = p.Results.normA;
+  sigma = p.Results.sigma;
+  theta = p.Results.theta;
+  verbose = p.Results.verbose;
+Z = p.Results.Z;
+Fadj = p.Results.Fadj;
 
   if numel( A ) == 0
     applyA = @(x) x;
@@ -47,20 +61,41 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, sigma, tau, var
     applyAT = @(x) A( x, 'transp' );
   end
 
+  if numel( sigma ) == 0  && numel( A ) > 0
+    if numel( normA ) == 0
+      error( 'If an A is supplied, you must supply sigma or normA' );
+    end
+    sigma = 0.95 / normA / tau;
+  end
+
   xBar = x;
-  z = applyA( x );
 
   if nargout > 1,  objValues = zeros( N, 1 ); end
 
   for optIter = 1 : N
-    tmp = z + sigma * applyA( xBar );
+    if optIter == 1
+      tmp = sigma * applyA( xBar );
+    else
+      tmp = z + sigma * applyA( xBar );
+    end
     z = proxgConj( tmp, sigma );
 
     lastX = x;
     tmp = x - tau * applyAT( z );
-    x = proxf( tmp );
+    x = proxf( tmp, tau );
 
-    if nargout > 1, objValues( optIter ) = f(x) + g( applyA(x) ); end
+    if nargout > 1
+      objValues( optIter ) = f( x ) + g( applyA( x ) );
+    end
+
+    if verbose == true
+      if nargout > 1
+        disp([ 'chambollePock: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
+          'objective value: ', num2str( objValues( optIter ), '%15.13f' ) ]);
+      else
+        disp([ 'chambollePock: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+      end
+    end
 
     xBar = x + theta * ( x - lastX );
   end
