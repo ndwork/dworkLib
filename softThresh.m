@@ -2,9 +2,11 @@
 function out = softThresh( in, thresh )
   % out = softThresh( in, thresh )
   %
-  % Note that this functionality is implemented in Matlab with the wtThresh
-  % function, but it is part of the Wavelet Toolbox.  If you don't have
-  % that toolbox, then this function will work fine.  :)
+  % Applies the proximal operator of the L1 norm (proxL1)
+  %
+  % Note that this functionality for real inputs is implemented by Matlab
+  % with the wthresh function, but it is part of the Wavelet Toolbox.  If
+  % you don't have that toolbox, then this function will work fine.  :)
   %
   % Inputs:
   % in - scalar or array
@@ -19,6 +21,21 @@ function out = softThresh( in, thresh )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  out = sign(in) .* max( ( abs(in) - thresh ), 0 );
+  if isreal( in )
+
+    out = sign(in) .* max( ( abs(in) - thresh ), 0 );
+    
+  else
+
+    magIn = abs( in );
+
+    scalingFactors = thresh ./ magIn;
+    scalingFactors( magIn <= thresh ) = 1;
+
+    projsOntoUnitMag = in .* scalingFactors;
+
+    out = in - projsOntoUnitMag;
+
+  end
 
 end
