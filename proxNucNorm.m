@@ -16,12 +16,9 @@ function out = proxNucNorm( in, thresh )
   % purpose.
 
   [u,s,v] = svd( in );
-  
-  if isreal( in )
-    s = softThresh( diag(s), thresh );
-  else
-    s = proxL1Complex( diag(s), thresh );
-  end
 
-  out = u * diag(s) * v;
+  s = softThresh( diag(s), thresh );  % Singular values are always real
+
+  out = u * diag(s) * v';
+
 end
