@@ -1,14 +1,30 @@
 
 
 function out = computeGradient( in, varargin )
+  % out = computeGradient( in, varargin )
+  %
   % This function computes the gradient (or the derivative) of the input
   % with circular boundary conditions
+  
+  % Inputs:
+  % in - a multi-dimensional array
+  %
+  % Output:
+  % out - an array of dimension equal to dimension of input plus one where the gradient
+  %   dimension is the last dimension of the output.
+  %
+  % Written by Nicholas Dwork - Copyright 2019
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
   p.addParameter( 'op', [], @(x) true );
   p.parse( varargin{:} );
   op = p.Results.op;
-
 
   if strcmp( 'transp', op )
     sIn = size( in );
