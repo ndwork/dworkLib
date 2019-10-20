@@ -20,13 +20,8 @@ function out = norms( A, p, dim )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 3
-    dim = ndims(A);
-  end
-  
-  if nargin < 2
-    p = 2;
-  end
+  if nargin < 3, dim = ndims(A); end
+  if nargin < 2, p = 2; end
 
   absA = abs( A );
 
