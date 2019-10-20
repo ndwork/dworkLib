@@ -38,7 +38,7 @@ function [xStar,objectiveValues] = gradDescent( x, gGrad, varargin )
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
-  if t <= 0, error('gradDescent: t0 must be greater than 0'); end;
+  if t <= 0, error('gradDescent: t0 must be greater than 0'); end
 
   calculateObjectiveValues = 0;
   if nargout > 1
@@ -51,8 +51,8 @@ function [xStar,objectiveValues] = gradDescent( x, gGrad, varargin )
   end
 
   for k=0:N-1
-    if verbose, disp([ 'gradDescent Iteration: ', num2str(k) ]); end;
-    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x); end;
+    if verbose, disp([ 'gradDescent Iteration: ', num2str(k) ]); end
+    if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x); end
 
     x = x - t * gGrad( x );
   end
