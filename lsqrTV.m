@@ -1,7 +1,6 @@
 
 function [x,residuals] = lsqrTV( A, b, lambda, varargin )
-  % x = lsqrTV_2D( A, b, lambda [, sigma, tau, 'theta', theta, ...
-  %   'x0', x0, 'nIter', nIter ] );
+  % x = lsqrTV( A, b, lambda [, sigma, tau, 'theta', theta, 'x0', x0, 'nIter', nIter ] );
   %
   % Solves the following regularized least squares optimization problem
   %   minimize (1/2)|| Ax - b ||_2^2 + lambda TV(x)
@@ -91,7 +90,7 @@ function [x,residuals] = lsqrTV( A, b, lambda, varargin )
   end
 
   % Chambolle-Pock iteration
-  if nargout > 1, residuals=zeros(nIter,1); end;
+  if nargout > 1, residuals=zeros(nIter,1); end
   for i=1:nIter
     tmp1 = z1 + sigma * applyA( xBar );
     tmp2 = z2 + sigma * applyD( xBar );
