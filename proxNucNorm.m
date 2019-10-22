@@ -1,6 +1,6 @@
 
 function out = proxNucNorm( in, thresh )
-  % out = proxL1Complex( in, thresh )
+  % out = proxNucNorm( in, thresh )
   %
   % Returns the proximal operator of the nuclear norm of the input matrix
   %
