@@ -1,6 +1,6 @@
 
 function out = ifftc( in, varargin )
-  % out = ifftc( in [, n, dim, true/false ] )
+  % out = ifftc( in [, n, dim, 'unitary', true/false ] )
   %
   % Compute the centered ifft
   %
@@ -11,6 +11,7 @@ function out = ifftc( in, varargin )
   % n - zero pads to this number of elements and then perform an ifft
   %     if a two dimensional ifft, the zero pads to size [n(1) n(2)] and performs ifft
   % dim - if supplied, only does an ifft along this dimension
+  % unitary - if true, use a scaling factor to make the transform unitary
   %
   % Written by Nicholas Dwork, Copyright 2019
   %
@@ -24,13 +25,12 @@ function out = ifftc( in, varargin )
   p = inputParser;
   p.addOptional( 'n', [], @(x) numel(x) == 0 || ispositive(x) );
   p.addOptional( 'dim', [], @isnumeric );
-  p.addOptional( 'unitary', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   dim = p.Results.dim;
   n = p.Results.n;
-  unitary = p.Results.unitary;
 
   if numel( dim ) > 0
+    if numel( n ) > 1, error( 'Too many elements in n with dimension supplied' ); end
     out = ifft( ifftshift( in, dim ), n, dim );
 
   else
@@ -54,10 +54,6 @@ function out = ifftc( in, varargin )
         out = ifftn( ifftshift( in ), n );
     end
 
-  end
-
-  if unitary == true
-    out = out / sqrt( numel(in) );
   end
 
 end
