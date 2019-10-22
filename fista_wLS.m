@@ -42,9 +42,11 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultN = 100;
+
   p = inputParser;
   p.addParameter( 'h', [] );
-  p.addParameter( 'N', 100, @ispositive );
+  p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x) == 0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'r', 0.5, @ispositive );
   p.addParameter( 's', 1.25, @ispositive );
@@ -58,6 +60,8 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   s = p.Results.s;  % s must be greater than 1
   t0 = p.Results.t0;  % t0 must be greater than 0
   verbose = p.Results.verbose;
+
+  if numel( N ) == 0, N = defaultN; end
 
   if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end
   if s <= 1, error('fista: s must be greater than 1'); end

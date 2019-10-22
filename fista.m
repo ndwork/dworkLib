@@ -33,9 +33,11 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultN = 100;
+
   p = inputParser;
   p.addParameter( 'h', [] );
-  p.addParameter( 'N', 100, @isnumeric );
+  p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x)==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
@@ -45,6 +47,8 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   printEvery = p.Results.printEvery;  % display result printEvery iterations
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
+
+  if numel( N ) == 0, N = defaultN; end
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
 
