@@ -1,9 +1,16 @@
 
-function recon = mri_ssqRecon( kData )
+function recon = mri_ssqRecon( kData, varargin )
+  % recon = mri_ssqRecon( kData [, 'multiSlice', true/false ] )
+  %
   % Perform a sum of squared reconstruction
   %
   % Inputs:
   % kData is an array of size ( Ny, Nx, nSlices, ..., nCoils ) of kSpace values
+  %
+  % Optional Inputs:
+  % multiSlice - if set to true, assumed that each slice contains its own Fourier data
+  %   Otherwise, assumed it's a 3D reconstruction (and a Fourier transform accross 3rd dimension
+  %   is necessary).
   %
   % Output:
   % recon is the reconstructed image
@@ -17,7 +24,7 @@ function recon = mri_ssqRecon( kData )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  coilRecons = mri_fftRecon( kData );
+  coilRecons = mri_fftRecon( kData, varargin{:} );
 
   tmpReconSq = coilRecons .* conj( coilRecons );
 
