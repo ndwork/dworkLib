@@ -18,7 +18,7 @@ function out = lsqrTikhonov( A, b, gamma, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if gamma<0, error('lsqrTikhonov: gamma must be non-negative'); end;
+  if gamma<0, error('lsqrTikhonov: gamma must be non-negative'); end
 
   % M = ( A, I )
   nb = numel(b);
@@ -42,7 +42,7 @@ function out = lsqrTikhonov( A, b, gamma, varargin )
     end
   end
 
-  % We will actually minimize || M x - B ||_2 where M=(A,I)
+  % We will actually minimize || M x - B ||_2 where M=(A,I) and B=(b,0)
   if isa( A, 'function_handle' )
     ATb = A( b, 'transp' );
   else
