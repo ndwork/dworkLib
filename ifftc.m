@@ -1,6 +1,6 @@
 
 function out = ifftc( in, varargin )
-  % out = ifftc( in [, n, dim, 'unitary', true/false ] )
+  % out = ifftc( in [, n, dim ] ) or out = ifftc( in, dim )
   %
   % Compute the centered ifft
   %
@@ -28,6 +28,10 @@ function out = ifftc( in, varargin )
   p.parse( varargin{:} );
   dim = p.Results.dim;
   n = p.Results.n;
+
+  if numel( dim ) == 0 && numel( n ) ~= 0
+    dim = n;  n=[];
+  end
 
   if numel( dim ) > 0
     if numel( n ) > 1, error( 'Too many elements in n with dimension supplied' ); end
