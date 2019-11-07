@@ -56,8 +56,8 @@ function pressShiftF5
   rob = Robot;  %Create a Robot-object to do the key-pressing
   rob.keyPress( KeyEvent.VK_SHIFT );
   rob.keyPress( KeyEvent.VK_F5 );
-  rob.keyRelease( KeyEvent.VK_SHIFT );
   rob.keyRelease( KeyEvent.VK_F5 );
+  rob.keyRelease( KeyEvent.VK_SHIFT );
 end
 
 
