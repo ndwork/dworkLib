@@ -1,13 +1,16 @@
 
 function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   % [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj [, ...
-  %   'N', N, 'A', A, 'f', f, 'g', g, 'mu', mu, 'tau', tau, 'theta', theta, ...
-  %   'verbose', verbose ] )
+  %   'N', N, 'A', A, 'f', f, 'g', g, 'normA', normA, 'mu', mu, 'tau', tau, ...
+  %   'theta', theta, 'verbose', verbose ] )
   %
   % Implements Chambolle-Pock (Primal-Dual Hybrid graident method) with line search
   % based on A First-Order Primal-Dual Algorithm with Linesearch by Malitsky and Pock
   %
   % minimizes f( x ) + g( A x )
+  %
+  % Inputs:
+  % x - initial guess
   %
   % Optional Inputs:
   % A - if A is not provided, it is assumed to be the identity

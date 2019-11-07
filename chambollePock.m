@@ -1,9 +1,12 @@
 
 function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau [, ...
-  %   'A', A, 'f', f, 'g', g ] )
+  %   'A', A, 'f', f, 'g', g, 'normA', normA ] )
   %
   % minimizes f( x ) + g( A x )
+  %
+  % Inputs:
+  % x - initial guess
   %
   % Optional Inputs:
   % A - if A is not provided, it is assumed to be the identity
@@ -36,8 +39,6 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'theta', 1, @(x) x > 0 && x < 2 );
   p.addParameter( 'verbose', false, @islogical );
-p.addParameter( 'Z', [] );
-p.addParameter( 'Fadj', [] );
   p.parse( varargin{:} );
   A = p.Results.A;
   f = p.Results.f;
@@ -47,8 +48,6 @@ p.addParameter( 'Fadj', [] );
   sigma = p.Results.sigma;
   theta = p.Results.theta;
   verbose = p.Results.verbose;
-Z = p.Results.Z;
-Fadj = p.Results.Fadj;
 
   if numel( A ) == 0
     applyA = @(x) x;
