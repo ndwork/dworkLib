@@ -1,5 +1,5 @@
 
-function recon = csReconFISTA( samples, lambda, varargin )
+function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % recon = csReconFISTA( samples, lambda [, 'debug', debug, 'nIter', nIter, ...
   %   'polish', polish, 'printEvery', printEvery, 'verbose', verbose, ...
   %   'waveletType', waveletType ] )
@@ -29,12 +29,17 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  split = zeros(4);  split(1,1) = 1;
+  %split = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
+  %split = [ 1 0; 0 0; ];
+
   p = inputParser;
   p.addParameter( 'checkAdjoints', false, @islogical );
   p.addParameter( 'debug', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'printEvery', 1, @ispositive );
+  p.addParameter( 'split', split, @isnumeric );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'waveletType', 'Deaubechies', @(x) true );
   p.parse( varargin{:} );
@@ -54,8 +59,8 @@ function recon = csReconFISTA( samples, lambda, varargin )
     end
   end
 
+  nSamples = numel( samples );
   M = ( samples ~= 0 );
-  nSamples = numel( samples );  % Note that A is square
 
   % RI = [ Re; Im; ]
   % A = M F RI , A' = (RI)' * F' * M
@@ -63,12 +68,12 @@ function recon = csReconFISTA( samples, lambda, varargin )
   % gGrad = A'*A*x - A'*b;
 
   function out = F( x )
-    Fx = 1/sqrt(nSamples) .* fftshift( fft2( x(:,:,1) + 1i * x(:,:,2) ) );
+    Fx = 1/sqrt(nSamples) .* fftc( x(:,:,1) + 1i * x(:,:,2) );
     out = cat( 3, real(Fx), imag(Fx) );
   end
 
   function out = Fadj( y )
-    Fadjy = sqrt(nSamples) * ifft2( ifftshift( y(:,:,1) + 1i * y(:,:,2) ) );
+    Fadjy = sqrt(nSamples) * ifftc( y(:,:,1) + 1i * y(:,:,2) );
     out = cat( 3, real(Fadjy), imag(Fadjy) );
   end
 
@@ -91,21 +96,17 @@ function recon = csReconFISTA( samples, lambda, varargin )
   end
 
   b = cat( 3, real(samples), imag(samples) );
+
   function out = g( x )
-    Ax = A( x );
-    diff = Ax(:) - b(:);
-    out = 0.5 * norm( diff, 2 ).^2;
+    diff = A( x ) - b;
+    out = 0.5 * norm( diff(:), 2 ).^2;
   end
 
-  Aadjb = Aadj(b);
+  Aadjb = Aadj( b );
   function out = gGrad( x )
-    out = Aadj( A(x) ) - Aadjb;
+    out = Aadj( A( x ) ) - Aadjb;
     out = out(:,:,1) + 1i * out(:,:,2);
   end
-
-  split = zeros(4);  split(1,1) = 1;
-  %split = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
-  %split = [ 1 0; 0 0; ];
 
   if strcmp( waveletType, 'Deaubechies' )
     W = @(x) wtDeaubechies2( x, split );
@@ -121,15 +122,15 @@ function recon = csReconFISTA( samples, lambda, varargin )
 
   proxth = @(x,t) WT( softThresh( W(x), t*lambda ) );
     % The proximal operator of || W x ||_1 was determined using
-    % Vandenberghe's notes from EE 236C; slide 8-8 of "The proximal mapping"
+    % Vandenberghe's notes from EE 236C; slide of "The proximal mapping" entitled
+    % "Composition with Affine Mapping"
 
   function out = h( x )
     Wx = W(x);
     out = sum( abs( Wx(:) ) );
   end
 
-  x0 = ifft2( ifftshift( samples ) );
-    % Could possibly make this better with inverse gridding
+  x0 = ifftc( samples );  % Could possibly make this better with inverse gridding
 
   t = 1;
   if debug
