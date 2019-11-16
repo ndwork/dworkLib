@@ -1,6 +1,7 @@
 
 function wt = wtDeaubechies2( img, varargin )
   % wt = wtDeaubechies2( sig [, split] );
+  %
   % Performs a Deaubechies wavelet transform of an image (with circular boundary conditions)
   %
   % Inputs:

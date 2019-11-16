@@ -1,6 +1,6 @@
 
 function wt = wtHaar2( img, varargin )
-  % wt = wtHaar2( sig [, split] );
+  % wt = wtHaar2( sig [, split ] );
   % Performs a Haar wavelet transform of an image
   %
   % Inputs:

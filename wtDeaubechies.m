@@ -1,8 +1,8 @@
 
 function wt = wtDeaubechies( sig, varargin )
   % wt = wtDeaubechies( sig [, split] );
-  % Performs a Deaubechies wavelet transform of a signal with
-  %   circular boundary conditions
+  %
+  % Performs a Deaubechies wavelet transform of a signal with circular boundary conditions
   % (http://wavelets.pybytes.com/wavelet/db2/)
   % Note that this is a unitary transform
   %
