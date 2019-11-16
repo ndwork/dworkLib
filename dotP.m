@@ -13,6 +13,9 @@ function out = dotP( a, b )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if numel( a ) ~= numel( b )
+    error( 'Inputs to dot product must be the same size.' );
+  end
 
   out = sum( a(:) .* conj(b(:)) );
 
