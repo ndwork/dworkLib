@@ -1,6 +1,7 @@
 
 function stats( data )
   % stats( data )
+  %
   % display several relevant stats about the data array to the screen
   %
   % Written by Nicholas Dwork - Copyright 2017
