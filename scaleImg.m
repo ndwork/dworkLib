@@ -6,8 +6,10 @@ function out = scaleImg( img, varargin )
   %
   % Inputs:
   % outMinMax - 2 element array specifying output min and max
+  %   or an array from which the min and max are derived.
   %   If not specified, default is [0 1]
   % inMinMax - 2 element array specifying input min and max
+  %   or an array from which the min and max are derived
   %   If not specified, true image statistics are used
   %
   % Outputs:
@@ -31,8 +33,8 @@ function out = scaleImg( img, varargin )
   outMinMax = p.Results.outMinMax;
 
   if isempty( inMinMax ), inMinMax=[ min(img(:)) max(img(:)) ]; end
-  inMin = inMinMax(1);  outMin = outMinMax(1);
-  inMax = inMinMax(2);  outMax = outMinMax(2);
+  inMin = min( inMinMax(:) );  outMin = min( outMinMax(:) );
+  inMax = max( inMinMax(:) );  outMax = max( outMinMax(:) );
 
   if inMax <= inMin, error('Max must be larger than min'); end
   if outMax <= outMin, error('Max must be larger than min'); end
