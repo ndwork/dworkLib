@@ -96,6 +96,8 @@ function [scaling,imH] = imshownice( img, varargin )
   % Now restore units to previously used values
   set( ca, 'units', beforeAxesUnits );
   set( cf, 'units', beforeFigUnits );
+
+  drawnow; pause(0.02);
   
-  drawnow;
+  addToolbarExplorationButtons( cf );  % Restore the missing toolbar
 end

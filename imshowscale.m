@@ -139,9 +139,11 @@ function imH = imshowscale( img, varargin )
     set( ca, 'units', beforeAxesUnits );
   end
 
-  drawnow; pause(0.1);
+  drawnow; pause(0.02);
 
   % Now restore units to previously used values
   set( ca, 'units', beforeAxesUnits );
   set( cf, 'units', beforeFigUnits );
+
+  addToolbarExplorationButtons( cf );  % Restore the missing toolbar.
 end
