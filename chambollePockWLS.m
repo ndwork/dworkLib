@@ -35,14 +35,14 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'A', [] );
   p.addParameter( 'beta', 1, @ispositive );
   p.addParameter( 'delta', 0.99, @(x) x>0 && x<1 );
-  p.addParameter( 'doCheckAdjoint', false, @islogical );
+  p.addParameter( 'doCheckAdjoint', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'mu', 0.7, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'tau', 1, @ispositive );
   p.addParameter( 'theta', 1, @ispositive );
-  p.addParameter( 'verbose', false, @islogical );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.parse( varargin{:} );
   A = p.Results.A;
   beta = p.Results.beta;
@@ -75,7 +75,7 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
     if ~adjointCheckPassed, error([ 'checkAdjoint failed with error ', num2str(adjCheckErr) ]); end
   end
 
-  if nargout > 1,  objValues = zeros( N, 1 ); end
+  if nargout > 1, objValues = zeros( N, 1 ); end
 
   for optIter = 1 : N
     lastX = x;
