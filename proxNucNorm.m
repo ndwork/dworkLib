@@ -15,7 +15,7 @@ function out = proxNucNorm( in, thresh )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  [u,s,v] = svd( in );
+  [u,s,v] = svd( in, 'econ' );
 
   s = softThresh( diag(s), thresh );  % Singular values are always real
 
