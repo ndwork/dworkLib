@@ -31,7 +31,7 @@ function out = projCmpMag( x, t )
     scalingFactors = ones( size(x) );
     scalingFactors( xMag > t ) = 1 ./ xMag( xMag > t );
 
-    out = x * scalingFactors;
+    out = x .* scalingFactors;
 
   end
 end
