@@ -39,4 +39,6 @@ function p = evaluatePoly2( c, x, y )
 
     xtou = xtou .* x(:);
   end
+
+  p = reshape( p, size(x) );
 end
