@@ -7,6 +7,10 @@ function x = matchingPursuit( A, b, K )
   % performs matching pursuit optimization that greedily attempts to solve
   % minimize (1/2) || A x - b ||_2^2 subject to ||x||_0 <= k
   %
+  % Note that if the set of the columns of A is orthonormal then matching
+  % pursuit is the same as orthogonal matching pursuit (which generally
+  % performs much better)
+  %
   % Inputs:
   % A - the dictionary matrix of matching pursuit; each column is an
   %   element of the dictionary
