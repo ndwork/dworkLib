@@ -571,34 +571,55 @@ function testDworkLib
   figure; imshow( [noisyImg, denoisedImg], [] );
   title('Nonlocal Means Result');
 
+  %% orthogonalMatchingPursuit
+  close all
+  fprintf( '\nTesting orthogonalMatchingPursuit: \n' );
+  M = 50;  N = 30;
+  K = 3;
+  A = rand( M, N );
+  nA = norms( A, 2, 1 );
+  A = A ./ ( ones(M,1) * nA );
+  x = zeros( N, 1 );
+  x(1) = 1;
+  x(2) = 3;
+  x(N-2) = 2.10;
+  b = A * x;
+  xHat = orthogonalMatchingPursuit( A, b, K );
+  err = norm( x(:) - xHat(:) ) / norm( x(:) );
+  if err > 1d-8
+    error([ 'orthogonalMatchingPursuit failed with error ', num2str(err) ]);
+  else
+    disp( 'orthogonalMatchingPursuit passed' );
+  end
+
   %% padData
   fprintf('\nTesting padData: \n');
   padded = padData( [1 2 3], 5 );
   err = norm( padded - [0 1 2 3 0] );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   padded = padData( [1 2 3], 4 );
   err = norm( padded - [0 1 2 3] );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   padded = padData( [1 2], 4 );
   err = norm( padded - [0 1 2 0] );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   padded = padData( [1 2], 3 );
   err = norm( padded - [1 2 0] );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
 
   % test is cropData and padData are adjoints of each other
   x = rand(5,1);  y = rand(3,1);
   err = dotP( cropData(x,3), y ) - dotP( x, padData(y,5) );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   x = rand(6,1); y = rand(4,1);
   err = dotP( cropData(x,4), y ) - dotP( x, padData(y,6) );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   x = rand(5,1); y = rand(4,1);
   err = dotP( cropData(x,4), y ) - dotP( x, padData(y,5) );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   x = rand(6,1); y = rand(5,1);
   err = dotP( cropData(x,5), y ) - dotP( x, padData(y,6) );
-  if err>0, error(['padData failed with error ', num2str(err)]); end;
+  if err>0, error(['padData failed with error ', num2str(err)]); end
   disp('padData passed');
 
   %% parforProgress
