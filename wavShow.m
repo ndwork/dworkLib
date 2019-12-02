@@ -25,13 +25,15 @@ function imH = wavShow( wt, varargin )
   defaultSplit = 1;
   p = inputParser;
   p.addOptional( 'scale', 1, @ispositive );
+  p.addParameter( 'range', [] );
   p.addParameter( 'split', defaultSplit );
   p.parse( varargin{:} );
+  range = p.Results.range;
   scale = p.Results.scale;
   split = p.Results.split;
 
   img2show = wavScale( wt, split );
-  imH = imshowscale( img2show, scale );
+  imH = imshowscale( img2show, scale, 'range', range );
 end
 
 
