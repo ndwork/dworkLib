@@ -525,6 +525,27 @@ function testDworkLib
     disp('makeDftMatrix passed');
   end
 
+  %% matchingPursuit
+  close all
+  fprintf( '\nTesting matchingPursuit: \n' );
+  M = 30;  N = 20;
+  K = 3;
+  A = rand( M, N );
+  nA = norms( A, 2, 1 );
+  A = A ./ ( ones(M,1) * nA );
+  x = zeros( N, 1 );
+  x(1) = 1;
+  x(8) = 3;
+  x(N-2) = 2.10;
+  b = A * x;
+  xHat = matchingPursuit( A, b, K );
+  err = norm( x(:) - xHat(:) ) / norm( x(:) );
+  if err > 1
+    error([ 'matchingPursuit failed with error ', num2str(err) ]);
+  else
+    disp( 'matchingPursuit passed' );
+  end
+
   %% matrixVolProd
   A = rand(3,4);
   vol = rand(4,5,10000);
