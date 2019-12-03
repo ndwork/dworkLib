@@ -18,6 +18,6 @@ function out = ufft2( in, varargin )
 
   if ~ismatrix( in ), error('Input must be two-dimensional' ); end
 
-  out = 1/sqrt(numel(in)) .* fft2( in, varargin{:} );
+  out = 1/sqrt( size(in,1) * size(in,2) ) .* fft2( in, varargin{:} );
 
 end
