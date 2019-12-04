@@ -25,7 +25,12 @@ function img = iwtHaar2( wt, varargin )
   p.addOptional( 'split', defaultSplit );
   p.parse( varargin{:} );
   split = p.Results.split;
-  
+
+  sSplit = size( split );
+  if max( mod( log2(sSplit), 1 ) ) ~= 0
+    error( 'size of split should be even' );
+  end
+
   % H/L - High / Low pass filter
   % h/v - horizontal / vertical direction
 

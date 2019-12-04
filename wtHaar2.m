@@ -26,6 +26,11 @@ function wt = wtHaar2( img, varargin )
   p.parse( varargin{:} );
   split = p.Results.split;
 
+  sSplit = size( split );
+  if max( mod( log2(sSplit), 1 ) ) ~= 0
+    error( 'size of split should be even' );
+  end
+
   wt1 = img(1:2:end-1,:) + img(2:2:end,:);
   wt11 = wt1(:,1:2:end-1) + wt1(:,2:2:end);
   wt12 = wt1(:,1:2:end-1) - wt1(:,2:2:end);

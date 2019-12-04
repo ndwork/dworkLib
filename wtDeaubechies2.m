@@ -29,6 +29,11 @@ function wt = wtDeaubechies2( img, varargin )
   p.parse( varargin{:} );
   split = p.Results.split;
 
+  sSplit = size( split );
+  if max( mod( log2(sSplit), 1 ) ) ~= 0
+    error( 'size of split should be even' );
+  end
+
   imgSqrt3 = img * sqrt(3);
   img3 = 3 * img;
 

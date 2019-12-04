@@ -37,6 +37,10 @@ function img = iwtDeaubechies2( wt, varargin )
   wt12 = wt(1:sWT(1)/2,sWT(2)/2+1:end);
   wt22 = wt(sWT(1)/2+1:end,sWT(2)/2+1:end);
 
+  sSplit = size( split );
+  if max( mod( log2(sSplit), 1 ) ) ~= 0
+    error( 'size of split should be even' );
+  end
 
   nSplit = numel(split);
   if nSplit > 1
