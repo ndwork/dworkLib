@@ -4,7 +4,8 @@ function mask = makeEdgeMask( sz, edge )
   %
   % Inputs:
   % sz - two element vector specifying the size of the output image mask
-  % edge - scalar specifying number of pixels in edge
+  % edge - either a scalar specifying number of pixels in edge or a two 
+  %   element array specifying the size of the edge in each dimension.
   %
   % Outputs:
   % mask - a 2D array where edge pixels are 1 and all other pixels are 0
@@ -16,13 +17,14 @@ function mask = makeEdgeMask( sz, edge )
   % implied warranties of merchantability or fitness for a particular 
   % purpose.
 
-  if edge < 1, error('Edge must be >= 1'); end
-
+  if numel( edge ) == 1, edge = [ edge edge ]; end
+  if min(edge) < 1, error('Edge must be >= 1'); end
+  
   mask = zeros( sz );
-  mask(1:edge,:) = 1;
-  mask(:,1:edge) = 1;
-  mask(end-edge+1:end,:) = 1;
-  mask(:,end-edge+1:end) = 1;
+  mask(1:edge(1),:) = 1;
+  mask(:,1:edge(2)) = 1;
+  mask(end-edge(1)+1:end,:) = 1;
+  mask(:,end-edge(2)+1:end) = 1;
 
 end
 
