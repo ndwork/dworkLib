@@ -32,7 +32,8 @@ function t1Map = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
   mask = p.Results.mask;
   verbose = p.Results.verbose;
 
-  usePhaseConstraint = false;
+  usePhaseConstraint = false;  % Using phase constraint makes results worse
+                               % See Barral et al. for details
 
   sData = size( dataCube );
   if numel( mask ) == 0, mask=ones( sData(1:2) ); end
