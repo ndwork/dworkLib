@@ -32,6 +32,10 @@ function imH = wavShow( wt, varargin )
   scale = p.Results.scale;
   split = p.Results.split;
 
+  if max( abs( imag( wt(:) ) ) ) ~= 0
+    error( 'Input to wavShow is complex' );
+  end
+  
   img2show = wavScale( wt, split );
   imH = imshowscale( img2show, scale, 'range', range );
 end
