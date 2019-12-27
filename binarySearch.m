@@ -29,7 +29,7 @@ function out = binarySearch( f, LB, UB, varargin )
   tol = p.Results.tol;
 
   thisLB = LB;  fLB = f( thisLB );
-  thisUB = UB;  fUB = f( thisUB );
+  thisUB = UB;  %fUB = f( thisUB );  % fUB is never used
 
   i = 0;
   while i < nMax
