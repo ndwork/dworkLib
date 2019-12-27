@@ -21,6 +21,12 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp([ 'Usage: mask = vdSampleMask( sMask, sigmas, nSamples ', ...
+      '[, ''maskType'', maskType ] )' ]);
+    return
+  end
+
   p = inputParser;
   p.addParameter( 'maskType', 'Laplacian', @(x) true );
   p.parse( varargin{:} );
