@@ -21,6 +21,11 @@ function out = softThresh( in, thresh )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp( 'Usage: out = softThresh( in, thresh )' );
+    return
+  end
+
   if isreal( in )
 
     out = sign(in) .* max( ( abs(in) - thresh ), 0 );
