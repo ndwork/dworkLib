@@ -16,8 +16,6 @@ function out = uifft2( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if ~ismatrix( in ), error('Input must be two-dimensional' ); end
-
   out = sqrt( size(in,1) * size(in,2) ) .* ifft2( in, varargin{:} );
 
 end
