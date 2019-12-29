@@ -67,35 +67,32 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % A' * A = (RI)' * F' * M * F * RI
   % gGrad = A'*A*x - A'*b;
 
-  function out = F( x )
-    Fx = 1/sqrt(nSamples) .* fftc( x(:,:,1) + 1i * x(:,:,2) );
-    out = cat( 3, real(Fx), imag(Fx) );
+  function Fx = F( x )
+    Fx = 1/sqrt(nSamples) .* fftc( x );
   end
 
-  function out = Fadj( y )
-    Fadjy = sqrt(nSamples) * ifftc( y(:,:,1) + 1i * y(:,:,2) );
-    out = cat( 3, real(Fadjy), imag(Fadjy) );
+  function Fadjy = Fadj( y )
+    Fadjy = sqrt(nSamples) * ifftc( y );
   end
-
-  M2 = cat( 3, M, M );
 
   function out = A( x )
-    x = cat( 3, real(x), imag(x) );
     Fx = F( x );
-    out = M2 .* Fx;
+    out = Fx( M == 1 );
   end
 
   function out = Aadj( y )
-    out = Fadj( M2 .* y );
+    MTy = zeros( size( samples ) );
+    MTy( M==1 ) = y;
+    out = Fadj( MTy );
   end
 
   if checkAdjoints == true
     % Variable used during debugging of this routine
     checkResult = csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj );
-    if checkResult ~= false, disp([ 'Adjoints test passed' ]); end
+    if checkResult ~= false, disp( 'Adjoints test passed' ); end
   end
 
-  b = cat( 3, real(samples), imag(samples) );
+  b = samples( M == 1 );
 
   function out = g( x )
     diff = A( x ) - b;
@@ -105,7 +102,6 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   Aadjb = Aadj( b );
   function out = gGrad( x )
     out = Aadj( A( x ) ) - Aadjb;
-    out = out(:,:,1) + 1i * out(:,:,2);
   end
 
   if strcmp( waveletType, 'Deaubechies' )
@@ -159,14 +155,13 @@ end
 
 function out = csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
   % Check to make sure that Fadj is the adjoint of F
-  x1 = rand( [size(samples) 2] );
+  randSamples = rand( size(samples) ) + 1i * rand( size(samples) );
 
-  if checkAdjoint( x1, F, Fadj ) ~= true
+  if checkAdjoint( randSamples, F, Fadj ) ~= true
     error( 'Fadj is not the transpose of F' );
   end
 
-  x2 = rand( [size(samples) 2] );
-  if checkAdjoint( x2, A, Aadj ) ~= true
+  if checkAdjoint( randSamples, A, Aadj ) ~= true
     error( 'Aadj is not the transpose of A' );
   end
 
