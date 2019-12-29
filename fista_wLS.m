@@ -83,17 +83,6 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   theta = 1;
 
   for k=0:N-1
-    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
-    if verbose>0 && mod( k, printEvery ) == 0
-      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
-      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
-      if calculateObjectiveValues > 0
-        verboseString = [ verboseString, ',  objective: ', ...
-          num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
-      end
-      disp( verboseString );
-    end
-
     lastX = x;
     lastT = t;
     t = s * lastT;
@@ -107,14 +96,27 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
         theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
       end
       y = (1-theta) * lastX + theta * v;
+
       Dgy = gGrad( y );
       x = proxth( y - t * Dgy, t );
-      breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t))*norm(x(:)-y(:),2)^2;
+
+      breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t)) * norm( x(:) - y(:), 2 )^2;
       if g(x) <= breakThresh, break; end
       t = r*t;
       if verbose>1 && mod( k, printEvery ) == 0
         disp([ '  Step size change to: ', num2str(t) ]);
       end
+    end
+
+    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if verbose>0 && mod( k, printEvery ) == 0
+      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
+      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
+      if calculateObjectiveValues > 0
+        verboseString = [ verboseString, ',  objective: ', ...
+          num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+      end
+      disp( verboseString );
     end
 
     v = x + (1/theta) * ( x - lastX );
