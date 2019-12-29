@@ -36,10 +36,22 @@ function out = scaleImg( img, varargin )
   inMin = min( inMinMax(:) );  outMin = min( outMinMax(:) );
   inMax = max( inMinMax(:) );  outMax = max( outMinMax(:) );
 
-  if inMax <= inMin, error('Max must be larger than min'); end
-  if outMax <= outMin, error('Max must be larger than min'); end
+  if inMax < inMin, error('Max must be larger than min'); end
+  if outMax < outMin, error('Max must be larger than min'); end
 
-  tmp = (img - inMin) / ( inMax - inMin );
-  out = tmp * (outMax - outMin) + outMin;
-  out = min( max( out, outMin ), outMax );
+  if outMax == outMin
+    out = outMax * ones( size( img ) );
+  elseif inMin == inMax
+    if inMin <= outMin
+      out = outMin * ones( size( img ) );
+    elseif inMin >= outMax
+      out = outMax * ones( size( img ) );
+    else
+      out = inMin * ones( size( img ) );
+    end
+  else
+    tmp = (img - inMin) / ( inMax - inMin );
+    out = tmp * (outMax - outMin) + outMin;
+    out = min( max( out, outMin ), outMax );
+  end
 end
