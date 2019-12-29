@@ -1,5 +1,4 @@
 
-
 function out = binarySearch( f, LB, UB, varargin )
   % out = binarySearch( f, LB, UB [, 'tol', tol, 'nMax', nMax ] )
   %
@@ -20,6 +19,11 @@ function out = binarySearch( f, LB, UB, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 3
+    disp( 'Usage: out = binarySearch( f, LB, UB [, ''tol'', tol, ''nMax'', nMax ] )' );
+    return
+  end
 
   p = inputParser;
   p.addParameter( 'nMax', 1000, @ispositive );
