@@ -1,6 +1,6 @@
 
 function imH = wavShow( wt, varargin )
-  % imH = wavshow( sig [, scale, 'split', split] );
+  % imH = wavshow( wt [, scale, 'split', split] );
   %
   % shows the wavelet transform with individual scaling of each portion for
   % improved viewing
@@ -21,6 +21,11 @@ function imH = wavShow( wt, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 1
+    disp( 'Usage:  imH = wavshow( wt [, scale, ''split'', split] )' );
+    return
+  end
 
   defaultSplit = 1;
   p = inputParser;
