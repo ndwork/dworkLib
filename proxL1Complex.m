@@ -22,6 +22,8 @@ function out = proxL1Complex( in, thresh, weights )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2, disp( 'Usage:  out = proxL1Complex( in, thresh [, weights ] )' ); end
+
   if nargin > 2, thresh = thresh .* weights; end
 
   magIn = abs( in );
