@@ -80,4 +80,6 @@ function displayNice( dispFunctionH, in1, varargin )
   else
     set( gca, 'fontsize', 14, 'LineWidth', 1.5 );
   end
+
+  addToolbarExplorationButtons( gcf );  % Restore the missing toolbar
 end
