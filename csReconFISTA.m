@@ -116,7 +116,7 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     error( 'Unrecognized wavelet type' );
   end
 
-  proxth = @(x,t) WT( softThresh( W(x), t*lambda ) );
+  proxth = @(x,t) WT( proxL1Complex( W(x), t*lambda ) );
     % The proximal operator of || W x ||_1 was determined using
     % Vandenberghe's notes from EE 236C; slide of "The proximal mapping" entitled
     % "Composition with Affine Mapping"
@@ -140,7 +140,7 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   end
 
   if polish
-    maskW = softThresh( W(recon), t*lambda ) ~= 0;
+    maskW = proxL1Complex( W(recon), t*lambda ) ~= 0;
     proxth = @(x,t) WT( maskW .* W(x) );
     if debug
       [recon,oValues2] = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, ...
