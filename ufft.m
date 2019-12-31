@@ -27,9 +27,9 @@ function out = ufft( in, varargin )
   if numel( dim ) == 0
     tmp = squeeze( in );
     if size( tmp, 1 ) > 1
-      dim = size( tmp, 1 );
+      dim = 1;
     else
-      dim = size( tmp, 2 );
+      dim = 2;
     end
   end
 
