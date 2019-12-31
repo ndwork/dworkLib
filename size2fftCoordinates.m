@@ -29,6 +29,10 @@ function ks = size2fftCoordinates( N )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage: ks = size2fftCoordinates( N )' );
+    return
+  end
 
   if N(1)==1 && numel(N) > 1
     N = N(2:end);
@@ -40,7 +44,7 @@ function ks = size2fftCoordinates( N )
     ks{i} = size2fftCoordinates_1D( N(i) );
   end
 
-  if numel( ks ) == 1, ks=ks{1}; end;
+  if numel( ks ) == 1, ks=ks{1}; end
 end
 
 
