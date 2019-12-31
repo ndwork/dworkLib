@@ -1,6 +1,6 @@
 
-function stemnice( in1, varargin )
-  % stemnice( in1 [, in2, 'ax', ax, options ] )
+function out = stemnice( in1, varargin )
+  % out = stemnice( in1 [, in2, 'ax', ax, options ] )
   %
   % Inputs:
   %   in1 - 1D array to stem plot
@@ -18,11 +18,15 @@ function stemnice( in1, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage: out = stemnice( in1 [, in2, ''ax'', ax, options ] )' );
+    return
+  end
 
   ax = [];
   if numel( varargin ) > 0
     axIndx = find( strcmp( varargin, 'ax' ) );
-    if numel( axIndx > 0 )
+    if numel( axIndx ) > 0
       ax=varargin{axIndx+1};
       varargin = { varargin{1:axIndx-1} varargin{axIndx+2:end} };
     end
@@ -30,19 +34,19 @@ function stemnice( in1, varargin )
 
   if nargin - 2*numel(ax) > 2
 
-    if isnumeric( varargin{1} ) || islogical( varargin{1} );
+    if isnumeric( varargin{1} ) || islogical( varargin{1} )
 
       if mod( numel(varargin)-1, 2 ) == 0
-        if numel( ax ) > 0,
-          stem( ax, in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
+        if numel( ax ) > 0
+          out = stem( ax, in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
         else
-          stem( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
+          out = stem( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
         end
       else
         if numel( ax ) > 0
-          stem( ax, in1, varargin{1}, varargin{2}, 'LineWidth', 1.5, varargin{3:end} );
+          out = stem( ax, in1, varargin{1}, varargin{2}, 'LineWidth', 1.5, varargin{3:end} );
         else
-          stem( in1, varargin{1}, varargin{2}, 'LineWidth', 1.5, varargin{3:end} );
+          out = stem( in1, varargin{1}, varargin{2}, 'LineWidth', 1.5, varargin{3:end} );
         end
       end
 
@@ -50,15 +54,15 @@ function stemnice( in1, varargin )
 
       if mod( numel(varargin), 2 ) == 0
         if numel( ax ) > 0
-          stem( ax, in1, 'LineWidth', 1.5, varargin{:} );
+          out = stem( ax, in1, 'LineWidth', 1.5, varargin{:} );
         else
-          stem( in1, 'LineWidth', 1.5, varargin{:} );
+          out = stem( in1, 'LineWidth', 1.5, varargin{:} );
         end
       else
         if numel( ax ) > 0
-          stem( ax, in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
+          out = stem( ax, in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
         else
-          stem( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
+          out = stem( in1, varargin{1}, 'LineWidth', 1.5, varargin{2:end} );
         end
       end
 
@@ -67,17 +71,17 @@ function stemnice( in1, varargin )
   elseif nargin - 2*numel(ax) > 1
 
     if numel( ax ) > 0
-      stem( ax, in1, varargin{1}, 'LineWidth', 1.5 );
+      out = stem( ax, in1, varargin{1}, 'LineWidth', 1.5 );
     else
-      stem( in1, varargin{1}, 'LineWidth', 1.5 );
+      out = stem( in1, varargin{1}, 'LineWidth', 1.5 );
     end
 
   else
 
     if numel( ax ) > 0
-      stem( ax, in1, 'LineWidth', 1.5 );
+      out = stem( ax, in1, 'LineWidth', 1.5 );
     else
-      stem( in1, 'LineWidth', 1.5 );
+      out = stem( in1, 'LineWidth', 1.5 );
     end
 
   end
