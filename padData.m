@@ -19,6 +19,11 @@ function padded = padData( data, N, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp( 'Usage:  padded = padData( data, N [, padValue ] )' );
+    return;
+  end
+
   defaultPadValue = 0;
   p = inputParser;
   p.addOptional( 'padValue', defaultPadValue );
