@@ -22,6 +22,11 @@ function out = scaleImg( img, varargin )
   % implied warranties of merchantability or fitness for a particular 
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  out = scaleImg( img [, outMinMax, inMinMax ] )' );
+    return;
+  end
+
   defaultInMinMax = [ min(img(:)) max(img(:)) ];
   defaultOutMinMax = [0 1];
 
