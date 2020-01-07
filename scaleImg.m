@@ -37,6 +37,9 @@ function out = scaleImg( img, varargin )
   inMinMax = p.Results.inMinMax;
   outMinMax = p.Results.outMinMax;
 
+  if numel( inMinMax ) == 0, inMinMax = defaultInMinMax; end
+  if numel( outMinMax ) == 0, outMinMax = defaultOutMinMax; end
+  
   if isempty( inMinMax ), inMinMax=[ min(img(:)) max(img(:)) ]; end
   inMin = min( inMinMax(:) );  outMin = min( outMinMax(:) );
   inMax = max( inMinMax(:) );  outMax = max( outMinMax(:) );
