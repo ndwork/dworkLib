@@ -128,7 +128,7 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
 
   x0 = ifftc( samples );  % Could possibly make this better with inverse gridding
 
-  t = 1;
+  t = 1 / numel( samples );
   if debug
     %[recon,oValues] = fista( x0, @g, @gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
     [recon,oValues] = fista_wLS( x0, @g, @gGrad, proxth, 'h', @h, ...
