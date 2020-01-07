@@ -29,9 +29,9 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  split = zeros(4);  split(1,1) = 1;
-  %split = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
-  %split = [ 1 0; 0 0; ];
+  wavSplit = zeros(4);  wavSplit(1,1) = 1;
+  %wavSplit = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
+  %wavSplit = [ 1 0; 0 0; ];
 
   p = inputParser;
   p.addParameter( 'checkAdjoints', false, @islogical );
@@ -39,7 +39,7 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'printEvery', 1, @ispositive );
-  p.addParameter( 'split', split, @isnumeric );
+  p.addParameter( 'wavSplit', wavSplit, @isnumeric );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'waveletType', 'Deaubechies', @(x) true );
   p.parse( varargin{:} );
@@ -105,12 +105,12 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   end
 
   if strcmp( waveletType, 'Deaubechies' )
-    W = @(x) wtDeaubechies2( x, split );
-    WT = @(y) iwtDeaubechies2( y, split );
+    W = @(x) wtDeaubechies2( x, wavSplit );
+    WT = @(y) iwtDeaubechies2( y, wavSplit );
 
   elseif strcmp( waveletType, 'Haar' )
-    W = @(x) wtHaar2( x, split );
-    WT = @(y) iwtHaar2( y, split );
+    W = @(x) wtHaar2( x, wavSplit );
+    WT = @(y) iwtHaar2( y, wavSplit );
 
   else
     error( 'Unrecognized wavelet type' );
