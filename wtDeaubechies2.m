@@ -3,6 +3,8 @@ function wt = wtDeaubechies2( img, varargin )
   % wt = wtDeaubechies2( sig [, split] );
   %
   % Performs a Deaubechies wavelet transform of an image (with circular boundary conditions)
+  % Based on the Wikipedia page on the Daubechies wavelet transform and
+  % (http://wavelets.pybytes.com/wavelet/db2/)
   %
   % Inputs:
   % img - 2D array representing the image to be transformed
