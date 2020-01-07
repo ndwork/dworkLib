@@ -3,7 +3,7 @@ function wt = wtDeaubechies( sig, varargin )
   % wt = wtDeaubechies( sig [, split] );
   %
   % Performs a Daubechies wavelet transform of a signal with circular boundary conditions
-  % Based on the Wikipedia page on the Daubechies wavelet transform.
+  % Based on the Wikipedia page on the Daubechies wavelet transform and
   % (http://wavelets.pybytes.com/wavelet/db2/)
   % Note that this is a unitary transform
   %
