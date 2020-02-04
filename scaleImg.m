@@ -2,7 +2,8 @@
 function out = scaleImg( img, varargin )
   % out = scaleImg( img [, outMinMax, inMinMax ] )
   %
-  % Function scaled image affinely so that inMinMax is scaled to outMinMax
+  % Function scaled image affinely so that inMinMax is scaled to outMinMax.
+  % If img is complex, it scales the magnitude.
   %
   % Inputs:
   % outMinMax - 2 element array specifying output min and max
@@ -47,6 +48,16 @@ function out = scaleImg( img, varargin )
   if inMax < inMin, error('Max must be larger than min'); end
   if outMax < outMin, error('Max must be larger than min'); end
 
+  if min( isreal( img(:) ) ) == 1  % real data
+    out = scaleRealImg( img, outMin, outMax, inMin, inMax );
+  else  % complex data
+    scaledMag = scaleRealImg( abs( img ), outMin, outMax, inMin, inMax );
+    out = scaledMag .* exp( 1i * angle( img ) );
+  end
+
+end
+
+function out = scaleRealImg( img, outMin, outMax, inMin, inMax )
   if outMax == outMin
     out = outMax * ones( size( img ) );
   elseif inMin == inMax
@@ -63,3 +74,4 @@ function out = scaleImg( img, varargin )
     out = min( max( out, outMin ), outMax );
   end
 end
+
