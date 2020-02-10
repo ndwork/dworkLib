@@ -33,6 +33,12 @@ function imH = showImageCube( cube, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp([ 'Usage: imH = showImageCube( cube [, scale, ''border'', border, ''borderValue'', ', ...
+      'borderValue, ''nImgsPerRow'', nImgsPerRow, ''range'', range, ''sdevScale'', sdevScale ' ]);
+    return;
+  end
+  
   p = inputParser;
   p.addOptional( 'scale', 1, @isnumeric );
   p.addParameter( 'border', 1, @isnumeric );

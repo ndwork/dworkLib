@@ -24,6 +24,11 @@ function recon = mri_ssqRecon( kData, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  recon = mri_ssqRecon( kData [, ''multiSlice'', true/false ] )' );
+    return;
+  end
+
   coilRecons = mri_fftRecon( kData, varargin{:} );
 
   tmpReconSq = coilRecons .* conj( coilRecons );
