@@ -71,6 +71,23 @@ function padded = padData( data, N, varargin )
     padded ( minY : minY + sData(1)-1, ...
              minX : minX + sData(2)-1, ...
              minZ : minZ + sData(3)-1  ) = data;
+
+  else
+    padded = zeros( N(:)' );
+    sData = size( data );
+    minIndxs = zeros( numel(N) );
+    str2eval = ' padded ( ';
+    nDimsData = ndims( data );
+    for dimIndx = 1 : nDimsData
+      minIndxs( dimIndx ) = findMinIndx( N( dimIndx ), sData( dimIndx ) );
+      str2eval = [ str2eval, ...
+        ' minIndxs( ', indx2str(dimIndx,nDimsData), ...
+          ' ) : minIndxs( ', indx2str(dimIndx,nDimsData), ...
+        ' ) + sData( ', indx2str(dimIndx,nDimsData), ' ) - 1' ];   %#ok<AGROW>
+      if dimIndx < nDimsData, str2eval = [ str2eval, ',' ]; end
+    end
+    str2eval = [ str2eval, ') = data' ];
+    eval( str2eval );
   end
 
 end
