@@ -20,12 +20,21 @@ function recons = mri_fftRecon( kData, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp('Usage:  recons = mri_fftRecon( kData [, ''multiSlice'', true/false );' );
+    return;
+  end
+
   p = inputParser;
   p.addParameter( 'multiSlice', false, @islogical );
   p.parse( varargin{:} );
   multiSlice = p.Results.multiSlice;
-  
-  recons = fftshift( ifftc( fftshift( ifftc( kData, [], 1 ), 1 ), [], 2 ), 2 );
+
+  kData = ifftc( kData, [], 1 );
+  kData = fftshift( kData, 1 );
+  kData = ifftc( kData, [], 2 );
+  recons = fftshift( kData, 2 );
+  %recons = fftshift( ifftc( fftshift( ifftc( kData, [], 1 ), 1 ), [], 2 ), 2 );
 
   if ~ismatrix( kData ) && multiSlice == false
     recons = fftshift( ifftc( recons, [], 3 ), 3 );
