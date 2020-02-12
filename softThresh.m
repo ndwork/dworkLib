@@ -29,18 +29,14 @@ function out = softThresh( in, thresh )
   if isreal( in )
 
     out = sign(in) .* max( ( abs(in) - thresh ), 0 );
-    
+
   else
 
-    magIn = abs( in );
-
-    scalingFactors = thresh ./ magIn;
-    scalingFactors( magIn <= thresh ) = 1;
-
-    projsOntoUnitMag = in .* scalingFactors;
-
-    out = in - projsOntoUnitMag;
+    magIn = abs( in );  % We know magIn is positive
+    magOut = max( ( magIn - thresh ), 0 );
+    out = magOut .* exp( 1i * angle( in ) );
 
   end
 
 end
+
