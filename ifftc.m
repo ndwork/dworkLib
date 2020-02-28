@@ -45,7 +45,7 @@ function out = ifftc( in, varargin )
 
       case 2
         if numel( n ) > 0
-          if numel( n ) ~= 2, error( 'sz has the wrong number of elements' ); end
+          if numel( n ) ~= 2, error( 'n has the wrong number of elements' ); end
           out = ifft2( ifftshift( in ), n(1), n(2) );
         else
           out = ifft2( ifftshift( in ) );

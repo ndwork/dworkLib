@@ -13,6 +13,11 @@ function value = findFractionAboveValue( data, fraction )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage: value = findFractionAboveValue( data, fraction )' );
+    return
+  end
+  
   nData = numel( data );
   lowerValue = min( data(:) );
   upperValue = max( data(:) );
