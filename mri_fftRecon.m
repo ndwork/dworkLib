@@ -34,10 +34,11 @@ function recons = mri_fftRecon( kData, varargin )
   kData = fftshift( kData, 1 );
   kData = ifftc( kData, [], 2 );
   recons = fftshift( kData, 2 );
-  %recons = fftshift( ifftc( fftshift( ifftc( kData, [], 1 ), 1 ), [], 2 ), 2 );
+  recons = recons * sqrt( size(recons,1) * size(recons,2) );
 
   if ~ismatrix( kData ) && multiSlice == false
     recons = fftshift( ifftc( recons, [], 3 ), 3 );
+    recons = recons * sqrt( size( recons, 3 ) );
   end
 
 end
