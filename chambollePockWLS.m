@@ -69,7 +69,6 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
     applyAT = @(x) A( x, 'transp' );
     y = applyA( x );
   end
-  y(:) = 0;
 
   if doCheckAdjoint == true
     [adjointCheckPassed,adjCheckErr] = checkAdjoint( x, applyA, applyAT );
