@@ -19,6 +19,10 @@ function out = whitenData( data, covMatrix )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp( 'Usage:  out = whitenData( data, covMatrix )' );
+    return
+  end
 
   if size( data, ndims( data ) ) ~= size( covMatrix, 1 ) || ...
      size( data, ndims( data ) ) ~= size( covMatrix, 2 )
