@@ -58,7 +58,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   ys = coords(:) * ones( 1, hSize );
   xs = ones(hSize,1) * coords';
 
-  [ nCols, nRows, nSlices, nCoils ] = size( coilRecons );
+  [ nRows, nCols, nSlices, nCoils ] = size( coilRecons );
 
   senseMaps0 = bsxfun( @rdivide, coilRecons, ssqRecon );
   senseMapCols = cell( 1, nCols, 1, 1 );
