@@ -3,8 +3,8 @@ function newParams = updateScaleShifts( g, gPrime, xs, ys, beta, alpha, ...
   domainShift, stepSize, varargin )
   % newParams = updateScaleShiftParams( ...
   %   g, gPrime, xs, ys, beta, alpha, gamma, stepSize [, 'objective', objective, ...
-  %   'Lb', Lb, 'Ub', Ub, ...
-  %   'findBeta', findBeta, 'findAlpha', findAlpha, 'findGamma', findGamma ] )
+  %   'Lb', Lb, 'Ub', Ub, 'findBeta', findBeta, 'findAlpha', findAlpha, ...
+  %   'findDomainShift', findDomainShift ] )
   %
   % Compute a projected (sub)gradient descent update on the scaling and shifting
   % parameters to minimize || ys - beta * g( alpha * xs - domainShift ) ||_2
@@ -32,7 +32,7 @@ function newParams = updateScaleShifts( g, gPrime, xs, ys, beta, alpha, ...
   % 'Ub' - an array equal to the number of parameters specifying the upper bounds
   % findBeta - determine the new value of the range scaling parameter
   % findAlpha - determine the new value of the domain scaling parameter
-  % findGamma - determine the new value of the domain shifting parameter
+  % findDomainShift - determine the new value of the domain shifting parameter
   %
   % Outputs:
   % newParams = an array of size 1-3 (depending on the parameters sought)
