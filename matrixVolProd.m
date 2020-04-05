@@ -17,6 +17,11 @@ function out = matrixVolProd( A, vol )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp( 'Usage:  out = matrixVolProd( A, vol )' );
+    return;
+  end
+  
   sVol = ones(1,3);
   sVol(1:ndims(vol)) = size( vol );
   out = zeros( [ size(A,1) sVol(2) sVol(3) ] );
