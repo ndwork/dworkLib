@@ -1,6 +1,6 @@
 
 function out = scatternice( in1, in2, varargin )
-  % scatternice( in1, in2  [, 'ax', ax, options ] )
+  % scatternice( in1 [, in2, 'ax', ax, options ] )
   %
   % Inputs:
   %   in1 - domain values to plot
@@ -23,12 +23,17 @@ function out = scatternice( in1, in2, varargin )
   ax = [];
   if numel( varargin ) > 0
     axIndx = find( strcmp( varargin, 'ax' ) );
-    if numel( axIndx > 0 )
+    if numel( axIndx ) > 0
       ax=varargin{axIndx+1};
       varargin = { varargin{1:axIndx-1} varargin{axIndx+2:end} };
     end
   end
 
+  if nargin < 2
+    in2 = in1;
+    in1 = 1 : numel( in2 );
+  end
+  
   if numel( varargin ) > 0
     out = scatter( in1, in2, varargin{:}, 'filled' );
   else
