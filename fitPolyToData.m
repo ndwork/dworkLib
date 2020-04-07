@@ -1,7 +1,6 @@
 
-function v = fitPolyToData( N, x, y )
-  % v = fitPolyToData( N, x, y ) or
-  % v = fitPolyToData( N, y )
+function [v,RSquared] = fitPolyToData( N, x, y )
+  % [v,RSquared] = fitPolyToData( N, x [, y] )
   %
   % This function finds a polynomial p so that || y - p(x) ||_2 is minimized
   %
@@ -21,7 +20,14 @@ function v = fitPolyToData( N, x, y )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2
+  if nargin < 1
+    disp( 'Usage:  [v,RSquared] = fitPolyToData( N, x [, y] )' );  return;
+  end
+  if nargout > 1 && N ~= 1
+    error( 'N must be 1 to return RSquared' );  return;
+  end
+
+  if nargin < 3
     y = x;
     x = 1:numel(y);
   end
@@ -32,4 +38,12 @@ function v = fitPolyToData( N, x, y )
   end
 
   v = A \ y(:);
+  
+  if nargout > 1
+    p = evaluatePoly( v, x );
+    meanY = mean( y );
+    ssTot = sum( ( y(:) - meanY ).^2 );
+    ssReg = sum( ( p(:) - meanY ).^2 );
+    RSquared = ssReg / ssTot;
+  end
 end
