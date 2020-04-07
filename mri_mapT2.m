@@ -1,5 +1,5 @@
 
-function [t2Map,m0Map] = mri_mapT2( dataCube, TEs, varargin )
+function [t2Map,m0Map,RSquared] = mri_mapT2( dataCube, TEs, varargin )
   % [t2Map,m0Map] = mri_mapT2( dataCube, TEs, [, 'alg', alg, ...
   %  b1ScaleMap, 'b1ScaleMap', 'mask', mask, 'verbose', verbose ] )
   %
@@ -53,23 +53,38 @@ function [t2Map,m0Map] = mri_mapT2( dataCube, TEs, varargin )
   if numel( b1ScaleMap ) > 0 && strcmp( alg, 'lsqr' )
     alg = 'lsqr_non180';
   end
-  
+
+  if ~strcmp( alg, 'linear' ) && nargout > 2
+    error( 'RSquared only available with linear fit' );
+  end
+
   fminconOptions = optimoptions('fmincon','Display','off');
   m0MapCols = cell( 1, sData(2) );
   t2MapCols = cell( 1, sData(2) );
+  RSquaredCols = cell( 1, sData(2) );
+
   p = parforProgress( sData(2) );
   parfor i=1:sData(2)
     if verbose ~= 0, p.progress( i, 10 ); end    %#ok<PFBNS>
 
     m0MapCol = zeros( sData(1), 1 );  %#ok<PFBNS>
     t2MapCol = zeros( sData(1), 1 );
+    RSquaredCol = zeros( sData(1), 1 );
 
     for j=1:sData(1)
       if mask(j,i)==0, continue; end
 
       thisData = abs( squeeze( dataCube(j,i,:) ) );
 
-      if strcmp( 'lsqr', alg )
+      if strcmp( 'linear', alg )
+        [params,thisRSquared] = fitPolyToData( 1, TEs, thisData );
+        %figure; scatternice( thisData );  hold on; plotnice( evaluatePoly(params,TEs), 'r' )
+        thisT2 = -1 / params(2);
+        m0MapCol(j) = exp( params(1) );
+        t2MapCol(j) = thisT2;
+        RSquaredCol(j) = thisRSquared;
+
+      elseif strcmp( 'lsqr', alg )
         params = fmincon( @(tmp) norm( thisData - signalModel(TEs,tmp) ), ...
           [0; 0;], [], [], [], [], [0; 0;], [], [], fminconOptions );
         m0MapCol(j) = params(1);
@@ -84,23 +99,22 @@ function [t2Map,m0Map] = mri_mapT2( dataCube, TEs, varargin )
         m0MapCol(j) = params(1);
         t2MapCol(j) = params(2);
 
-      elseif strcmp( 'linear', alg )
-        params = fitPolyToData( 1, TEs, thisData );
-        %figure; stemnice( thisData );  hold on; plotnice( evaluatePoly(params,TEs), 'r' )
-        thisT2 = -1 / params(2);
-        m0MapCol(j) = exp( params(1) );
-        t2MapCol(j) = thisT2;
-
       end
     end
 
     m0MapCols{i} = m0MapCol;
     t2MapCols{i} = t2MapCol;
+    if strcmp( 'linear', alg )
+      RSquaredCols{i} = RSquaredCol;
+    end
   end
   p.clean;
 
   m0Map = cell2mat( m0MapCols );
   t2Map = cell2mat( t2MapCols );
+  if strcmp( 'linear', alg )
+    RSquared = cell2mat( RSquaredCols );
+  end
 end
 
 
