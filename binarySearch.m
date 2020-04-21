@@ -45,6 +45,7 @@ function out = binarySearch( f, LB, UB, varargin )
 
     if sign( fLB ) == sign( fMid )
       thisLB = mid;
+      fLB = fMid;
     else
       thisUB = mid;
     end
