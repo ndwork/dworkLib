@@ -1,7 +1,7 @@
 
 function [t2Map,m0Map,RSquared] = mri_mapT2( dataCube, TEs, varargin )
   % [t2Map,m0Map] = mri_mapT2( dataCube, TEs, [, 'alg', alg, ...
-  %  b1ScaleMap, 'b1ScaleMap', 'mask', mask, 'verbose', verbose ] )
+  %  'b1ScaleMap', b1ScaleMap, 'mask', mask, 'verbose', verbose ] )
   %
   %  Determines T2 values by fitting data to a model.
   
@@ -79,8 +79,8 @@ function [t2Map,m0Map,RSquared] = mri_mapT2( dataCube, TEs, varargin )
       if strcmp( 'linear', alg )
         [params,thisRSquared] = fitPolyToData( 1, TEs, thisData );
         %figure; scatternice( thisData );  hold on; plotnice( evaluatePoly(params,TEs), 'r' )
-        thisT2 = -1 / params(2);
-        m0MapCol(j) = exp( params(1) );
+        thisT2 = -1 / params(2) * params(1);
+        m0MapCol(j) = params(1);
         t2MapCol(j) = thisT2;
         RSquaredCol(j) = thisRSquared;
 
@@ -91,6 +91,7 @@ function [t2Map,m0Map,RSquared] = mri_mapT2( dataCube, TEs, varargin )
         t2MapCol(j) = params(2);
 
       elseif strcmp( 'lsqr_non180', alg )
+        spinAngle = pi * b1ScaleMap(j,i);
         params = fmincon( ...
           @(tmp) norm( thisData - signalModel_non180(TEs,tmp,spinAngle) ), ...
             [0; 0;], [], [], [], [], [0; 0;], [], [], fminconOptions );
@@ -98,6 +99,9 @@ function [t2Map,m0Map,RSquared] = mri_mapT2( dataCube, TEs, varargin )
           %  [0; 0;], [], [], [], [], [0; 0;], [], [], fminconOptions );
         m0MapCol(j) = params(1);
         t2MapCol(j) = params(2);
+        
+      else
+        error( 'Unrecognized algorithm specification' );
 
       end
     end
