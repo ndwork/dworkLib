@@ -1,7 +1,7 @@
 
 function [scaling,imH] = imshownice( img, varargin )
   % scaling = imshownice( img [, scale, 'method', method, 'sdevScale', sdevScale, ...
-  %   'border', border ] )
+  %   'thresh', thresh, 'border', border ] )
   % show the image on the following scale:
   %   meanImg - sdevScale*sdevImg, meanImg + sdevScale*sdevImg
   %
@@ -13,7 +13,9 @@ function [scaling,imH] = imshownice( img, varargin )
   % method - when scaling method, interpolation method to use
   %   default is 'nearest'
   %   any method accepted by imresize is accepted for this parameter
-  % sdevScale - default is 2.5
+  % sdevScale - if provided, then scales image according to median +/- sdevScale * std( img(:) )
+  % thresh - scales image so this fraction is below lower value and (1-thresh) is above.
+  %   The default is 0.05
   % border - border to put around the image in the figure window
   %   either 'noBorder' or a value in pixels  (default is 10)
   %
@@ -32,20 +34,22 @@ function [scaling,imH] = imshownice( img, varargin )
 
   defaultScale = 1.0;
   defaultMethod = 'nearest';
-  defaultSDevScale = 2.5;
+  defaultThresh = 0.05;
   defaultBorder = 10;
   p = inputParser;
   p.addOptional( 'scale', defaultScale, @isnumeric );
   p.addParameter( 'method', defaultMethod, @(x) true );
-  p.addParameter( 'sdevScale', defaultSDevScale, @isnumeric );
+  p.addParameter( 'sdevScale', [], @isnumeric );
+  p.addParameter( 'thresh', [], @(x) x >= 0 && x < 1 );
   p.addParameter( 'border', defaultBorder );
   p.parse( varargin{:} );
   scale = p.Results.scale;
   method = p.Results.method;
   sdevScale = p.Results.sdevScale;
+  thresh = p.Results.thresh;
   border = p.Results.border;
 
-  if numel( sdevScale ) == 0, sdevScale = defaultSDevScale; end
+  if numel( thresh ) == 0, thresh = defaultThresh; end
   
   medianImg = median( real(img(:)) );
   sdevImg = std( real(img(:)) );
@@ -53,7 +57,13 @@ function [scaling,imH] = imshownice( img, varargin )
   if ismatrix( img )
     % Grayscale image
     tmp = imresize( img, scale, method );
-    scaling = [ medianImg - sdevScale*sdevImg, medianImg + sdevScale*sdevImg ];
+    if numel( sdevScale ) > 0
+      scaling = [ medianImg - sdevScale*sdevImg, medianImg + sdevScale*sdevImg ];
+    else
+      lowScalingLevel = findFractionAboveValue( img(:), 1-thresh );
+      highScalingLevel = findFractionAboveValue( img(:), thresh );
+      scaling = [ lowScalingLevel highScalingLevel ];
+    end
     imH = imshow( tmp, scaling );
   else
     % Color image
@@ -62,9 +72,14 @@ function [scaling,imH] = imshownice( img, varargin )
     for i=1:sImg(end)
       tmp(:,:,i) = imresize( img(:,:,i), scale, method );
     end
-    inMin = medianImg - sdevScale*sdevImg;
-    inMax = medianImg + sdevScale*sdevImg;
-    scaling = [inMin inMax];
+    if numel( sdevScale ) > 0
+      lowScalingLevel = medianImg - sdevScale*sdevImg;
+      highScalingLevel = medianImg + sdevScale*sdevImg;
+    else
+      lowScalingLevel = findFractionAboveValue( img(:), 1-thresh );
+      highScalingLevel = findFractionAboveValue( img(:), thresh );
+    end
+    scaling = [lowScalingLevel highScalingLevel];
     scaled = scaleImg( tmp, scaling, [0 1] );
     imH = imshow( scaled );
   end
