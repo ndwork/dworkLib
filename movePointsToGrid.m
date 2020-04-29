@@ -1,6 +1,6 @@
 
 function [griddedPts,samples] = movePointsToGrid( pts, mins, maxs, Ns )
-  % griddedPts = movePointsToGrid( pts, mins, maxs, nums )
+  % [griddedPts,samples] = movePointsToGrid( pts, mins, maxs, nums )
   %
   % Moves points in an Real^N space to the points specified by grid
   %
