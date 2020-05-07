@@ -1,6 +1,6 @@
 
-function out = normL21( in )
-  % out = normL21( in )
+function out = normL2L1( in )
+  % out = normL2L1( in )
   %
   % Calculates the L_{2,1} norm of the input.  It is assumed that
   % the last dimension of in represents the groups
