@@ -1,9 +1,10 @@
 
 function dworkLib( varargin )
-  % dworkLib( [ pattern ] )
+  % dworkLib( [ pattern, inFilename ] )
   %
   % Optional Inputs
   % pattern - file must contain this search pattern in order to be listed.
+  % inFilename - only search filenames
   %
   % Written by Nicholas - Copyright 2016
   %

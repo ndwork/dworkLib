@@ -24,9 +24,11 @@ function showLibFiles( varargin )
     % must specify validation function above to keep addOptional from
     % thinking that argument is a parameter's name.
   p.addOptional( 'pattern', defaultPattern, @(x) true );
+  p.addOptional( 'inFileName', false, @islogical );
   p.parse( varargin{:} );
   libName = p.Results.libName;
   pattern = p.Results.pattern;
+  inFileName = p.Results.inFileName;
 
   if isempty( libName )
     disp('Usage: showLibFiles( [ libName ] )' );
@@ -52,8 +54,11 @@ function showLibFiles( varargin )
         end
       end
     end
-    if found==0
+    if found == 0
       disp('The pattern does not match with any filenames.');
+    end
+    if inFileName == true
+      return
     end
 
     foundWithin = 0;
