@@ -1,12 +1,14 @@
 
 function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau [, ...
-  %   'A', A, 'f', f, 'g', g, 'normA', normA ] )
+  %   'A', A, 'f', f, 'g', g, 'normA', normA, 'verbose', verbose ] )
   %
   % minimizes f( x ) + g( A x )
   %
   % Inputs:
   % x - initial guess
+  % proxf - a function handle for the proximal operator of
+  % proxgConj - a function handle for the proximal operator of the conjugate of g
   %
   % Optional Inputs:
   % A - if A is not provided, it is assumed to be the identity
