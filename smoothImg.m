@@ -36,11 +36,10 @@ function out = smoothImg( in, varargin )
 
   if numel( N ) == 0
     N = ceil( max( 5*sigma, 3 ) );
-    for i=1:numel(N)
-      if mod( N(i), 2 ) == 0, N(i) = N(i) + 1; end
-    end
+    N( mod( N, 2 ) == 0 ) = N( mod( N, 2 ) == 0 ) + 1;
   end
 
+  if min( mod( N, 2 ) ) == 0, error( 'All values of N must be odd' ); end
   if numel( N ) == 1, N = [ N N ]; end
 
   if sigma > 0
