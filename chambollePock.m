@@ -1,7 +1,7 @@
 
 function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau [, ...
-  %   'A', A, 'f', f, 'g', g, 'normA', normA, 'verbose', verbose ] )
+  %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'verbose', verbose ] )
   %
   % minimizes f( x ) + g( A x )
   %
