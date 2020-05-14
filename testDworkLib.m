@@ -214,7 +214,7 @@ function testDworkLib
   A = rand(M,N);
   b = rand(M,1);
 
-  bestX = A\b;
+  bestX = A \ b;
 
   g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
   gGrad = @(x) A'*A*x - A'*b;
