@@ -1,6 +1,6 @@
 
 function out = computeGradient( in, varargin )
-  % out = computeGradient( in [, 'op', op ] ] )
+  % out = computeGradient( in [, op ] ] )
   %
   % This function computes the gradient (or the derivative) of the input
   % with circular boundary conditions
@@ -25,7 +25,7 @@ function out = computeGradient( in, varargin )
   % implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
-  p.addParameter( 'op', [], @(x) true );
+  p.addOptional( 'op', 'notransp', @(x) true );
   p.parse( varargin{:} );
   op = p.Results.op;
 
@@ -40,7 +40,7 @@ function out = computeGradient( in, varargin )
       out = out + ( STin - subIn );
     end
 
-  else
+  elseif strcmp( 'notransp', op )
     out = zeros( [ size( in ) ndims(in) ] );
 
     for dimIndx = 1 : ndims(in)
