@@ -53,7 +53,7 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   else
     dataIsComplex = false;
   end
-  
+
   err = 0;
   fx = f(x);
   if numel(y) == 0
