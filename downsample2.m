@@ -1,6 +1,6 @@
 
 function out = downsample2( img, D, varargin )
-  % out = downsample2( img, D [, 'S', S ] )
+  % out = downsample2( img, D [, 'S', S, 'sOut', sOut ] )
   % Implements the adjoint of upsample2
   %
   % Inputs:
@@ -10,6 +10,7 @@ function out = downsample2( img, D, varargin )
   %
   % Optional Inputs:
   % S - amount to shift input, either a scalar or an array with two elements
+  % sOut - the size of the output array
   %
   % Outputs:
   % out - the downsampled image
