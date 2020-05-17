@@ -2,7 +2,7 @@
 function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   % [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj [, ...
   %   'N', N, 'A', A, 'f', f, 'g', g, 'normA', normA, 'mu', mu, 'tau', tau, ...
-  %   'theta', theta, 'verbose', verbose ] )
+  %   'theta', theta, 'y', y, 'verbose', verbose ] )
   %
   % Implements Chambolle-Pock (Primal-Dual Hybrid graident method) with line search
   % based on A First-Order Primal-Dual Algorithm with Linesearch by Malitsky and Pock
@@ -16,7 +16,8 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   % A - if A is not provided, it is assumed to be the identity
   % f - to determine the objective values, f must be provided
   % g - to determine the objective values, g must be provided
-  % N - the number of iterations that ADMM will perform (default is 100)
+  % N - the number of iterations that CP will perform (default is 100)
+  % y - the initial values of y in the CP iterations
   %
   % Outputs:
   % xStar - the optimal point
@@ -42,6 +43,7 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'tau', 1, @ispositive );
   p.addParameter( 'theta', 1, @ispositive );
+  p.addParameter( 'y', [], @isnumeric );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.parse( varargin{:} );
   A = p.Results.A;
@@ -54,21 +56,21 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   N = p.Results.N;
   tau = p.Results.tau;
   theta = p.Results.theta;
+  y = p.Results.y;
   verbose = p.Results.verbose;
 
   if numel( A ) == 0
     applyA = @(x) x;
     applyAT = @(x) x;
-    y = x;
   elseif isnumeric( A )
     applyA = @(x) A * x;
     applyAT = @(y) A' * y;
-    y = A * x;
   else
     applyA = @(x) A( x, 'notransp' );
     applyAT = @(x) A( x, 'transp' );
-    y = applyA( x );
   end
+
+  if numel( y ) == 0, y = applyA( x ); end
 
   if doCheckAdjoint == true
     [adjointCheckPassed,adjCheckErr] = checkAdjoint( x, applyA, applyAT );
