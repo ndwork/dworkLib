@@ -74,9 +74,7 @@ function out = smoothImg( in, varargin )
         shiftJ = j - halfN1;
 
         shifted = shiftImg( in, [ shiftJ shiftI 0 ] );
-        for ch=1:nChannels
-          out(:,:,ch) = out + h(j,i) * shifted;
-        end
+        out = out + h(j,i) * shifted;
       end
     end
 
