@@ -1,6 +1,6 @@
 
 function out = upsample2( img, U, varargin )
-  % out = upsampleImg( img, U [, 'S', S, 'sOut', sOut ] )
+  % out = upsample2( img, U [, 'S', S, 'sOut', sOut ] )
   %
   % Inputs:
   % img - two dimensional array
@@ -36,7 +36,7 @@ function out = upsample2( img, U, varargin )
   if numel( sOut ) == 0, sOut = sImg(:) .* U(:); end
 
   out = zeros( sOut(:)' );
-  yqs = S(1) + (0:sImg(1)-1) * (U(1)+1) + 1;
-  xqs = S(2) + (0:sImg(2)-1) * (U(2)+1) + 1;
+  yqs = S(1) + (0:sImg(1)-1) * U(1) + 1;
+  xqs = S(2) + (0:sImg(2)-1) * U(2) + 1;
   out( yqs, xqs ) = img;
 end
