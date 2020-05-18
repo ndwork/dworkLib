@@ -41,6 +41,7 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'g', [] );
   p.addParameter( 'mu', 0.7, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'tau', 1, @ispositive );
   p.addParameter( 'theta', 1, @ispositive );
   p.addParameter( 'y', [], @isnumeric );
@@ -54,6 +55,7 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
   g = p.Results.g;
   mu = p.Results.mu;
   N = p.Results.N;
+  printEvery = p.Results.printEvery;
   tau = p.Results.tau;
   theta = p.Results.theta;
   y = p.Results.y;
@@ -88,11 +90,13 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
       objValues( optIter ) = f( x ) + g( applyA( x ) );
     end
     if verbose == true
-      if nargout > 1
-        disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
-          'objective value: ', num2str( objValues( optIter ),'%15.13f' ) ]);
-      else
-        disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+      if mod( optIter, printEvery ) == 0 || optIter == 1
+        if nargout > 1
+          disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
+            'objective value: ', num2str( objValues( optIter ),'%15.13f' ) ]);
+        else
+          disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+        end
       end
     end
 
