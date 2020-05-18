@@ -9,25 +9,23 @@ function out = downsize2( img, newSize, varargin )
 
   sImg = size( img );
 
-  y = ( 0 : sImg( 1 ) - 1 ) / sImg( 1 );
-  x = ( 0 : sImg( 2 ) - 1 ) / sImg( 2 );
+  y = ( ( 0 : sImg( 1 ) - 1 ) + 0.5 ) / sImg( 1 );
+  x = ( ( 0 : sImg( 2 ) - 1 ) + 0.5 ) / sImg( 2 );
 
-  yNew = ( 0 : newSize( 1 ) - 1 ) / newSize( 1 );
-  xNew = ( 0 : newSize( 2 ) - 1 ) / newSize( 2 );
+  yNew = ( ( 0 : newSize( 1 ) - 1 ) + 0.5 ) / newSize( 1 );
+  xNew = ( ( 0 : newSize( 2 ) - 1 ) + 0.5 ) / newSize( 2 );
 
-  xMin = min( x(:) );  xMax = max( x(:) );  xNew = min( max( xNew, xMin ), xMax );
-  yMin = min( y(:) );  yMax = max( y(:) );  yNew = min( max( yNew, yMin ), yMax );
-
-  [xNew,yNew] = meshgrid( xNew, yNew );
 
   if strcmp( op, 'notransp' )  
-    out = interp2( x, y, img, xNew, yNew, 'nearest' );
+    xNewIndxs = interp1( x, 1:numel(x), xNew, 'nearest' );
+    yNewIndxs = interp1( y, 1:numel(y), yNew, 'nearest' );
+    out = img( yNewIndxs, xNewIndxs );
 
   elseif strcmp( op, 'transp' )
+    xIndxs = interp1( xNew, 1:numel(xNew), x, 'nearest' );
+    yIndxs = interp1( yNew, 1:numel(yNew), y, 'nearest' );
     out = zeros( newSize );
-    yNewIndxs = round( y * newSize( 1 ) );
-    xNewIndxs = round( x * newSize( 2 ) );
-    out( yNewIndxs+1, xNewIndxs+1 ) = img;
+    out( yIndxs, xIndxs ) = img;
 
   else
     error('Unrecognized op value' );
