@@ -41,7 +41,8 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'normA', [], @ispositive );
   p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'theta', 1, @(x) x > 0 && x < 2 );
-  p.addParameter( 'verbose', false, @islogical );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.parse( varargin{:} );
   A = p.Results.A;
   f = p.Results.f;
@@ -50,6 +51,7 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
   normA = p.Results.normA;
   sigma = p.Results.sigma;
   theta = p.Results.theta;
+  printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
 
   if numel( A ) == 0
@@ -67,7 +69,7 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
     if numel( normA ) == 0
       error( 'If an A is supplied, you must supply sigma or normA' );
     end
-    sigma = 0.95 / normA / tau;
+    sigma = ( 0.95 / normA^2 ) / tau;
   end
 
   xBar = x;
@@ -91,11 +93,13 @@ function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
     end
 
     if verbose == true
-      if nargout > 1
-        disp([ 'chambollePock: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
-          'objective value: ', num2str( objValues( optIter ), '%15.13f' ) ]);
-      else
-        disp([ 'chambollePock: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+      if mod(optIter,printEvery) == 0 || optIter == 1
+        if nargout > 1
+          disp([ 'chambollePock: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
+            'objective value: ', num2str( objValues( optIter ), '%15.13f' ) ]);
+        else
+          disp([ 'chambollePock: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+        end
       end
     end
 
