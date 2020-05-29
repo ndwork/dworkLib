@@ -107,7 +107,7 @@ function [out1,out2] = alignDicoms( in1, in2, varargin )
     % scale image 2 so that pixels have the same size as image 1
     hScale = pxlSpacing2(1) / pxlSpacing1(1);
     vScale = pxlSpacing2(2) / pxlSpacing1(2);
-    newSize = size( data2(:,:,1) ) .* [ vScale hScale ];
+    newSize = round( size( data2(:,:,1) ) .* [ vScale hScale ] );
 
     scaled2 = zeros( newSize(1), newSize(2), size(data2,3) );
     for i = 1 : size( data2, 3 )
