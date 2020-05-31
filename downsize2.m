@@ -1,6 +1,25 @@
 
 function out = downsize2( img, newSize, varargin )
   % Does nearest neighbor interpolation for image downsizing
+  %
+  % out = downsize2( img, newSize [, op ] )
+  %
+  % Inputs:
+  % img - 2D array
+  % newSize - two element array specifying new size of image
+  %
+  % Optional Inputs:
+  % op - either 'transp' or 'notransp'
+  %
+  % Outputs:
+  % out - the downsized image
+  %
+  % Written by Nicholas Dwork - Copyright 2020
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   p = inputParser;
   p.addOptional( 'op', 'notransp', @(x) true );
