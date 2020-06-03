@@ -1,6 +1,6 @@
 
 function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
-  % c = polyFit2( x, y, z, xOrder, yOrder [, 'w', w ] )
+  % c = polyFit2( x, y, z, xOrder, yOrder [, 'w', w, 'cMask', cMask ] )
   %
   % Determines the matrix c that minimizes
   %    || z - \sum_{u=0,v=0}^{xOrder,yOrder} c_{u,v} x^u y^v ||_2
@@ -14,6 +14,8 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
   %
   % Optional Inputs:
   % w - a 1D array specifying the weights of a weighted least squares norm
+  % cMask - specify which coefficients should not be used.  It's a 2D array
+  %   of size yOrder x xOrder; any value equal to 0 is not used.
   %
   % Outputs:
   % c - a 2D array of size (yOrder+1) x (xOrder+1)
@@ -29,13 +31,17 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
 
   p = inputParser;
   p.addParameter( 'w', [], @isnonnegative );
+  p.addParameter( 'cMask', [], @isnumeric );
   p.parse( varargin{:} );
   w = p.Results.w;
+  cMask = p.Results.cMask;
 
   nPts = numel( x );
   if numel( y ) ~= nPts || numel( z ) ~= nPts
     error( 'x, y, and z must have the same number of elements' );
   end
+
+  if numel( cMask ) == 0, cMask = ones( xOrder+1, yOrder+1 ); end
 
   A = zeros( nPts, (xOrder+1) * (yOrder+1) );
 
@@ -44,6 +50,8 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
 
     thisytov = ones(nPts,1);
     for v = 0 : yOrder
+
+      if cMask(v+1,u+1) == 0, continue; end
 
       A( :, v+1 + (yOrder+1)*u ) = thisxtou .* thisytov;
       thisytov = thisytov .* y(:);
@@ -57,8 +65,9 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
     %c = lsqminnorm( A, z(:) );
     c = pinv(A) * z(:);
   else
+    W = sparse( 1:numel(w), 1:numel(w), w(:) ); 
     %c = lsqminnorm( diag(w(:)) * A, w(:) .* z(:) );
-    c = pinv( diag(w(:)) * A ) * ( w(:) .* z(:) );
+    c = pinv( W * A ) * ( w(:) .* z(:) );
   end
 
   c = reshape( c, [yOrder+1 xOrder+1] );
