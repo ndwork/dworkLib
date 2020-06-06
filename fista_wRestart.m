@@ -6,6 +6,8 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
   % g is differentiable and h has a simple proximal operator.
+  % Written according to "Adaptive Restart for Accelerated Gradient Schemes"
+  % by Donoghue and Candes
   %
   % Inputs:
   % x - the starting point
@@ -44,7 +46,7 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
-  if t <= 0, error('fista: t0 must be greater than 0'); end;
+  if t <= 0, error('fista: t0 must be greater than 0'); end
   
   calculateObjectiveValues = 0;
   if nargout > 1
@@ -66,7 +68,7 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   nRestarts = 0;
   while iter < N
 
-    if verbose, disp([ 'FISTA wRestarting Iteration: ', num2str(iter) ]); end;
+    if verbose, disp([ 'FISTA wRestarting Iteration: ', num2str(iter) ]); end
     if calculateObjectiveValues > 0, objectiveValues(iter+1) = g(x) + h(x); end
 
     gGradZ = gGrad( z );
@@ -77,7 +79,7 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
 
     traj = z - lastZ;
     if dotP( traj, gGradZ ) > 0 && restarted == 0
-      % Restarts when trajectory and gradient are form oblique angles
+      % Restarts when trajectory and -gradient form oblique angles
       restarted = 1;
       z = lastZ;
       k = 0;
