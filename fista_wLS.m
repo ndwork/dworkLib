@@ -1,11 +1,14 @@
 
 function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
-  %   'h', h, 'N', N, 'r', r, 's', s, 't0', t0, 'verbose', verbose ] )
+  %   'h', h, 'N', N, 'r', r, 's', s, 't0', t0, 'restart', true/false, ...
+  %   'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
   % search as described in "Fraction-variant beam orientation optimization
   % for non-coplanar IMRT" by O'Connor et al. (2017)
+  % Restart was implemented according to "Adaptive Restart for Accelerated
+  % Gradient Schemes" by Donoghue and Candes.
   %
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
   % g is differentiable and h has a simple proximal operator.
@@ -51,6 +54,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   p.addParameter( 'r', 0.5, @ispositive );
   p.addParameter( 's', 1.25, @ispositive );
   p.addParameter( 't0', 1, @ispositive );
+  p.addParameter( 'restart', false, @islogical );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
@@ -59,6 +63,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   r = p.Results.r;  % r must be between 0 and 1
   s = p.Results.s;  % s must be greater than 1
   t0 = p.Results.t0;  % t0 must be greater than 0
+  restart = p.Results.restart;
   verbose = p.Results.verbose;
 
   if numel( N ) == 0, N = defaultN; end
@@ -81,8 +86,10 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   t = t0;
   v = x;
   theta = 1;
+  k = 0;
+  iter = 0;
 
-  for k=0:N-1
+  while iter < N
     lastX = x;
     lastT = t;
     t = s * lastT;
@@ -119,7 +126,16 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       disp( verboseString );
     end
 
-    v = x + (1/theta) * ( x - lastX );
+    if restart == true && k > 0 && dotP( Dgy, x-lastX ) > 0
+      % Restart (kill momentum) when trajectory and -gradient form oblique angles
+      k = 0;
+      v = x;
+    else
+      k = k + 1;
+      v = x + (1/theta) * ( x - lastX );
+    end
+
+    iter = iter + 1;
   end
 
   xStar = x;
