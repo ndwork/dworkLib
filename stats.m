@@ -46,6 +46,7 @@ function stats( data )
   end
 
   disp([ 'Size of Input: ', num2str(size(data)) ]);
+  if numel( data ) == 0, return; end
 
   imagData = imag(data);
   if max( abs(imagData(:)) ~= 0 )
