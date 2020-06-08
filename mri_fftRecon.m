@@ -30,14 +30,12 @@ function recons = mri_fftRecon( kData, varargin )
   p.parse( varargin{:} );
   multiSlice = p.Results.multiSlice;
 
-  kData = ifftc( kData, 1 );
-  kData = fftshift( kData, 1 );
-  kData = ifftc( kData, 2 );
-  recons = fftshift( kData, 2 );
+  kData = fftshift( ifft( ifftshift( kData, 1 ), [], 1 ), 1 );
+  recons = fftshift( ifft( ifftshift( kData, 2 ), [], 2 ), 2 );
   recons = recons * sqrt( size(recons,1) * size(recons,2) );
 
   if ~ismatrix( kData ) && multiSlice == false
-    recons = fftshift( ifftc( recons, 3 ), 3 );
+    recons = fftshift( ifft( ifftshift( recons, 3 ), [], 3 ), 3 );
     recons = recons * sqrt( size( recons, 3 ) );
   end
 
