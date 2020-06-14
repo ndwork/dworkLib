@@ -95,6 +95,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
           thisAbsCoilRecon = thisAbsRecon( :, :, :, coil );
 
           w = thisMask .* gFilt .* thisAbsCoilRecon ./ abs( thisMap );
+          w( ~isfinite(w) ) = 0;
           c = polyFit2( xs, ys, thisMap, L, L, 'w', w );
 
           senseMapRowCoils( y0, 1, coil ) = c(1,1);  % evalPoly2( c, 0, 0 );
@@ -128,5 +129,4 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   if verbose == true, pfObj.clean; end
 
   senseMaps = max( min( senseMaps, 1 ), 0 );
-
 end
