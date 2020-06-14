@@ -34,31 +34,37 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
   nCoilSegs = sCoil(1)-1;
   if nCoilSegs < 1, error( 'You did not specify enough coil segments' ); end
   if sCoil(2) == 2, segs = [ segs zeros( nCoilSegs ) ]; end
-  
+
   nLocs = size( locs, 1 );
-  sensitivities = zeros( nLocs, 1 );
+  bs = zeros( nLocs, 3 );
 
   s1 = segs( 1, : );
   for segIndx = 1 : nCoilSegs
     s2 = s1;
-    s1 = segs( segIndx, : );
+    s1 = segs( segIndx+1, : );
     s = s2 - s1;
-    sUnit = s / norm( s(:) );
+    sUnit = s(:) / norm( s(:) );
 
-    for locIndx = 1 : nLocs
-      p = locs( locIndx, : );
-      u = s2 - p;
-      v = p - s1;
+    u = bsxfun( @plus, -locs, s2 );
+    v = bsxfun( @minus, locs, s1 );
 
-      cosAlpha = dotP( sUnit, u ) / norm( u(:) );
-      cosBeta = dotP( sUnit, v ) / norm( v(:) );
-      R = p - projV1ontoV2( v, s );
+    cosAlphas = ( u * sUnit ) ./ norms( u, 2, 2 );
+    cosBetas = ( v * sUnit ) ./ norms( v, 2, 2 );
+    sinBetas = sin( acos( cosBetas ) );
 
-      sensitivities( locIndx ) = ( cosAlpha + cosBeta ) / R;
-    end
+    vNorms = norms( v, 2, 2 );
+    Rs = vNorms ./ sinBetas;
 
+    sMags = ( cosAlphas + cosBetas ) ./ Rs;  % sensitivity magnitudes
+
+    sCross = makeCrossProdMatrix( sUnit );
+    sDirs = ( sCross * v' )';
+    sDirs = bsxfun( @times, sDirs, 1 ./ norms( sDirs, 2, 2 ) );
+
+    bs = bs + bsxfun( @times, sDirs, sMags );
   end
 
-
+  % By the principle of reciprocity, the sensitivity is proportional to the
+  % magnitude of the emitted magnetic field at each location
+  sensitivities = norms( bs, 2, 2 );
 end
-
