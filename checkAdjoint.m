@@ -28,6 +28,12 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( ['Usage: out = checkAdjoint( x, f [, ', ...
+      'fAdj, ''tol'', tol, ''y'', y, ''nRand'', nRand ] )' ]);
+    return
+  end
+  
   p = inputParser;
   p.addOptional( 'fAdj', [] );
   p.addParameter( 'nRand', 1, @isnumeric );
