@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
-  %   'h', h, 'N', N, 'r', r, 's', s, 't0', t0, 'restart', true/false, ...
+  %   'h', h, 'innerProd', 'N', N, 'r', r, 's', s, 't0', t0, 'restart', true/false, ...
   %   'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
@@ -25,6 +25,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % Optional Inputs:
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
+  % innerProd - function handle to the inner product.
+  %     (default is a function handle to dotP)
+  %     Note: for complex vectors, innerProd should be real( dotP( x, y ) )
   % N - the number of iterations that FISTA will perform (default is 100)
   % r - the backtracking line search parameter; must be between 0 and 1
   %     (default is 0.5)
@@ -50,6 +53,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
   p = inputParser;
   p.addParameter( 'h', [] );
+  p.addParameter( 'innerProd', [] );
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x) == 0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'r', 0.5, @ispositive );
@@ -61,6 +65,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
+  innerProd = p.Results.innerProd;
   N = p.Results.N;  % total number of iterations
   printEvery = p.Results.printEvery;  % display result printEvery iterations
   r = p.Results.r;  % r must be between 0 and 1
@@ -72,6 +77,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   verbose = p.Results.verbose;
 
   if numel( N ) == 0, N = defaultN; end
+  if numel( innerProd ) == 0
+    innerProd = @(x,y) dotP( x, y );
+  end
 
   if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end
   if s <= 1, error('fista: s must be greater than 1'); end
@@ -121,9 +129,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       x = proxth( y - t * Dgy, t );
 
       gy = g( y );
-      part1 = dotP( real(Dgy), real(x-y) ) + (1/(2*t)) * norm( real(x(:)) - real(y(:)), 2 )^2;
-      part2 = dotP( imag(Dgy), imag(x-y) ) + (1/(2*t)) * norm( imag(x(:)) - imag(y(:)), 2 )^2;
-      breakThresh = gy + part1 + part2;
+      breakThresh = gy + innerProd( Dgy, x-y );
 
       gx = g( x );
       if ( gx <= breakThresh ) || ...
@@ -148,7 +154,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       disp( verboseString );
     end
 
-    if restart == true && k > 0 && dotP( Dgy, x-lastX ) > 0
+    if restart == true && k > 0 && innerProd( Dgy, x-lastX ) > 0
       % Restart (kill momentum) when trajectory and -gradient form oblique angles
       k = 0;
       v = x;
