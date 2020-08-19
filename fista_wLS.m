@@ -46,6 +46,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % purpose.
 
   defaultN = 100;
+  defaultSubIterThresh = 100;
 
   p = inputParser;
   p.addParameter( 'h', [] );
@@ -54,7 +55,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   p.addParameter( 'r', 0.5, @ispositive );
   p.addParameter( 's', 1.25, @ispositive );
   p.addParameter( 't0', 1, @ispositive );
+  p.addParameter( 'minStep', 0, @(x) x >= 0 );
   p.addParameter( 'restart', false, @islogical );
+  p.addParameter( 'subIterThresh', defaultSubIterThresh, @ispositive );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   h = p.Results.h;
@@ -63,7 +66,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   r = p.Results.r;  % r must be between 0 and 1
   s = p.Results.s;  % s must be greater than 1
   t0 = p.Results.t0;  % t0 must be greater than 0
+  minStep = p.Results.minStep;
   restart = p.Results.restart;
+  subIterThresh = p.Results.subIterThresh;
   verbose = p.Results.verbose;
 
   if numel( N ) == 0, N = defaultN; end
@@ -71,7 +76,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end
   if s <= 1, error('fista: s must be greater than 1'); end
   if t0 <= 0, error('fista: t0 must be greater than 0'); end
-  
+
   calculateObjectiveValues = 0;
   if nargout > 1
     if numel(h) == 0
@@ -83,7 +88,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   end
 
 
-  t = t0;
+  t = t0 / s;
   v = x;
   theta = 1;
   k = 0;
@@ -95,7 +100,15 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
     t = s * lastT;
     lastTheta = theta;
 
+    subIter = 0;
     while true
+      subIter = subIter + 1;
+      if verbose == true
+        disp([ '     sub iteration: ', num2str( subIter ), '  t: ', num2str(t) ]);
+      end
+
+      if t < minStep, t = minStep; end
+      
       if k==0
         theta = 1;
       else
@@ -107,15 +120,24 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       Dgy = gGrad( y );
       x = proxth( y - t * Dgy, t );
 
-      breakThresh = g(y) + dotP(Dgy,x-y) + (1/(2*t)) * norm( x(:) - y(:), 2 )^2;
-      if g(x) <= breakThresh, break; end
+      gy = g( y );
+      part1 = dotP( real(Dgy), real(x-y) ) + (1/(2*t)) * norm( real(x(:)) - real(y(:)), 2 )^2;
+      part2 = dotP( imag(Dgy), imag(x-y) ) + (1/(2*t)) * norm( imag(x(:)) - imag(y(:)), 2 )^2;
+      breakThresh = gy + part1 + part2;
+
+      gx = g( x );
+      if ( gx <= breakThresh ) || ...
+         ( subIter >= subIterThresh ) || ...
+         ( t <= minStep )
+       break;
+      end
       t = r*t;
       if verbose>1 && mod( k, printEvery ) == 0
         disp([ '  Step size change to: ', num2str(t) ]);
       end
     end
 
-    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if calculateObjectiveValues > 0, objectiveValues(k+1) = gx + h(x); end
     if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
