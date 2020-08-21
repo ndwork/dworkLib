@@ -1,6 +1,7 @@
 
 function value = findFractionAboveValue( data, fraction )
   % value = findFractionAboveValue( data, fraction )
+  %
   % This function finds the value where fraction amount of the data is
   % above this value.
   % For example, if fraction is 0.35, then this function finds the value
