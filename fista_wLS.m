@@ -130,7 +130,8 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
       gy = g( y );
       innerProdResult = innerProd( Dgy, x-y );
-      breakThresh = gy + innerProdResult;
+      normDiffSq = innerProd( x-y, x-y );
+      breakThresh = gy + innerProdResult + (1/(2*t)) * normDiffSq;
 
       gx = g( x );
       if ( gx <= breakThresh ) || ...
