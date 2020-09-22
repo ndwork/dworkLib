@@ -30,7 +30,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   p = inputParser;
   p.addParameter( 'L', 2, @ispositive );
-  p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) );  
+  p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
   p.addParameter( 'sigma', 3, @ispositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
@@ -64,7 +64,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   senseMapCols = cell( 1, nCols, 1, 1 );
   senseMaps = senseMaps0;
 
-  if verbose == true, pfObj = parforProgress( nSlices * nCols ); end
+  pfObj = parforProgress( nSlices * nCols );
 
   for slice = 1 : nSlices
     thisSliceMap0 = squeeze( senseMaps0(:,:,slice,:) );
