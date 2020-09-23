@@ -7,6 +7,13 @@ function out = applyC_2D( F, kTraj, N, kCy, kCx, Cy, Cx, varargin )
   % then it performs a regular(non-circular) convolution.
   %
   % Written by Nicholas Dwork - Copyright 2016
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   defaultGridKs = [];
   defaultType = [];
