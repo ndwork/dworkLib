@@ -1,6 +1,6 @@
 
-function t1Map = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
-  % t1Map = mri_mapT1InversionRecovery( dataCube, TIs, ...
+function [t1Map,t1M0Map] = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
+  % [t1Map,t1M0Map] = mri_mapT1InversionRecovery( dataCube, TIs, ...
   %   [, 'mask', mask, 'verbose', verbose ] )
   %
   % This method is implemented according to equation 6 of "A Robust Methodology
@@ -9,7 +9,8 @@ function t1Map = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
   % Inputs:
   % dataCube - a 3D array of size MxNxK.  Each k index corresponds to an
   %   image taken with a different inversion time.
-  % TIs - a 1D array of size K specifying the inversion time of each image
+  % TIs - a 1D array of size K specifying the time of acquisiton after inversion
+  %   of each image
   %
   % Optional Inputs:
   % mask - a 2D array of size MxN.  Only map pixels with nonzero mask values.
@@ -39,44 +40,51 @@ function t1Map = mri_mapT1InversionRecovery( dataCube, TIs, varargin )
   if numel( mask ) == 0, mask=ones( sData(1:2) ); end
   %showImageCube( mask.*abs(dataCube), showScale );  titlenice('t1 ir Data');
 
-  fminconOptions = optimoptions('fmincon','Display','off');
-  f = @(x,TIs) (x(1)+1i*x(2)) + (x(3)+1i*x(4))*exp(-TIs/x(5));
-  t1MapCols = cell( sData(2), 1 );
+  fminconOptions = optimoptions( 'fmincon' , 'Display', 'off' );
+  f = @(x,TIs) ( x(1) + 1i * x(2) ) + ( x(3) + 1i * x(4) ) * exp( -TIs / x(5) );
+
+  t1MapCols = cell( 1, sData(2) );
+  t1M0MapCols = cell( 1, sData(2) );
+
   p = parforProgress( sData(2) );
   parfor i=1:sData(2)
     if verbose ~= 0, p.progress( i, 10 ); end   %#ok<PFBNS>
     t1MapCol = zeros( sData(1), 1 );   %#ok<PFBNS>
+    t1M0MapCol = zeros( sData(1), 1 );
 
     for j=1:sData(1)
       if mask(j,i) == 0, continue; end
 
       thisData = squeeze( dataCube(j,i,:) ); 
       [~,minSigIndx] = min( abs( thisData ) );
-      tmp0 = [ 1; 0; 1; 0; TIs(minSigIndx) ];   %#ok<PFBNS>
+      tmp0 = [ 0; 0; 0; 0; TIs(minSigIndx) ];   %#ok<PFBNS>
       if usePhaseConstraint == true
-        tmp = fmincon( @(tmp) norm( thisData - f(tmp,TIs(:)) ), tmp0, [], [], ...
-         [],[], [-Inf;-Inf;-Inf;-Inf;0], [], @phaseConstraint, fminconOptions );
+        tmp = fmincon( @(tmp) norm( thisData - f( tmp, TIs(:)) ), tmp0, [], [], ...
+          [],[], [-Inf;-Inf;-Inf;-Inf;0], [], @phaseConstraint, fminconOptions );
       else
-        tmp = fmincon( @(tmp) norm( thisData - f(tmp,TIs(:)) ), tmp0, [], [], ...
-         [],[], [-Inf;-Inf;-Inf;-Inf;0], [], [], fminconOptions );
+        tmp = fmincon( @(tmp) norm( thisData - f( tmp, TIs(:)) ), tmp0, [], [], ...
+          [],[], [-Inf;-Inf;-Inf;-Inf;0], [], [], fminconOptions );
       end
       t1MapCol(j) = tmp(5);
+      t1M0MapCol(j) = tmp(1) + 1i * tmp(2);
 
-      figure; plotnice( TIs, real(thisData) );
-      hold all;  plotnice( TIs, real(f(tmp,TIs(:))) );  titlenice( 'real fit' );
-      legendnice( 'data', 'model' )
-      figure; plotnice( TIs, imag(thisData) );
-      hold all;  plotnice( TIs, imag(f(tmp,TIs(:))) );  titlenice( 'imag fit' );
-      legendnice( 'data', 'model' )
+%       if ~exist( gcp( 'nocreate' ) ) && verbose == 1        
+%         close all
+%         figure; plotnice( TIs, real(thisData) );
+%         hold all;  plotnice( TIs, real(f(tmp,TIs(:))) );  titlenice( 'real fit' );
+%         legendnice( 'data', 'model' )
+%         figure; plotnice( TIs, imag(thisData) );
+%         hold all;  plotnice( TIs, imag(f(tmp,TIs(:))) );  titlenice( 'imag fit' );
+%         legendnice( 'data', 'model' )
+%       end
     end
     t1MapCols{i} = t1MapCol;
+    t1M0MapCols{i} = t1M0MapCol;
   end
   p.clean;
-  t1Map = zeros( sData(1:2) );
-  for i=1:sData(2)
-    t1Map(:,i) = t1MapCols{i};
-  end
-
+  
+  t1Map = cell2mat( t1MapCols );
+  t1M0Map = cell2mat( t1M0MapCols );
 end
 
 

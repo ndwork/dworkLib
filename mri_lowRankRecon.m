@@ -19,7 +19,7 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   %
   % Optional Inputs:
   % alpha - oversampling factor in Gridding
-  % w - window width (in pixels)
+  % W - window width (in pixels)
   % nC - number of points to use in convolution kernel
   %
   % Written by Nicholas Dwork, Copyright 2020
