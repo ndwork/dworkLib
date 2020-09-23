@@ -1,7 +1,8 @@
 
-function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, lambda, varargin )
+function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
+  lambda, varargin )
   % recon = mri_lowRankRecon( data, traj, sMaps, lambda [, 
-  %   'dataWeights', dataWeights, 'alpha', alpha, 'W', W, 'nC', nC ] )
+  %   'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % Dynamic MRI reconstruction using low rank regularization in the temporal dimension
   % Written as problem (6) in "Accelerated Dynamic MRI Exploiting Sparsity and
@@ -24,12 +25,10 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, lambda, 
   % Written by Nicholas Dwork, Copyright 2020
 
   p = inputParser;
-  p.addParameter( 'dataWeights', 1, @isnumeric );
   p.addParameter( 'alpha', [], @ispositive );
   p.addParameter( 'W', [], @ispositive );
   p.addParameter( 'nC', [], @ispositive );
   p.parse( varargin{:} );
-  dataWeights = p.Results.dataWeights;
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
