@@ -23,6 +23,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   %     VORONOI
   %   nIter - specifies the number of iterations of fp method
   %   psfMask - only used by space domain optimizations
+  %   verbose - true/false
   %
   % Outputs:
   %   weights - 1D array with density compensation weights
@@ -49,6 +50,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   p.addParameter( 'alg', defaultAlg );
   p.addParameter( 'nIter', defaultNIter, checknum );
   p.addParameter( 'psfMask', defaultPsfMask );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
@@ -56,6 +58,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   alg = p.Results.alg;
   nIter = p.Results.nIter;
   psfMask = p.Results.psfMask;
+  verbose = p.Results.verbose;
 
   if numel( alpha ) == 0, alpha = defaultAlpha; end
   if numel( W ) == 0, W = defaultW; end
@@ -123,7 +126,7 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
       out = applyC_2D( in, traj, 0, kCy, kCx, Cy, Cx, traj, 'type', 'noCirc' );
 
       iteration = iteration + 1;
-      if mod( iteration, 5 ) == 0,
+      if verbose ~= 0 && mod( iteration, 5 ) == 0,
         disp(['makePrecompWeights_2D_CLSDC working on iteration ', ...
           num2str(iteration) ]);
       end
