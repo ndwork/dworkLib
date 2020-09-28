@@ -4,7 +4,7 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
   %
   % computes the sensitivity for each coil at all locations in locs
   % This code uses the technique described in "MRI image enhancement using 
-  % Biot?Savart law at 3 tesla" by Esin and Alpaslan
+  % Biot-Savart law at 3 Tesla" by Esin and Alpaslan
   %
   % Inputs:
   % segs - The coil is specified as a 2D array that correspond to a set of 3D
