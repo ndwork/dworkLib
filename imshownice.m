@@ -80,7 +80,7 @@ function [scaling,imH] = imshownice( img, varargin )
       highScalingLevel = findFractionAboveValue( img(:), thresh );
     end
     scaling = [lowScalingLevel highScalingLevel];
-    scaled = scaleImg( tmp, scaling, [0 1] );
+    scaled = scaleImg( tmp, [0 1], scaling );
     imH = imshow( scaled );
   end
 
