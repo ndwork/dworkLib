@@ -15,7 +15,7 @@ function mri_showImg( varargin )
 
   if numel( file ) == 0
     file = uigetfile('P*.7');
-    if isa( file, 'double' ) && file==0, return; end;
+    if isa( file, 'double' ) && file==0, return; end
   end
 
   data = rawloadX( file );
