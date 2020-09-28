@@ -83,7 +83,9 @@ function imH = imshowscale( img, varargin )
         img = ( img - minRange ) / dRange;
       end
 
-      imH = imshow( imColorResize( img, scale, method ) );
+      colorResized = imColorResize( img, scale, method );
+      scaled = scaleImg( colorResized, [0 1], [ min(img(:)) max(img(:)) ] );
+      imH = imshow( scaled );
 
     else
       error('wrong number of dimensions of img');
