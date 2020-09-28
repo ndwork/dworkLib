@@ -18,4 +18,3 @@ function out = nucNorm( in )
   out = sum( diag( s ) );
 end
 
-
