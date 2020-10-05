@@ -25,9 +25,16 @@ function out = proxConjL1( in, t )
   % purpose.
 
   if nargin < 2, t=1; end
+  if t < 0, error( 't must be positive' ); end
+
+  if t == 0
+    out = in;
+    return
+  end
 
   if isreal( in )
-    out = min( in, t );
+    out = min( in, 1 / t );
+    out = max( out, -1 / t );
 
   else
     magIn = abs( in );
