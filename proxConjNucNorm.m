@@ -17,11 +17,15 @@ function out = proxConjNucNorm( in, t )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if t == 0
+    out = in;
+    return;
+  end
+
   [u,s,v] = svd( in, 'econ' );
 
   sPrime = proxConjL1( diag(s), t );
 
   out = u * diag( sPrime ) * v';
-
 end
 
