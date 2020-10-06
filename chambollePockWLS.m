@@ -72,23 +72,23 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
     applyAT = @(x) A( x, 'transp' );
   end
 
-  if numel( y ) == 0, y = applyA( x ); end
+  if numel( y ) == 0
+    y = applyA( x );
+    y(:) = 0;
+  end
 
   if doCheckAdjoint == true
     [adjointCheckPassed,adjCheckErr] = checkAdjoint( x, applyA, applyAT );
     if ~adjointCheckPassed, error([ 'checkAdjoint failed with error ', num2str(adjCheckErr) ]); end
   end
 
-  if nargout > 1, objValues = zeros( N, 1 ); end
+  if nargout > 1, objValues = zeros( N+1, 1 ); end
 
   for optIter = 1 : N
-    lastX = x;
-    tmp = lastX - tau * applyAT( y );
-    x = proxf( tmp, tau );
-
     if nargout > 1
       objValues( optIter ) = f( x ) + g( applyA( x ) );
     end
+
     if verbose == true
       if mod( optIter, printEvery ) == 0 || optIter == 1
         if nargout > 1
@@ -99,6 +99,10 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
         end
       end
     end
+
+    lastX = x;
+    tmp = lastX - tau * applyAT( y );
+    x = proxf( tmp, tau );
 
     lastTau = tau;
     tau = tau * sqrt( 1 + theta );
