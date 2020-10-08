@@ -1,11 +1,9 @@
 
-function out = ufft2( in, varargin )
-  % out = ufft2( in, varargin )
+function out = ufft2( in )
+  % out = ufft2( in )
   %
-  % Compute the two-dimensional unitary fft
-  %
-  % Optional Inputs:
-  % Any optional inputs are passed to fft2.
+  % Compute the two-dimensional unitary fft of 
+  % the first two dimensions of in
   %
   % Written by Nicholas Dwork, Copyright 2019
   %
@@ -16,8 +14,11 @@ function out = ufft2( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if ~ismatrix( in ), error('Input must be two-dimensional' ); end
+  if ismatrix( in )
+    Fin = fft2( in );
+  else
+    Fin = fft( fft( in, [], 1 ), [], 2 );
+  end
 
-  out = 1/sqrt( size(in,1) * size(in,2) ) .* fft2( in, varargin{:} );
-
+  out = ( 1 / sqrt( size(in,1) * size(in,2) ) ) * Fin;
 end

@@ -1,11 +1,9 @@
 
-function out = uifft2( in, varargin )
-  % out = uifft2( in, varargin )
+function out = uifft2( in )
+  % out = uifft2( in )
   %
-  % Compute the two-dimensional unitary inverse fft
-  %
-  % Optional Inputs:
-  % Any optional inputs are passed to ifft2.
+  % Compute the two-dimensional unitary inverse fft of
+  % the first two dimensions of in
   %
   % Written by Nicholas Dwork, Copyright 2019
   %
@@ -16,7 +14,11 @@ function out = uifft2( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  out = sqrt( size(in,1) * size(in,2) ) .* ifft2( in, varargin{:} );
+  if ismatrix( in )
+    FHin = ifft2( in );
+  else
+    FHin = ifft( ifft( in, [], 1 ), [], 2 );
+  end
 
+  out = sqrt( size(in,1) * size(in,2) ) * FHin;
 end
-
