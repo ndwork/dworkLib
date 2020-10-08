@@ -2,12 +2,12 @@
 function out = makeLoraksMatrix( in, varargin )
   % out = makeLoraksMatrix( in [, 'op', op, 'R', R, 'sKData', sKData ] );
   %
-  % Makes the C LORAKS matrix from the k-space img in.
+  % Makes the C LORAKS matrix from the k-space array in.
   % The C LORAKS matrix is defined in "Low-Rank Modeling of Local k-Space
   % Neighborhoods (LORAKS) for Constrained MRI" by Justin Haldar
   %
   % Inputs:
-  % in - if 'notransp' then a 2D complex array specifying the k-space values
+  % in - if 'notransp' then a 2D x nCoils complex array specifying the k-space values
   %    - if 'transp' then a LORAKS matrix that must be converted to a 2D array
   %
   % Optional Inputs:
@@ -18,19 +18,67 @@ function out = makeLoraksMatrix( in, varargin )
   p = inputParser;
   p.addParameter( 'op', 'notransp', @(x) true );
   p.addParameter( 'R', 3, @ispositive );
-  p.addParameter( 'sKData', [], @(x) isnumeric(x) && numel(x) == 2 );
+  p.addParameter( 'sKData', [], @(x) isnumeric(x) );
   p.parse( varargin{:} );
   op = p.Results.op;
   R = p.Results.R;
   sKData = p.Results.sKData;
 
+  if strcmp( op, 'notransp' )
+    sKData = size( in );
+  else
+    if numel( sKData ) == 0, error( 'Must supply sKData for transp operation' ); end
+  end
+  if numel( sKData ) > 2
+    nCoils = sKData(3);
+  else
+    nCoils = 1;
+  end
+
   rImg = makeRadialImg( [ 2*R+1 2*R+1 ] ) <= R;
   K = sum( rImg(:) );
+  NR = ( sKData(1) - 2*R ) * ( sKData(2) - 2*R );
+
+  L = @(x) makeLoraksCoilMatrix( x, 'notransp', R, sKData(1:2), rImg, K, NR );
+  Lh = @(x) makeLoraksCoilMatrix( x, 'transp', R, sKData(1:2), rImg, K, NR );
+
+  doCheckAdjoint = false;
+  if doCheckAdjoint == true
+    tmp = zeros( sKData(1:2) );
+    [checkL,adjErrL] = checkAdjoint( tmp, L, Lh );
+    if checkL ~= true
+      error([ 'L and Lh failed ajoint test with error ', num2str(adjErrL) ]);
+    end
+  end
 
   if strcmp( op, 'notransp' )
+    out = zeros( K, NR * nCoils );
 
-    sKData = size( in );
-    NR = ( sKData(1) - 2*R ) * ( sKData(2) - 2*R );
+    for coilIndx = 1 : nCoils
+      startIndx = (coilIndx-1) * NR + 1;
+      endIndx = coilIndx * NR;
+      out( :, startIndx : endIndx ) = L( in(:,:,coilIndx) );
+      %out( :, startIndx : endIndx ) = makeLoraksCoilMatrix( in, 'notransp', ...
+      %  R, sKData(1:2), rImg, K, NR );
+    end
+
+  else
+    out = zeros( sKData );
+    for coilIndx = 1 : nCoils
+      startIndx = (coilIndx-1) * NR + 1;
+      endIndx = coilIndx * NR;
+      thisLoraksMatrix = in( :, startIndx : endIndx );
+      out( :, :, coilIndx ) = Lh( thisLoraksMatrix );
+      %out( :, :, coilIndx ) = makeLoraksCoilMatrix( thisLoraksMatrix, 'transp', ...
+      %  R, sKData(1:2), rImg, K, NR );
+    end
+  end
+
+end
+
+function out = makeLoraksCoilMatrix( in, op, R, sKData, rImg, K, NR )
+
+  if strcmp( op, 'notransp' )    
     out = zeros( K, NR );
 
     cIndx = 1;
@@ -43,11 +91,9 @@ function out = makeLoraksMatrix( in, varargin )
     end
 
   elseif strcmp( op, 'transp' )
-    if numel( sKData ) == 0
-      error( 'Must supply sKData for transp operation' );
-    end
-    [ kIn, NR ] = size( in );   %#ok<ASGLU>
+    [ kIn, nrIn ] = size( in );
     if kIn ~= K, error( 'Incorrect input dimensions' ); end
+    if nrIn ~= NR, error( 'Incorrect input dimensions' ); end
 
     out = zeros( sKData );
     cIndx = 1;
@@ -65,3 +111,6 @@ function out = makeLoraksMatrix( in, varargin )
   end
 
 end
+
+
+
