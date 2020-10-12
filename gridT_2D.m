@@ -31,9 +31,9 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   defaultNc = 500;
   checknum = @(x) isnumeric(x) && isscalar(x) && (x > 1);
   p = inputParser;
-  p.addParamValue( 'alpha', defaultAlpha, checknum );
-  p.addParamValue( 'W', defaultW, checknum );
-  p.addParamValue( 'nC', defaultNc, checknum );
+  p.addParameter( 'alpha', defaultAlpha, checknum );
+  p.addParameter( 'W', defaultW, checknum );
+  p.addParameter( 'nC', defaultNc, checknum );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
