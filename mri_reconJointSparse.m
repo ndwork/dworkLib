@@ -32,7 +32,7 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
   if size( data, 1 ) ~= nTraj, error( 'Wrong input dimensions' ); end
 
   nData = numel( data );
-  wavSplit = zeros(4);  wavSplit(1,1) = 1;
+  wavSplit = zeros(8);  wavSplit(1,1) = 1;
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
       y = reshape( in, [ sImg nCoils ] );
