@@ -1,18 +1,15 @@
 
-function [recon,objValues] = mri_jointSparseRecon( data, traj, sImg, lambda, ...
-  varargin )
-  % recon = mri_nucNormPLoraksRecon( data, traj, lambda, sImg [, ...
+function [recon,objectiveValues] = mri_jointSparseRecon( data, traj, sMaps, ...
+  lambda, varargin )
+  % recon = mri_lowRankRecon( data, traj, sMaps, lambda [, 
   %   'alpha', alpha, 'W', W, 'nC', nC ] )
-  %
-  % Performs reconstructions while regularizing the joint sparsity
-  % of the images from each coil
   %
   % Inputs: 
   % data - an NxC array of data values where N is the number of data points and
   %   C is the number of coils
   % traj - a complex vector of N length specifying the k-space trajectory
+  % sMaps - sensitivity maps
   % lambda - regularization parameter
-  % sImg - the size of the image to create
   %
   % Optional Inputs:
   % alpha - oversampling factor in Gridding
@@ -23,47 +20,31 @@ function [recon,objValues] = mri_jointSparseRecon( data, traj, sImg, lambda, ...
 
   p = inputParser;
   p.addParameter( 'alpha', [], @ispositive );
-  p.addParameter( 'debug', false, @islogical );
   p.addParameter( 'W', [], @ispositive );
   p.addParameter( 'nC', [], @ispositive );
-  p.addParameter( 'verbose', true, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
-  debug = p.Results.debug;
   W = p.Results.W;
   nC = p.Results.nC;
-  verbose = p.Results.verbose;
 
-  sData = size( data );
-  nCoils = sData( 2 );
+  sSMaps = size( sMaps );
+  sImg = sSMaps(1:2);
+  if numel( sSMaps ) < 3
+    nCoils = 1;
+  else
+    nCoils = sSMaps(3);
+  end
+  if size( data, 2 ) ~= nCoils, error( 'Wrong input dimensions' ); end
+  nTimes = size( data, 3 );
   nTraj = size( traj, 1 );
-  if sData(1) ~= nTraj, error( 'Wrong input dimensions' ); end
+  if size( data, 1 ) ~= nTraj, error( 'Wrong input dimensions' ); end
 
-  function out = applyGi( x, op )
-    if nargin > 1 && strcmp( op, 'transp' )
+  function out = applyGi( x, type )
+    if nargin > 1 && strcmp( type, 'transp' )
       out = iGridT( x, traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-    elseif nargin < 2 || strcmp( op, 'notransp' )
+    elseif nargin < 2 || strcmp( type, 'notransp' )
       out = iGrid( x, traj, 'alpha', alpha, 'W', W, 'nC', nC );
     end
-  end
-
-  nData = numel( data );
-  function out = applyA( x, op )
-    if nargin < 2 || strcmp( op, 'notransp' )
-      out = cell( 1, nTraj );
-      for coilIndx = 1 : nCoils
-        out{coilIndx} = applyGi( x(:,:,coilIndx), 'notransp' );
-      end
-      out = cell2mat( out );
-    elseif strcmp( op, 'transp' )
-      out = cell(1,1,nCoils);
-      for coilIndx = 1 : nCoils
-        out{coilIndx} = applyGi( x(:,coilIndx), 'transp' );
-      end
-      out = cell2mat( out );
-    end
-
-    out = out / sqrt( nData );
   end
 
   wavSplit = zeros(4);  wavSplit(1,1) = 1;
@@ -80,28 +61,51 @@ function [recon,objValues] = mri_jointSparseRecon( data, traj, sImg, lambda, ...
     end
   end
 
-  function out = applyAW( x, op )
+  nData = numel( data );
+  function out = applyA( x, op )
     if nargin < 2 || strcmp( op, 'notransp' )
-      x = reshape( x, [ sImg nCoils ] );
-      Ax = applyA( x );
-      Wx = wavTransform( x );
-      out = [ Ax(:); Wx(:); ];
-      
-    elseif strcmp( op, 'transp' )
-      x1 = reshape( x( 1 : nData ), size( data ) );
-      ATx = applyA( x1, op );
+      senseImgs = bsxfun( @times, sMaps, img );
+      out = zeros( nTraj, nCoils );
+      for coilIndx = 1 : nCoils
+        coilImg = senseImgs( :, :, coilIndx );
+        out(:,coilIndx) = applyGi( coilImg, 'notransp' );
+      end
 
-      x2 = reshape( x( nData + 1 : end ), [ sImg nCoils ] );
-      Whx = wavTransform( x2, 'transp' );
-
-      out = ATx(:) + Whx(:);
+    elseif nargin > 1 && strcmp( op, 'transp' )
+      kData = reshape( x, [ nTraj nCoils ] );
+      out = zeros( sImg );
+      for coilIndx = 1 : nCoils
+        tmp = applyGi( kData(:,coilIndx), 'transp' );
+        out = out + sMaps(:,:,coilIndx) .* tmp;
+      end
 
     else
-      error( 'Unrecognized op value' );
+      error( 'Unrecognized op' );
+    end
+
+    out = out(:) / sqrt( nData );
+  end
+
+  function out = applyAWh( in, op )
+    if nargin < 1 || strcmp( op, 'notransp' )
+      y = reshape( in, sImg );
+      Why = wavTransform( y, 'transp' );
+      AWhy = applyA( Why );
+      out = AWhy(:);
+
+    elseif strcmp( op, 'transp' )
+      y = reshape( in, size( data ) );
+      Ahy = applyA( y, 'transp' );
+      WAhy = wavTransform( Ahy, 'notransp' );
+      out = WAhy(:);
+
+    else
+      error( 'Unrecognized op' );
     end
   end
 
   doCheckAdjoint = false;
+doCheckAdjoint = true;
   if doCheckAdjoint == true
     tmp = zeros( sImg );
     [checkGi,adjErrGi] = checkAdjoint( tmp, @applyGi );
@@ -115,72 +119,71 @@ function [recon,objValues] = mri_jointSparseRecon( data, traj, sImg, lambda, ...
       error([ 'wavTransform failed adjoint test with error ', num2str(adjErrWav) ]);
     end
 
-    tmp = zeros( [ sImg nCoils ] );
+    tmp = zeros( [ sImg nTimes ] );
     [checkA,adjErrA] = checkAdjoint( tmp, @applyA );
     if checkA ~= true
       error([ 'applyA failed adjoint test with error ', num2str(adjErrA) ]);
     end
-
-    tmp = zeros( [ sImg nCoils ] );
-    [checkAW,adjErrAW] = checkAdjoint( tmp, @applyAW );
-    if checkAW ~= true
-      error([ 'applyAL failed adjoint test with error ', num2str(adjErrAW) ]);
+    
+    tmp = zeros( [ sImg nTimes ] );
+    [checkAWh,adjErrAWh] = checkAdjoint( tmp, @applyAWh );
+    if checkAWh ~= true
+      error([ 'applyAWh failed adjoint test with error ', num2str(adjErrAWh) ]);
     end
   end
 
   b = data(:) / sqrt( nData );
   function out = g( in )
-    in1 = in( 1 : nData );
-    g1 = 0.5 * norm( in1(:) - b ).^2;
-
-    in2 = in( nData + 1 : end );
-    in2 = reshape( in2, [ sImg nCoils ] );
-    g2 = lambda * normL2L1( in2 );
-
-disp([ '     Cost parts g1 / g2: ', num2str(g1), ' / ', num2str(g2) ]);
-
-    out = g1 + g2;
+    Ain = applyAWh( in );
+    out = 0.5 * norm( Ain(:) - b ).^2;
   end
+
+  AWhTb = applyAWh( b, 'transp' );
+  function out = gGrad( in )
+    AWhin = applyAWh( in );
+    AWhTAWhin = applyAWh( AWhin, 'transp' );  
+    out = AWhTAWhin - AWhTb;
+  end
+
+  function out = proxth( in, t )
+    X = reshape( in, [ sImg nTimes ] );
+    out = proxL2L1( X, t * lambda );
+    out = out( : );
+  end
+
+  function out = h( in )
+    X = reshape( in, [ prod( sImg ) nTimes ] );
+    out = normL2L1( X );
+  end
+
+  % Setup inputs to fista_wLS
+  innerProd = @(x,y) real( dotP( x, y ) );
 
   initializeWithGridding = false;
   if initializeWithGridding == true
     weights = makePrecompWeights_2D( traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-    x0 = mri_gridRecon( data, traj, sImg, 'alpha', alpha, ...
-      'W', W, 'nC', nC, 'weights', weights );
+
+    y0 = cell( [ 1 1 nTimes ] );
+    parfor gTimeIndx = 1 : nTimes
+      timeData = data(:,:,gTimeIndx);
+      coilRecons = mri_gridRecon( timeData, traj, sImg, 'alpha', alpha, ...
+        'W', W, 'nC', nC, 'weights', weights );
+      thisRecon = sum( coilRecons .* conj( coilRecons ), 3 );
+      %x0(:,:,gTimeIndx) = thisRecon;
+      y0{1,1,gTimeIndx} = thisRecon;
+    end
+    y0 = cell2mat( y0 );
   else
-    x0 = zeros( [ sImg nCoils ] );
+    y0 = zeros( [ sImg nTimes ] );
   end
 
-  function out = proxgConj( v, t )
-    v1 = v( 1 : nData );
-    out1 = proxConjL2Sq( v1, t, b );
+  % minimize || A Wh y - b ||_2^2 + lambda || y ||_{2,1}
+  % Equivalently, minimize g(y) + h(y) where
+  % g(y) = || A Wh y - b ||_2^2  and  h(y) = lambda || y ||_{2,1}
 
-    v2 = v( nData + 1 : end );
-    v2 = reshape( v2, [ sImg nCoils ] );
-    out2 = proxConjL2L1( v2, lambda );
+  [yStar,objectiveValues] = fista_wLS( y0(:), @g, @gGrad, @proxth, 'N', 30, ...
+    't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
 
-    out = [ out1(:); out2(:); ];
-  end
-
-  f = @(x) 0;
-  proxf = @(x,t) x;
-
-  % TODO:  Instead of solving for x, I could solve for y = Wx and then use FISTA
-  beta = 1;
-  if debug == true
-    nIterCP = 10;
-  else
-    nIterCP = 100;
-  end
-  if nargout > 1
-    [xStar,objValues] = chambollePockWLS( x0(:), proxf, @proxgConj, ...
-      'A', @applyAW, 'beta', beta, 'N', nIterCP, 'verbose', verbose, ...
-      'doCheckAdjoint', doCheckAdjoint, 'f', f, 'g', @g );
-  else
-    xStar = chambollePockWLS( x0(:), proxf, @proxgConj, ...
-      'A', @applyAW, 'beta', beta, 'N', nIterCP, 'verbose', verbose, ...
-      'doCheckAdjoint', doCheckAdjoint );
-  end
-
-  recon = reshape( xStar, [ sImg nCoils ] );
+  yStar = reshape( yStar, [ sImg nTimes ] );
+  recon = wavTransform( yStar, 'transp' );
 end
