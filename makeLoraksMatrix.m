@@ -52,26 +52,35 @@ function out = makeLoraksMatrix( in, varargin )
   end
 
   if strcmp( op, 'notransp' )
-    out = zeros( K, NR * nCoils );
+    out = cell( 1, nCoils );
+    %out = zeros( K, NR * nCoils );
 
-    for coilIndx = 1 : nCoils
-      startIndx = (coilIndx-1) * NR + 1;
-      endIndx = coilIndx * NR;
-      out( :, startIndx : endIndx ) = L( in(:,:,coilIndx) );
+    parfor coilIndx = 1 : nCoils
+      %startIndx = (coilIndx-1) * NR + 1;
+      %endIndx = coilIndx * NR;
+      %out( :, startIndx : endIndx ) = L( in(:,:,coilIndx) );
       %out( :, startIndx : endIndx ) = makeLoraksCoilMatrix( in, 'notransp', ...
       %  R, sKData(1:2), rImg, K, NR );
+      out{ coilIndx } = L( in(:,:,coilIndx ) );
     end
+    out = cell2mat( out );
 
-  else
-    out = zeros( sKData );
-    for coilIndx = 1 : nCoils
+  elseif strcmp( op, 'transp' )
+    out = cell(1,1,nCoils);
+    %out = zeros( sKData );
+    parfor coilIndx = 1 : nCoils
       startIndx = (coilIndx-1) * NR + 1;
       endIndx = coilIndx * NR;
       thisLoraksMatrix = in( :, startIndx : endIndx );
-      out( :, :, coilIndx ) = Lh( thisLoraksMatrix );
+      %out( :, :, coilIndx ) = Lh( thisLoraksMatrix );
+      out{1,1,coilIndx} = Lh( thisLoraksMatrix );
       %out( :, :, coilIndx ) = makeLoraksCoilMatrix( thisLoraksMatrix, 'transp', ...
       %  R, sKData(1:2), rImg, K, NR );
     end
+    out = cell2mat( out );
+    
+  else
+    error( 'Unrecognized value of op' );
   end
 
 end
