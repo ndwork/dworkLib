@@ -27,9 +27,8 @@ function out = proxL2L1( in, t, weights )
   nDimsIn = numel( sIn );
   normsIn = norms( in, 2, nDimsIn );
 
-  tInv = 1 / t;
-  scalingFactors = tInv ./ normsIn;
-  scalingFactors( normsIn <= tInv ) = 1;
+  scalingFactors = t ./ normsIn;
+  scalingFactors( normsIn <= t ) = 1;
 
   projsOntoL2Ball = bsxfun( @times, in, scalingFactors );
 
