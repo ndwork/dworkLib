@@ -146,21 +146,23 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   innerProd = @(x,y) real( dotP( x, y ) );
 
   % Intialize x0 with gridding result
-  %x0 = zeros( [ sImg nTimes ] );
-  weights = makePrecompWeights_2D( traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-
-  x0 = cell( [ 1 1 nTimes ] );
-  parfor gTimeIndx = 1 : nTimes
-    timeData = data(:,:,gTimeIndx);
-    coilRecons = mri_gridRecon( timeData, traj, sImg, 'alpha', alpha, ...
-      'W', W, 'nC', nC, 'weights', weights );
-    thisRecon = sum( coilRecons .* conj( coilRecons ), 3 );
-    %x0(:,:,gTimeIndx) = thisRecon;
-    x0{1,1,gTimeIndx} = thisRecon;
+  initializeWithGridding = false;
+  if initializeWithGridding == true
+    weights = makePrecompWeights_2D( traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
+    x0 = cell( [ 1 1 nTimes ] );
+    parfor gTimeIndx = 1 : nTimes
+      timeData = data(:,:,gTimeIndx);
+      coilRecons = mri_gridRecon( timeData, traj, sImg, 'alpha', alpha, ...
+        'W', W, 'nC', nC, 'weights', weights );
+      thisRecon = sum( coilRecons .* conj( coilRecons ), 3 );
+      x0{1,1,gTimeIndx} = thisRecon;
+    end
+    x0 = cell2mat( x0 );
+  else
+    x0 = zeros( [ sImg nTimes ] );
   end
-  x0 = cell2mat( x0 );
   
-  [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', 30, ...
+  [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', 50, ...
     't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
 
   recon = reshape( xStar, [ sImg nTimes ] );
