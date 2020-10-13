@@ -95,13 +95,18 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
 
   % Setup inputs to fista_wLS
   innerProd = @(x,y) real( dotP( x, y ) );
-  y0 = zeros( [ sImg nCoils ] );
+  initializeWithGridding = false;
+  if initializeWithGridding == false
+    y0 = zeros( [ sImg nCoils ] );
+  else
+    y0 = mri_gridRecon( data, traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
+  end
 
   % minimize || A y - b ||_2^2 + lambda || y ||_{2,1}
   % Equivalently, minimize g(y) + h(y) where
   % g(y) = || A y - b ||_2^2  and  h(y) = lambda || y ||_{2,1}
 
-  nIter = 30;
+  nIter = 50;
   [yStar,objectiveValues] = fista_wLS( y0(:), @g, @gGrad, @proxth, 'N', nIter, ...
     't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
 
