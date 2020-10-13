@@ -95,7 +95,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
     end
   end
 
-
+  if calculateObjectiveValues > 0, gx = g( x ); end
   t = t0 / s;
   v = x;
   theta = 1;
@@ -103,6 +103,21 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   iter = 0;
 
   while iter < N
+    if calculateObjectiveValues > 0
+      hx = h( x );
+      objectiveValues( k+1 ) = gx + hx;
+    end
+    if verbose>0 && mod( k, printEvery ) == 0
+      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
+      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
+      if calculateObjectiveValues > 0
+        verboseString = [ verboseString, ',  objective: ', ...
+          num2str( objectiveValues(k+1) ), '   parts: ', num2str(gx), ...
+          ',  ', num2str( hx ) ];   %#ok<AGROW>
+      end
+      disp( verboseString );
+    end
+
     lastX = x;
     lastT = t;
     t = s * lastT;
@@ -143,17 +158,6 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       if verbose>1 && mod( k, printEvery ) == 0
         disp([ '  Step size change to: ', num2str(t) ]);
       end
-    end
-
-    if calculateObjectiveValues > 0, objectiveValues(k+1) = gx + h(x); end
-    if verbose>0 && mod( k, printEvery ) == 0
-      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
-      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
-      if calculateObjectiveValues > 0
-        verboseString = [ verboseString, ',  objective: ', ...
-          num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
-      end
-      disp( verboseString );
     end
 
     if restart == true && k > 0 && innerProd( Dgy, x-lastX ) > 0
