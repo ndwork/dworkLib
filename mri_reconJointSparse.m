@@ -102,7 +102,6 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
   % g(y) = || A y - b ||_2^2  and  h(y) = lambda || y ||_{2,1}
 
   nIter = 30;
-nIter = 2;
   [yStar,objectiveValues] = fista_wLS( y0(:), @g, @gGrad, @proxth, 'N', nIter, ...
     't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
 
