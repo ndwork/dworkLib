@@ -28,12 +28,14 @@ function out = mri_gridRecon( data, traj, sImg, varargin )
   p.addParameter( 'W', defaultW, @(x) numel(x) == 0 || checknum(x) );
   p.addParameter( 'nC', defaultNc, @(x) numel(x) == 0 || checknum(x) );
   p.addParameter( 'weights', [], @isnumeric );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
   weights = p.Results.weights;
-  
+  verbose = p.Results.verbose;
+
   if numel( alpha ) == 0, alpha = defaultAlpha; end
   if numel( W ) == 0, W = defaultW; end
   if numel( nC ) == 0, nC = defaultNc; end
@@ -42,7 +44,7 @@ function out = mri_gridRecon( data, traj, sImg, varargin )
 
   if numel( weights ) == 0
     weights = makePrecompWeights_2D( traj, sImg, ...
-      'alpha', alpha, 'W', W, 'nC', nC );
+      'alpha', alpha, 'W', W, 'nC', nC, 'verbose', verbose );
   end
 
   coilRecons = cell( 1, 1, nCoils );
