@@ -51,7 +51,7 @@ function F = iGrid_2D( data, traj, varargin )
   preEmphasized = data ./ denom;
 
   % Perform an fft
-  fftData = fftshift( ufft2( ifftshift(preEmphasized) ) );
+  fftData = fftshift( fft2( ifftshift(preEmphasized) ) );
 
   % Perform a circular convolution
   N = [Ny Nx];
