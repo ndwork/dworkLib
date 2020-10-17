@@ -17,7 +17,7 @@ function out = proxConjL2L1( x, t )
   nx = norms( x );
   scalings = ones( size( nx ) );
   tInv = 1 / t;
-  scalings( nx > 1 ) = tInv ./ scalings( nx > 1 );
+  scalings( nx > 1 ) = tInv ./ nx( nx > 1 );
 
   out = bsxfun( @times, x, scalings );
 end
