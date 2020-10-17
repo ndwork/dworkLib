@@ -19,12 +19,11 @@ function out = bilateralFilter( img, varargin )
   isPositiveAndOdd = @(x) (x>0) && (mod(x,2) == 1);
   isNumericAndPositive = @(x) isnumeric(x) && (x>0);
 
-  defaultS = 17;
   defaultSigmaD = 3;
   defaultSigmaR = 0.3;
   p = inputParser;
   p.addRequired( 'img', @isnumeric );
-  p.addParameter( 'S', defaultS, isPositiveAndOdd );
+  p.addParameter( 'S', [], isPositiveAndOdd );
   p.addParameter( 'sigmaD', defaultSigmaD, isNumericAndPositive );
   p.addParameter( 'sigmaR', defaultSigmaR, isNumericAndPositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
@@ -34,6 +33,8 @@ function out = bilateralFilter( img, varargin )
   sigmaR = p.Results.sigmaR;
   verbose = p.Results.verbose;
   
+  if numel( s ) == 0, s = 3 * sigmaD; end
+
   if ismatrix(img)
     out = bilateralFilter_2D( img, s, sigmaD, sigmaR, verbose );
   elseif ndims(img)==3
