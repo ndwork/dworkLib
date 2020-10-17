@@ -8,7 +8,7 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
   % data - an NxC array of data values where N is the number of data points and
   %   C is the number of coils
   % traj - a complex vector of N length specifying the k-space trajectory
-  % sMaps - sensitivity maps
+  % sImg - the size of the output image
   % lambda - regularization parameter
   %
   % Optional Inputs:
@@ -32,7 +32,7 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
   if size( data, 1 ) ~= nTraj, error( 'Wrong input dimensions' ); end
 
   nData = numel( data );
-  wavSplit = zeros(8);  wavSplit(1,1) = 1;
+  wavSplit = zeros(4);  wavSplit(1,1) = 1;
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
       y = reshape( in, [ sImg nCoils ] );
@@ -90,7 +90,7 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
 
   function out = h( in )
     X = reshape( in, [ sImg nCoils ] );
-    out = lambda  / prod( sImg ) * normL2L1( X );
+    out = ( lambda  / prod( sImg ) ) * normL2L1( X );
   end
 
   % Setup inputs to fista_wLS
