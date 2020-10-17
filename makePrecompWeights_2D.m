@@ -126,7 +126,7 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
       out = applyC_2D( in, traj, 0, kCy, kCx, Cy, Cx, traj, 'type', 'noCirc' );
 
       iteration = iteration + 1;
-      if verbose ~= 0 && mod( iteration, 5 ) == 0,
+      if verbose ~= 0 && mod( iteration, 5 ) == 0
         disp(['makePrecompWeights_2D_CLSDC working on iteration ', ...
           num2str(iteration) ]);
       end
@@ -138,7 +138,7 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
   nTraj = size(traj,1);
   b = ones(nTraj,1);
   function y = linop_4_tfocs( in, mode )
-    switch mode,
+    switch mode
       case 0
         y = [numel(b), nTraj];
       case 1
@@ -189,11 +189,13 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   p.addParameter( 'W', defaultW, checknum );
   p.addParameter( 'nC', defaultNc, checknum );
   p.addParameter( 'nIter', defaultNIter, checknum );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
   nIter = p.Results.nIter;
+  verbose = p.Results.verbose;
 
   % Make the Kaiser Bessel convolution kernel
   % alpha specifies the transition band of the KB filter
@@ -209,7 +211,7 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
 
   flag = 1;
   for iteration=1:nIter
-    if mod( iteration, 5 ) == 0
+    if verbose ~= 0 && mod( iteration, 5 ) == 0
       disp(['makePrecompWeights_2D_FP working on iteration ', ...
         num2str(iteration) ]);
     end
@@ -244,10 +246,12 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
   p.addParameter( 'alpha', defaultAlpha, checknum );
   p.addParameter( 'W', defaultW, checknum );
   p.addParameter( 'nC', defaultNc, checknum );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
+  verbose = p.Results.verbose;
 
   kbN = 2*N;
   nGrid = ceil( alpha * kbN );
@@ -272,7 +276,7 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
       out = out(:);
 
       iteration = iteration + 1;
-      if mod( iteration, 5 ) == 0,
+      if verbose ~= 0 && mod( iteration, 5 ) == 0
         disp(['makePrecompWeights_2D_SAMSANOV working on iteration ', ...
           num2str(iteration) ]);
       end
