@@ -37,19 +37,19 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
     if nargin < 2 || strcmp( op, 'notransp' )
       y = reshape( in, [ sImg nCoils ] );
       out = cell( 1, nCoils );
-      parfor coilIndx = 1 : nCoils
-        thisImg = y( :, :, coilIndx );
+      parfor coilIndx_A = 1 : nCoils
+        thisImg = y( :, :, coilIndx_A );
         WhImg = iwtDeaubechies2( thisImg, wavSplit );
-        out{coilIndx} = iGrid( WhImg, traj, 'alpha', alpha, 'W', W, 'nC', nC );
+        out{coilIndx_A} = iGrid( WhImg, traj, 'alpha', alpha, 'W', W, 'nC', nC );
       end
       out = cell2mat( out );
 
     elseif nargin > 1 && strcmp( op, 'transp' )
       kData = reshape( in, [ nTraj nCoils ] );
       WGihk = cell( 1, 1, nCoils );
-      parfor coilIndx = 1 : nCoils
-        Gihk = iGridT( kData(:,coilIndx), traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-        WGihk{coilIndx} = wtDeaubechies2( Gihk, wavSplit );
+      parfor coilIndx_Ah = 1 : nCoils
+        Gihk = iGridT( kData(:,coilIndx_Ah), traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
+        WGihk{coilIndx_Ah} = wtDeaubechies2( Gihk, wavSplit );
       end
       out = cell2mat( WGihk );
 
