@@ -84,13 +84,13 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
 
   function out = proxth( in, t )
     X = reshape( in, [ sImg nCoils ] );
-    out = proxL2L1( X, t * lambda / prod( sImg ) );
+    out = proxL2L1( X, t * lambda / prod( [ sImg nCoils ] ) );
     out = out( : );
   end
 
   function out = h( in )
     X = reshape( in, [ sImg nCoils ] );
-    out = ( lambda  / prod( sImg ) ) * normL2L1( X );
+    out = ( lambda  / prod( [ sImg nCoils ] ) ) * normL2L1( X );
   end
 
   % Setup inputs to fista_wLS
