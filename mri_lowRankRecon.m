@@ -45,71 +45,41 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   nTraj = size( traj, 1 );
   if size( data, 1 ) ~= nTraj, error( 'Wrong input dimensions' ); end
 
-  function out = applyGi( x, type )
-    if nargin > 1 && strcmp( type, 'transp' )
-      out = iGridT( x, traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-    elseif nargin < 2 || strcmp( type, 'notransp' )
-      out = iGrid( x, traj, 'alpha', alpha, 'W', W, 'nC', nC );
-    end
-  end
-
-  function out = applyK( x, type )
-    if nargin > 1 && strcmp( type, 'transp' )
-      kData = reshape( x, [ nTraj nCoils ] );
-      out = zeros( sImg );
-      for coilIndx = 1 : nCoils
-        tmp = applyGi( kData(:,coilIndx), 'transp' );
-        out = out + sMaps(:,:,coilIndx) .* tmp;
-      end
-
-    elseif nargin < 2 || strcmp( type, 'notransp' )
-      img = reshape( x, sImg );
-      senseImgs = bsxfun( @times, sMaps, img );
-      out = zeros( nTraj, nCoils );
-      for coilIndx = 1 : nCoils
-        coilImg = senseImgs( :, :, coilIndx );
-        out(:,coilIndx) = applyGi( coilImg, 'notransp' );
-      end
-    end
-
-    out = out(:);
-  end
-
+  nData = numel( data );
   function out = applyA( x, type )
-    if nargin > 1 && strcmp( type, 'transp' )
-      kData = reshape( x, [ nTraj nCoils nTimes ] );
-      out = zeros( [ sImg nTimes ] );
-      for timeIndx = 1 : nTimes
-        tmp = applyK( kData(:,:,timeIndx), 'transp' );
-        out(:,:,timeIndx) = reshape( tmp, sImg );
-      end
-
-    elseif nargin < 2 || strcmp( type, 'notransp' )
+    if nargin < 2 || strcmp( type, 'notransp' )
       imgs = reshape( x, [ sImg nTimes ] );
-      out = zeros( nTraj, nCoils, nTimes );
-      for timeIndx = 1 : nTimes
-        tmp = applyK( imgs(:,:,timeIndx), 'notransp' );
-        out(:,:,timeIndx) = reshape( tmp, [ nTraj nCoils ] );
+      out = cell( 1, 1, nTimes );
+      parfor timeIndx = 1 : nTimes
+        senseImgs = bsxfun( @times, sMaps, imgs(:,:,timeIndx) );
+        tmp = zeros( nTraj, nCoils );
+        for coilIndx = 1 : nCoils
+          coilImg = senseImgs( :, :, coilIndx );
+          tmp(:,coilIndx) = iGrid( coilImg, traj, 'alpha', alpha, 'W', W, 'nC', nC );
+        end
+        out{ timeIndx } = tmp;
       end
-    end
+      out = cell2mat( out );
 
+    elseif nargin > 1 && strcmp( type, 'transp' )
+      kData = reshape( x, [ nTraj nCoils nTimes ] );
+      out = cell( 1, 1, nTimes );
+      parfor timeIndx = 1 : nTimes
+        tmp = zeros([ sImg nCoils ]);
+        for coilIndx = 1 : nCoils
+          tmp(:,:,coilIndx) = iGridT( kData(:,coilIndx,timeIndx), traj, sImg, ...
+            'alpha', alpha, 'W', W, 'nC', nC );
+        end
+        out{timeIndx} = bsxfun( @times, tmp, sMaps );
+      end
+      out = cell2mat( out );
+
+    end
     out = out(:) / sqrt( nData );
   end
 
   doCheckAdjoint = false;
   if doCheckAdjoint == true
-    tmp = zeros( sImg );
-    [checkGi,adjErrGi] = checkAdjoint( tmp, @applyGi );
-    if checkGi ~= true
-      error([ 'applyGi failed adjoint test with error ', num2str(adjErrGi) ]);
-    end
-
-    tmp = zeros( sImg );
-    [checkK,adjErrK] = checkAdjoint( tmp, @applyK );
-    if checkK ~= true
-      error([ 'applyK failed adjoint test with error ', num2str(adjErrK) ]);
-    end
-
     tmp = zeros( [ sImg nTimes ] );
     [checkA,adjErrA] = checkAdjoint( tmp, @applyA );
     if checkA ~= true
@@ -117,7 +87,6 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
     end
   end
 
-  nData = numel( data );
   b = data / sqrt( nData );
   function out = g( in )
     Ain = applyA( in );
@@ -161,8 +130,9 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   else
     x0 = zeros( [ sImg nTimes ] );
   end
-  
-  [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', 50, ...
+
+  nIter = 30;
+  [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', nIter, ...
     't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
 
   recon = reshape( xStar, [ sImg nTimes ] );
