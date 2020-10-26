@@ -32,9 +32,11 @@ function imH = wavShow( wt, varargin )
   defaultwavSplit = 1;
   p = inputParser;
   p.addOptional( 'scale', 1, @ispositive );
+  p.addParameter( 'nImgsPerRow', [], @ispositive );
   p.addParameter( 'range', [] );
   p.addParameter( 'wavSplit', defaultwavSplit );
   p.parse( varargin{:} );
+  nImgsPerRow = p.Results.nImgsPerRow;
   range = p.Results.range;
   scale = p.Results.scale;
   wavSplit = p.Results.wavSplit;
@@ -42,8 +44,17 @@ function imH = wavShow( wt, varargin )
   if max( abs( imag( wt(:) ) ) ) ~= 0
     error( 'Input to wavShow is complex' );
   end
-  
-  img2show = wavScale( wt, wavSplit );
-  imH = imshowscale( img2show, scale, 'range', range );
+
+  if ismatrix( wt )
+    img2show = wavScale( wt, wavSplit );
+    imH = imshowscale( img2show, scale, 'range', range );
+
+  else
+    cube2show = zeros( size( wt ) );
+    for z = 1 : size( wt, 3 )
+      cube2show(:,:,z) = wavScale( wt(:,:,z), wavSplit );
+    end
+    imH = showImageCube( cube2show, scale, 'range', range, 'nImgsPerRow', nImgsPerRow );
+  end
 end
 
