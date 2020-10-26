@@ -110,9 +110,14 @@ function [xStar,objValues] = chambollePockWLS( x, proxf, proxgConj, varargin )
     diffx = x - lastX;
 
     lastY = y;
+    subIter = 0;
     while true
-      theta = tau / lastTau;
+      subIter = subIter + 1;
+      if verbose ~= false
+        disp([ '     sub iteration: ', num2str( subIter ), '  tau: ', num2str(tau) ]);
+      end
 
+      theta = tau / lastTau;
       xBar = x + theta * ( diffx );
 
       betaTau = beta * tau;
