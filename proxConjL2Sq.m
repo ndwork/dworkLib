@@ -1,6 +1,6 @@
 
-function out = proxConjL2( x, t, b )
-  % out = proxConjL2( x, t, b );
+function out = proxConjL2Sq( x, t, b )
+  % out = proxConjL2Sq( x, t, b );
   %
   % Let g = (1/2) || x - b ||_2^2.  This function returns t times
   % the proximal operator of the conjugate function of g.
