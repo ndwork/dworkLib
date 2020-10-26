@@ -59,7 +59,6 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     end
   end
 
-  nSamples = numel( samples );
   M = ( samples ~= 0 );
 
   % RI = [ Re; Im; ]
@@ -68,11 +67,11 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % gGrad = A'*A*x - A'*b;
 
   function Fx = F( x )
-    Fx = 1/sqrt(nSamples) .* fftc( x );
+    Fx = fftshift( fftshift( fft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
   end
 
   function Fadjy = Fadj( y )
-    Fadjy = sqrt(nSamples) * ifftc( y );
+    Fadjy = fftshift( fftshift( ifft2( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
   end
 
   function out = A( x )
@@ -80,8 +79,8 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     out = Fx( M == 1 );
   end
 
+  MTy = zeros( size( samples ) );
   function out = Aadj( y )
-    MTy = zeros( size( samples ) );
     MTy( M==1 ) = y;
     out = Fadj( MTy );
   end
@@ -116,27 +115,32 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     error( 'Unrecognized wavelet type' );
   end
 
-  proxth = @(x,t) WT( proxL1Complex( W(x), t*lambda ) );
+  nSamples = sum( M(:) );
+  proxth = @(x,t) WT( proxL1Complex( W(x), t * lambda / nSamples ) );
     % The proximal operator of || W x ||_1 was determined using
     % Vandenberghe's notes from EE 236C; slide of "The proximal mapping" entitled
     % "Composition with Affine Mapping"
 
   function out = h( x )
     Wx = W(x);
-    out = sum( abs( Wx(:) ) );
+    out = sum( abs( Wx(:) ) ) / nSamples;
   end
 
-  x0 = ifftc( samples );  % Could possibly make this better with inverse gridding
+  %x0 = zeros( size( samples ) );
+  x0 = Fadj( samples );
 
-  t = 1 / numel( samples );
+  innerProd = @(x,y) real( dotP( x, y ) );
+  
+  t0 = 1;
   if debug
     %[recon,oValues] = fista( x0, @g, @gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
     [recon,oValues] = fista_wLS( x0, @g, @gGrad, proxth, 'h', @h, ...
-      't0', t, 'N', nIter, 'verbose', true, 'printEvery', printEvery );                                                                     %#ok<ASGLU>
+      'innerProd', innerProd, 't0', t0, 'N', nIter, 'verbose', true, ...
+      'printEvery', printEvery );
   else
     %recon = fista( x0, @g, @gGrad, proxth );   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, @gGrad, proxth, 't0', t, 'N', nIter, ...
-      'verbose', verbose, 'printEvery', printEvery );
+    recon = fista_wLS( x0, @g, @gGrad, proxth, 't0', t0, 'N', nIter, ...
+      'innerProd', innerProd, 'verbose', verbose, 'printEvery', printEvery );
   end
 
   if polish
