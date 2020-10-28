@@ -103,6 +103,18 @@ function imH = showImageCube( cube, varargin )
     end
   end
 
-  imH = imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
+  if numel( range ) == 0
+    imH = imshowscale( outImg, scale );
+  elseif isnumeric( range )
+    imH = imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
+  else
+    thresh = 0.05;
+    lowScalingLevel = findFractionAboveValue( cube(:), 1-thresh );
+    highScalingLevel = findFractionAboveValue( cube(:), thresh );
+    scaling = [ lowScalingLevel highScalingLevel ];
+  
+    imH = imshowscale( outImg, scale, 'range', scaling, 'sdevScale', sdevScale );
+  end
+
   drawnow;
 end
