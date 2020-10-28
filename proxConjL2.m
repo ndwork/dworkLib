@@ -2,10 +2,10 @@
 function out = proxConjL2( x, t )
   % out = proxConjL2( x, t )
   %
-  % Calculates the proximal operator of the conjugate of f(x) = t * || x ||_2
+  % Calculates the proximal operator of the conjugate of f(x) = t * L2( x )
   %
   % Inputs:
-  % x - a vector
+  % x - a 1D array
   % t - a scalar
   %
   % Written by Nicholas Dwork - Copyright 2020
@@ -16,10 +16,10 @@ function out = proxConjL2( x, t )
 
   nx = norm( x );
   
-  tInv = 1 / t;
-  if nx > tInv
-    out = tInv / norm( x );
-  else
+  if nx <= t
     out = x;
+    return;
   end
+
+  out = t / nx;
 end
