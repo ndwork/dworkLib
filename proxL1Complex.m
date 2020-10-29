@@ -30,11 +30,10 @@ function out = proxL1Complex( in, thresh, weights )
   if nargin > 2, thresh = thresh .* weights; end
 
   magIn = abs( in );
-
   scalingFactors = thresh ./ magIn;
-  scalingFactors( magIn <= thresh ) = 1;
 
-  projsOntoUnitMag = in .* scalingFactors;
-
-  out = in - projsOntoUnitMag;
+  out = zeros( size( in ) );
+  out( magIn > thresh ) = in( magIn > thresh ) .* ( 1 - scalingFactors( magIn > thresh ) );
+  %projsOntoUnitMag = in .* scalingFactors;
+  %out = in - projsOntoUnitMag;
 end
