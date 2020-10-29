@@ -32,17 +32,15 @@ function out = proxConjL1( in, t )
     return
   end
 
-  tInv = 1 / t;
-
   if isreal( in )
-    out = min( in, tInv );
-    out = max( out, -tInv );
+    out = min( in, t );
+    out = max( out, -t );
 
   else
     magIn = abs( in );
-    scaling = tInv ./ magIn;
+    scaling = t ./ magIn;
     out = in;
-    out( magIn > tInv ) = in( magIn > tInv ) .* scaling( magIn > tInv );
+    out( magIn > t ) = in( magIn > t ) .* scaling( magIn > t );
 
   end
 end
