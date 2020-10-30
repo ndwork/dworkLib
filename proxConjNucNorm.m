@@ -2,11 +2,12 @@
 function out = proxConjNucNorm( in, t )
   % out = proxConjNucNorm( in, t )
   %
-  % Returns the proximal operator of the conjugate of the nuclear norm of the input matrix
+  % Returns the proximal operator of the conjugate of f(X) = t || X ||_*
+  % where X is the input matrix.
   %
   % Inputs:
   % in - an input matrix
-  % thresh - the thresholding value
+  % t - the thresholding value
   %
   % Written by Nicholas Dwork - Copyright 2019
   %
