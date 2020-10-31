@@ -1,5 +1,5 @@
 
-function out = proxConjNucNorm( in, t )
+function out = proxConjNucNorm( in, sigma, t )
   % out = proxConjNucNorm( in, t )
   %
   % Returns the proximal operator of the conjugate of f(X) = t || X ||_*
@@ -18,15 +18,12 @@ function out = proxConjNucNorm( in, t )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if t == 0
-    out = in;
-    return;
-  end
+  if nargin < 2, sigma = 1; end
+  if nargin < 3, t = 1; end
 
   [u,s,v] = svd( in, 'econ' );
 
-  sPrime = proxConjL1( diag(s), t );
+  sPrime = proxConjL1( diag(s), sigma, t );
 
   out = u * diag( sPrime ) * v';
 end
-

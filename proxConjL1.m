@@ -1,8 +1,9 @@
 
-function out = proxConjL1( in, t )
-  % out = proxConjL1( v, t )
+function out = proxConjL1( in, sigma, t )
+  % out = proxConjL1( v, sigma, t )
   %
-  % Returns the proximal operator of the conjugate function of f(x) = t * || x ||_1.
+  % Returns the proximal operator of sigma times the conjugate function of
+  % f(x) = t * || x ||_1.
   % The conjugate function of a norm is the indicator function of the unit ball of
   % the dual norm.  The dual of the L1 norm is the L_Infinity norm.
   % Thus, this operation is a clipping operation that reduces the magnitude of each
@@ -24,10 +25,11 @@ function out = proxConjL1( in, t )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2, t=1; end
-  if t < 0, error( 't must be positive' ); end
+  if nargin < 2, sigma = 1; end
+  if nargin < 3, t=1; end
 
-  if t == 0
+  if sigma < 0, error( 'sigma must be non-negative' ); end
+  if sigma == 0
     out = in;
     return
   end
