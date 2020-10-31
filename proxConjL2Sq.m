@@ -1,9 +1,9 @@
 
-function out = proxConjL2Sq( x, sigma, b, c )
-  % out = proxConjL2Sq( x, sigma, b, c );
+function out = proxConjL2Sq( x, sigma, c, b )
+  % out = proxConjL2Sq( x, sigma, c, b );
   %
-  % Let g(x) = (c/2) || x - b ||_2^2.  This function returns sigma times
-  % the proximal operator of the conjugate function of g.
+  % Let g(x) = (c/2) || x - b ||_2^2.  This function returns the
+  % proximal operator of sigma times the conjugate function of g.
   %
   % Written by Nicholas Dwork - Copyright 2019
   %
@@ -15,8 +15,8 @@ function out = proxConjL2Sq( x, sigma, b, c )
   % purpose.
 
   if nargin < 2, sigma=1; end
-  if nargin < 3, b=0; end
-  if nargin < 4, c=1; end
+  if nargin < 3, c=1; end
+  if nargin < 4, b=0; end
 
   out = ( x - sigma * b ) / ( sigma / c + 1 );
 
