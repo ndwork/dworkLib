@@ -24,33 +24,42 @@ function [ out, err ] = checkProx( x, prox, proxConj, varargin )
   tol = p.Results.tol;
 
   out = false;
+  err = 0;
   sx = size( x );
+
+  if max( min( x(:) ) ) == 0
+    x = ones( sx );
+  end
 
   v1 = prox( x, 1 );
   v2 = proxConj( x, 1 );
-  err = norm( v1(:) + v2(:) - x(:) );
-  if err > tol, return; end
+  thisErr = norm( v1(:) + v2(:) - x(:) );
+  if thisErr > tol, return; end
+  err = max( err, thisErr );
 
   if numel( t ) > 0
     v1 = prox( x, t );
     v2 = t * proxConj( t*x, 1/t );
-    err = norm( v1(:) + v2(:) - x(:) );
-    if err > tol, return; end
+    thisErr = norm( v1(:) + v2(:) - x(:) );
+    if thisErr > tol, return; end
+    err = max( err, thisErr );
   end
 
   y = rand( sx );
   v1 = prox( y, 1 );
   v2 = proxConj( y, 1 );
-  err = norm( v1(:) + v2(:) - y(:) );
-  if err > tol, return; end
+  thisErr = norm( v1(:) + v2(:) - y(:) );
+  if thisErr > tol, return; end
+  err = max( err, thisErr );
 
   for randIndx = 1 : nRand
     lambda = rand(1,1);
     y = rand( sx );
     v1 = prox( y, lambda );
     v2 = lambda * proxConj( y / lambda, 1 / lambda );
-    err = norm( v1(:) + v2(:) - y(:) );
-    if err > tol, return; end
+    thisErr = norm( v1(:) + v2(:) - y(:) );
+    if thisErr > tol, return; end
+    err = max( err, thisErr );
   end
 
   out = true;
