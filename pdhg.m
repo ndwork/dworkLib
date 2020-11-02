@@ -1,10 +1,11 @@
 
-function [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau, varargin )
-  % [xStar,objValues] = chambollePock( x, proxf, proxgConj, tau [, ...
+function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
+  % [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'sigma', sigma, ...
   %    'verbose', verbose ] )
   %
-  % minimizes f( x ) + g( A x )
+  % Implements the Primal Dual Hybrid Gradient (Chambolle-Pock) method that
+  % solves problems of the form:  minimize f( x ) + g( A x )
   %
   % Inputs:
   % x - initial guess
