@@ -21,6 +21,11 @@ function out = proxConjNucNorm( in, sigma, t )
   if nargin < 2, sigma = 1; end
   if nargin < 3, t = 1; end
 
+  if sigma == 0
+    out = in;
+    return;
+  end
+
   [u,s,v] = svd( in, 'econ' );
 
   sPrime = proxConjL1( diag(s), sigma, t );
