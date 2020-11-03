@@ -51,6 +51,9 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   padded = iGridT_2D( weightedF, kTraj, nGrid, ...
     'alpha', trueAlpha, 'W', W, 'nC', nC );
 
+  nOut = N(1) * N(2);
+  padded = padded / ( nOut^2 );
+
   recon = cropData( padded, N );
 end
 

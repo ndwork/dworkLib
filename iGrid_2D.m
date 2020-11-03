@@ -48,7 +48,7 @@ function F = iGrid_2D( data, traj, varargin )
 
   % Pre-emphasize the image
   denom = cImgY * transpose(cImgX);
-  preEmphasized = data ./ denom;
+  preEmphasized = ( Nx * Ny ) * ( data ./ denom );
 
   % Perform an fft
   fftData = fftshift( fft2( ifftshift( preEmphasized ) ) );
@@ -57,7 +57,4 @@ function F = iGrid_2D( data, traj, varargin )
   N = [Ny Nx];
   F = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx );
 end
-
-
-
 
