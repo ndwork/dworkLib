@@ -98,10 +98,10 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
     if verbose == true
       if mod( optIter, printEvery ) == 0 || optIter == 1
         if nargout > 1
-          disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
+          disp([ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
             'objective value: ', num2str( objValues( optIter ),'%15.13f' ) ]);
         else
-          disp([ 'chambollePockWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+          disp([ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
         end
       end
     end
