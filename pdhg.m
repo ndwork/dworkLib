@@ -74,15 +74,12 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   end
 
   xBar = x;
+  z = 0;
 
   if nargout > 1,  objValues = zeros( N, 1 ); end
 
   for optIter = 1 : N
-    if optIter == 1
-      tmp = sigma * applyA( xBar );
-    else
-      tmp = z + sigma * applyA( xBar );
-    end
+    tmp = z + sigma * applyA( xBar );
     z = proxgConj( tmp, sigma );
 
     lastX = x;

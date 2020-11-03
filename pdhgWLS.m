@@ -39,6 +39,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'doCheckAdjoint', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
+  p.addParameter( 'innerProd', [] );
   p.addParameter( 'mu', 0.7, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'printEvery', 1, @ispositive );
@@ -53,6 +54,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   doCheckAdjoint = p.Results.doCheckAdjoint;
   f = p.Results.f;
   g = p.Results.g;
+  innerProd = p.Results.innerProd;
   mu = p.Results.mu;
   N = p.Results.N;
   printEvery = p.Results.printEvery;
@@ -60,6 +62,10 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   theta = p.Results.theta;
   y = p.Results.y;
   verbose = p.Results.verbose;
+
+  if numel( innerProd ) == 0
+    innerProd = @(x,y) dotP( x, y );
+  end
 
   if numel( A ) == 0
     applyA = @(x) x;
@@ -127,7 +133,11 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
       diffy = y - lastY;
       ATdiffy = applyAT( diffy );
 
-      if tau * sqrt( beta ) * norm( ATdiffy(:) ) <= delta * norm( diffy(:) )
+      normATdiffy = sqrt( innerProd( ATdiffy(:), ATdiffy(:) ) );
+      normDiffy = sqrt( innerProd( diffy(:), diffy(:) ) );
+
+      %if tau * sqrt( beta ) * norm( ATdiffy(:) ) <= delta * norm( diffy(:) )
+      if tau * sqrt( beta ) * normATdiffy <= delta * normDiffy
         break
       end
       tau = mu * tau;

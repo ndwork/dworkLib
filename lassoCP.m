@@ -51,13 +51,13 @@ function [x,residuals] = lassoCP( K, b, gamma, varargin )
 
   x = rand( size(K,2), 1 );
   xBar = x;
-  z = K*x;  % initializing z in this way makes sure it has the right shape
+  z = K * x;  % initializing z in this way makes sure it has the right shape
   if nargout > 1, residuals=zeros(nIter,1); end
   for i=1:nIter
-    tmp = z + sigma*K*xBar;
-    z = ( tmp - sigma*b )/( 1 + sigma );
+    tmp = z + sigma * K * xBar;
+    z = ( tmp - sigma * b )/( 1 + sigma );
 
-    tmp = x - tau*K'*z;
+    tmp = x - tau * K' * z;
     lastX = x;
     x = tmp - max( min( tmp, tau*gamma), -tau*gamma );
 

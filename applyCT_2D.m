@@ -43,7 +43,7 @@ function out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx, varargin )
     shortDistsKx = kDistsX( shortDistIndxs );
     CValsY = interp1( kCy, Cy, shortDistsKy, 'linear', 0 );
     CValsX = interp1( kCx, Cx, shortDistsKx, 'linear', 0 );
-    kVals = fftData( shortDistIndxs );                                           %#ok<PFBNS>
+    kVals = fftData( shortDistIndxs );   %#ok<PFBNS>
     out( trajIndx ) = sum( kVals .* CValsY .* CValsX );
   end
 
