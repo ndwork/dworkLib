@@ -111,14 +111,16 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
     out = nucNorm( X );
   end
 
-  % Setup inputs to fista_wLS
   innerProd = @(x,y) real( dotP( x, y ) );
 
-  x0 = zeros( [ sImg nTimes ] );
+  ATA = @(x) applyA( applyA( x ), 'transp' );
+  L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
+  minStep = 0.95 / L;
+  t0 = 10 / L;
 
   nIter = 30;
   [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', nIter, ...
-    't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
+    't0', t0, 'innerProd', innerProd, 'minStep', minStep, 'h', @h, 'verbose', true );
 
   recon = reshape( xStar, [ sImg nTimes ] );
 end
