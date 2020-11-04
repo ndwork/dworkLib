@@ -32,26 +32,23 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
   if size( data, 1 ) ~= nTraj, error( 'Wrong input dimensions' ); end
 
   nData = numel( data );
-  wavSplit = zeros(4);  wavSplit(1,1) = 1;
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
       y = reshape( in, [ sImg nCoils ] );
       out = cell( 1, nCoils );
-      parfor coilIndx_A = 1 : nCoils
-        thisImg = y( :, :, coilIndx_A );
-        WhImg = iwtDeaubechies2( thisImg, wavSplit );
-        out{coilIndx_A} = iGrid( WhImg, traj, 'alpha', alpha, 'W', W, 'nC', nC );
+      parfor cIndx = 1 : nCoils
+        thisImg = y( :, :, cIndx );
+        out{1,cIndx} = iGrid( thisImg, traj, 'alpha', alpha, 'W', W, 'nC', nC );
       end
       out = cell2mat( out );
 
     elseif nargin > 1 && strcmp( op, 'transp' )
       kData = reshape( in, [ nTraj nCoils ] );
-      WGihk = cell( 1, 1, nCoils );
-      parfor coilIndx_Ah = 1 : nCoils
-        Gihk = iGridT( kData(:,coilIndx_Ah), traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-        WGihk{coilIndx_Ah} = wtDeaubechies2( Gihk, wavSplit );
+      out = cell( 1, 1, nCoils );
+      parfor cIndx = 1 : nCoils
+        out{1,1,cIndx} = iGridT( kData(:,cIndx), traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
       end
-      out = cell2mat( WGihk );
+      out = cell2mat( out );
 
     else
       error( 'Unrecognized op' );
@@ -82,38 +79,51 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
     out = ATAin - ATb;
   end
 
-  function out = proxth( in, t )
-    X = reshape( in, [ sImg nCoils ] );
-    out = proxL2L1( X, t * lambda / prod( [ sImg nCoils ] ) );
-    out = out( : );
-  end
-
   function out = h( in )
     X = reshape( in, [ sImg nCoils ] );
-    out = ( lambda  / prod( [ sImg nCoils ] ) ) * normL2L1( X );
+    WX = zeros( [ sImg nCoils ] );
+    parfor cIndx = 1 : nCoils
+      WX(:,:,cIndx) = wtDeaubechies2( X(:,:,cIndx), wavSplit );
+    end
+    out = ( lambda  / prod( [ sImg nCoils ] ) ) * normL2L1( WX );
+  end
+
+  wavSplit = zeros(4);  wavSplit(1,1) = 1;
+  function out = proxth( in, t )
+    X = reshape( in, [ sImg nCoils ] );
+    WX = zeros( [ sImg nCoils ] );
+    parfor cIndx = 1 : nCoils
+      WX(:,:,cIndx) = wtDeaubechies2( X(:,:,cIndx), wavSplit );
+    end
+    proxL2L1WX = proxL2L1( WX, t * lambda / prod( [ sImg nCoils ] ) );
+    out = zeros( [ sImg nCoils ] );
+    parfor cIndx = 1 : nCoils
+      out(:,:,cIndx) = iwtDeaubechies2( proxL2L1WX(:,:,cIndx), wavSplit );
+    end
+    out = out( : );
   end
 
   % Setup inputs to fista_wLS
   innerProd = @(x,y) real( dotP( x, y ) );
-  initializeWithGridding = false;
+  initializeWithGridding = true;
   if initializeWithGridding == false
-    y0 = zeros( [ sImg nCoils ] );
+    x0 = zeros( [ sImg nCoils ] );
   else
-    y0 = mri_gridRecon( data, traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
+    x0 = mri_gridRecon( data, traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
   end
 
   % minimize || A y - b ||_2^2 + lambda || y ||_{2,1}
   % Equivalently, minimize g(y) + h(y) where
   % g(y) = || A y - b ||_2^2  and  h(y) = lambda || y ||_{2,1}
 
+  ATA = @(x) applyA( applyA( x ), 'transp' );
+  L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
+  minStep = 0.95 / L;
+  t0 = 10 / L;
+  
   nIter = 30;
-  [yStar,objectiveValues] = fista_wLS( y0(:), @g, @gGrad, @proxth, 'N', nIter, ...
-    't0', 1d-2, 'innerProd', innerProd, 'minStep', 1d-11, 'h', @h, 'verbose', true );
+  [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', nIter, ...
+    't0', t0, 'innerProd', innerProd, 'minStep', minStep, 'h', @h, 'verbose', true );
 
-  yStar = reshape( yStar, [ sImg nCoils ] );
-  recons = cell( 1, 1, nCoils );
-  parfor coilIndx = 1 : nCoils
-    recons{coilIndx} = iwtDeaubechies2( yStar(:,:,coilIndx), wavSplit );
-  end
-  recons = cell2mat( recons );
+  recons = reshape( xStar, [ sImg nCoils ] );
 end
