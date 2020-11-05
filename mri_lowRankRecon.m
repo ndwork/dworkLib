@@ -112,6 +112,7 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   end
 
   innerProd = @(x,y) real( dotP( x, y ) );
+  x0 = zeros( [ sImg nTimes ] );
 
   ATA = @(x) applyA( applyA( x ), 'transp' );
   L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
