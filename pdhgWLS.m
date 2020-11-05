@@ -1,7 +1,7 @@
 
 function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % [xStar,objValues] = pdhgWLS( x, proxf, proxgConj [, ...
-  %   'N', N, 'A', A, 'f', f, 'g', g, 'mu', mu, 'tau', tau, ...
+  %   'N', N, 'A', A, 'beta', beta, 'f', f, 'g', g, 'mu', mu, 'tau', tau, ...
   %   'theta', theta, 'y', y, 'verbose', verbose ] )
   %
   % Implements Primal-Dual Hybrid graident method (Chambolle-Pock) with line search
@@ -14,6 +14,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   %
   % Optional Inputs:
   % A - if A is not provided, it is assumed to be the identity
+  % beta - line search parameter
   % f - to determine the objective values, f must be provided
   % g - to determine the objective values, g must be provided
   % N - the number of iterations that CP will perform (default is 100)
