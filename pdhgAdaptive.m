@@ -121,13 +121,35 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
     lastAx = Ax;
     lastATy = ATy;
 
-    tmp = x - tau * ATy;
-    x = proxf( tmp, tau );
-    Ax = applyA( x );
+    
+    % Backtracking
+    while true
+      tmpf = lastX - tau * lastATy;
+      x = proxf( tmpf, tau );
+      Ax = applyA( x );
 
-    tmp = y + sigma * ( 2 * Ax - lastAx ) ;
-    y = proxgConj( tmp, sigma );
+      tmpg = lastY + sigma * ( 2 * Ax - lastAx ) ;
+      y = proxgConj( tmpg, sigma );
+
+      bNum = 2 * tau * sigma * innerProd( y - lastY, Ax - lastAx );
+      normDiffXSq = norm( x(:) - lastX(:) )^2;
+      normDiffYSq = norm( y(:) - lastY(:) )^2;
+      bDen = gamma * sigma * normDiffXSq + gamma * tau * normDiffYSq;
+      b = bNum / bDen;
+
+      if b <= 1, break; end
+
+      % backtracking property does not hold
+      tau = beta * tau / b;
+      sigma = beta * sigma / b;
+      
+      if verbose == true
+        disp(['   Backtracked New Steps tau / sigma: ', num2str(tau), ' / ', num2str(sigma) ]);
+      end
+    end
+
     ATy = applyAT( y );
+    if optIter == 1, continue; end
 
     px = ( lastX - x ) / tau;
     py = ( lastATy - ATy );
@@ -160,21 +182,6 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
     else
       % residuals are similar
       % do not change step sizes
-    end
- 
-    % Backtracking
-    while true
-      bNum = 2 * tau * sigma * innerProd( y - lastY, Ax - lastAx );
-      normDiffXSq = norm( x(:) - lastX(:) )^2;
-      normDiffYSq = norm( y(:) - lastY(:) )^2;
-      bDen = gamma * tau * normDiffXSq + gamma * tau * normDiffYSq;
-      b = bNum / bDen;
-
-      if b <= 1, break; end
-
-      % backtracking property does not hold
-      tau = beta * tau / b;
-      sigma = beta * sigma / b;
     end
   end
 
