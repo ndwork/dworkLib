@@ -131,13 +131,13 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
       tmpg = lastY + sigma * ( 2 * Ax - lastAx ) ;
       y = proxgConj( tmpg, sigma );
 
-      bNum = 2 * tau * sigma * innerProd( y - lastY, Ax - lastAx );
+      bNum = 2 * tau * sigma * innerProd( Ax - lastAx, y - lastY );
       normDiffXSq = norm( x(:) - lastX(:) )^2;
       normDiffYSq = norm( y(:) - lastY(:) )^2;
-      bDen = gamma * sigma * normDiffXSq + gamma * tau * normDiffYSq;
+      bDen = gamma * ( sigma * normDiffXSq + tau * normDiffYSq );
       b = bNum / bDen;
 
-      if b <= 1, break; end
+      if b <= 1 || bDen == 0, break; end
 
       % backtracking property does not hold
       tau = beta * tau / b;
