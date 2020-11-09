@@ -26,7 +26,11 @@ function out = softThresh( in, thresh )
     return
   end
 
-  if isreal( in )
+  if thresh == 0
+
+    out = in;
+
+  elseif isreal( in )
 
     out = sign(in) .* max( ( abs(in) - thresh ), 0 );
 
