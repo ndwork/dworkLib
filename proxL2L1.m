@@ -2,7 +2,7 @@
 function out = proxL2L1( in, t, weights )
   % out = proxL2L1( in, t [, weights ] )
   %
-  % Returns the proximal operator of f(x) = t * L2L1( x ), where
+  % Returns the proximal operator of f(x) = t * weights .* L2L1( x ), where
   %   L2L1 is the (possibly weighted) L2,L1 norm.
   %
   % Inputs:
