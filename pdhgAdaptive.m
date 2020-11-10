@@ -4,7 +4,7 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   %   'alpha0', alpha0, 'eta', eta, 'Delta', Delta', 's', s, ...  % adaptive variables
   %   'beta', beta', 'gamma', gamma, % backtracking parameters
   %   'A', A, 'f', f, 'g', g, 'innerProd', innerProd, 'N', N, 'normA', normA, ...
-  %   'sigma', sigma, 'verbose', verbose ] )
+  %   'sigma', sigma, 'y', y, 'verbose', verbose ] )
   %
   % Implements the Adaptive Primal Dual Hybrid Gradient (Chambolle-Pock) method
   % of "Adaptive Primal-Dual Hybrid Gradient Methods for Saddle-Point Problems"
@@ -22,6 +22,7 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   % N - the number of iterations that ADMM will perform (default is 100)
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
+  % y - initial values for dual variable
   % verbose - true or false
   %
   % Outputs:
@@ -49,10 +50,11 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'innerProd', [] );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'normA', [], @ispositive );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 's', 1, @ispositive );
   p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
-  p.addParameter( 'printEvery', 1, @ispositive );
+  p.addParameter( 'y', [], @isnumeric );
   p.parse( varargin{:} );
   A = p.Results.A;
   beta = p.Results.beta;
@@ -65,10 +67,11 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   innerProd = p.Results.innerProd;
   N = p.Results.N;
   normA = p.Results.normA;
+  printEvery = p.Results.printEvery;
   s = p.Results.s;
   sigma = p.Results.sigma;
-  printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
+  y = p.Results.y;
 
   if numel( A ) == 0
     applyA = @(x) x;
@@ -92,9 +95,11 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
     sigma = ( 0.95 / normA^2 ) / tau;
   end
 
-
   Ax = applyA( x );
-  y = zeros( size( Ax ) );
+
+  if numel( y ) == 0
+    y = zeros( size( Ax ) );
+  end
 
   if nargout > 1,  objValues = zeros( N, 1 ); end
 
