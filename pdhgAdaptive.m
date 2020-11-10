@@ -131,6 +131,8 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
       tmpg = lastY + sigma * ( 2 * Ax - lastAx ) ;
       y = proxgConj( tmpg, sigma );
 
+      if optIter == 1, break; end
+
       bNum = 2 * tau * sigma * innerProd( Ax - lastAx, y - lastY );
       normDiffXSq = innerProd( x(:) - lastX(:), x(:) - lastX(:) );
       normDiffYSq = innerProd( y(:) - lastY(:), y(:) - lastY(:) );
