@@ -78,7 +78,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
   if numel( N ) == 0, N = defaultN; end
   if numel( innerProd ) == 0
-    innerProd = @(x,y) dotP( x, y );
+    innerProd = @(x,y) real( dotP( x, y ) );
   end
 
   if r <= 0 || r >= 1, error('fista: r must be in (0,1)'); end
