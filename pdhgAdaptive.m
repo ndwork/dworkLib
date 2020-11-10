@@ -82,7 +82,7 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   end
 
   if numel( innerProd ) == 0
-    innerProd = @(x,y) dotP( x, y );
+    innerProd = @(x,y) real( dotP( x, y ) );
   end
 
   if numel( sigma ) == 0  && numel( A ) > 0
@@ -132,8 +132,8 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
       y = proxgConj( tmpg, sigma );
 
       bNum = 2 * tau * sigma * innerProd( Ax - lastAx, y - lastY );
-      normDiffXSq = norm( x(:) - lastX(:) )^2;
-      normDiffYSq = norm( y(:) - lastY(:) )^2;
+      normDiffXSq = innerProd( x(:) - lastX(:), x(:) - lastX(:) );
+      normDiffYSq = innerProd( y(:) - lastY(:), y(:) - lastY(:) );
       bDen = gamma * ( sigma * normDiffXSq + tau * normDiffYSq );
       b = bNum / bDen;
 
