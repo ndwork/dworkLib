@@ -35,7 +35,7 @@ function out = makeEllipticalImage( sImg, varargin )
   x = (1:sImg(2)) - ceil((sImg(2)+1)/2);
   [xs,ys] = meshgrid( x, y );
 
-  if rot~=0,
+  if rot~=0
     pts = [ transpose(xs(:)); transpose(ys(:)); ];
     R = [ cos(rot) sin(rot); -sin(rot), cos(rot); ];
     Rpts = R * pts;
