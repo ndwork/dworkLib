@@ -51,21 +51,6 @@ function testDworkLib
     error( 'bisection failed' );
   end
 
-  %% chambollePockWLS
-  fprintf('\nTesting chambollePockWLS: \n');
-  %minimize ||Ax - b||_2^2 + lambda ||x||
-  A = rand( 7, 3 ) * 100;
-  x = rand( 3, 1 ) * 1;
-  x0 = rand( size( x ) );
-  b = A * x;
-  lambda = 0;
-  f = @(x) lambda * norm( x, 1 );
-  g = @(x) 0.5 * norm( x - b, 2 )^2;
-  proxf = @(x,t) softThresh( x, lambda * t );
-  proxgConj = @(x,t) ( x - t * b )/( 1 + t );
-  xStar = chambollePockWLS( x0, proxf, proxgConj, 'A', A, 'N', 10000, 'f', f, 'g', g );   %#ok<NASGU>
-  fprintf('\nchambollePockWLS ran to completion\n');
-
   %% cropData
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
@@ -144,7 +129,7 @@ function testDworkLib
   end
   
   %% findDoGFeatures2D
-  imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
+  imgFile = '/Applications/MATLAB_R2019b.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );
   features = findDoGFeatures2D( img, 'nFeatures', 10 );
   figure;
@@ -434,58 +419,6 @@ function testDworkLib
     disp('isOdd (2D) passed');
   end
 
-  %% lassoCP
-  M = 100;
-  N = M;
-  K = rand( M, N );
-  x = zeros(N,1);
-  x(2) = 1;
-  x(3) = pi;
-  x(20) = 10;
-  x(N) = 8;
-  b = K*x;
-  gamma = 1;
-  nIter = 1000;
-  [xHat,residuals] = lassoCP( K, b, gamma, 'nIter', nIter );
-  [xHatLS,residualsLS] = lassoCP( K, b, gamma, 'nIter', nIter );
-  err = norm(xHat-xHatLS,2);
-  if err > 1d-4, error( 'lassoCP failed'); end
-  disp('lassoCP passed');
-  %semilogy( residuals, 'b', 'LineWidth', 2 );
-  %hold on; semilogy( residualsLS, 'r', 'LineWidth', 2 );
-  %legend( 'cp', 'cpls' );
-
-  %%% lsqrFISTA
-  %fprintf( '\nTesting lsqrFISTA: \n');
-  %A = rand(9,8);
-  %b = rand(9,1);
-  %tolerance = 1d-8;
-  %x = A \ b;
-  %maxIter = 10000;
-  %x0 = rand( 8, 1 );
-  %x1 = lsqrFISTA( A, b, tolerance, maxIter, x0 );
-  %err1 = norm( x1 - x, 2 ) / norm(x,2);
-  %if ~isfinite(err1) || err1 > 1d-4
-  %  error(['lsqrFISTA with matrix failed with error ', num2str(err1)]);
-  %else
-  %  disp('lsqrFISTA with matrix passed');
-  %end
-  %
-  %function out = applyA( in, type )
-  %  if nargin>1 && strcmp(type,'transp')
-  %    out = A'*in;
-  %  else
-  %    out = A*in;
-  %  end
-  %end
-  %x2 = lsqrFISTA( @applyA, b, tolerance, maxIter, x0 );
-  %err2 = norm( x2 - x, 2 ) / norm(x,2);
-  %if ~isfinite(err2) || err2 > 1d-4
-  %  error(['lsqrFISTA with file handle failed with error ', num2str(err2)]);
-  %else
-  %  disp('lsqrFISTA with file handle passed');
-  %end
-
   %% lsqrTikhonov
   damping = 0;
   A = rand(20,5);
@@ -631,6 +564,66 @@ function testDworkLib
   end
   p.clean;
 
+  %% pdhg
+  fprintf('\nTesting pdhg: \n');
+  %minimize ||Ax - b||_2^2 + lambda ||x||
+  A = rand( 7, 3 ) * 10;
+  x = rand( 3, 1 ) * 1;
+  x0 = rand( size( x ) );
+  b = A * x;
+  lambda = 0;
+  f = @(x) lambda * norm( x, 1 );
+  g = @(x) 0.5 * norm( x - b, 2 )^2;
+  proxf = @(x,t) softThresh( x, t * lambda );
+  proxgConj = @(x,gamma) proxConjL2Sq( x, gamma, 1, b );
+
+  [~,s,~] = svd( A );
+  normA = sqrt( s(1,1) );
+  tau = 0.01 / s(1);
+  [xStar,objValues] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
+    'N', 10000, 'f', f, 'g', g );   %#ok<ASGLU>
+  err = norm( x(:) - xStar(:) );
+  fprintf('\npdhg ran to completion\n');
+
+  %% pdhgAdaptive
+  fprintf('\nTesting pdhgAdaptive: \n');
+  %minimize ||Ax - b||_2^2 + lambda ||x||
+  A = rand( 7, 3 ) * 10;
+  x = rand( 3, 1 ) * 1;
+  x0 = rand( size( x ) );
+  b = A * x;
+  lambda = 10;
+  f = @(x) lambda * norm( x, 1 );
+  g = @(x) 0.5 * norm( x - b, 2 )^2;
+  proxf = @(x,t) softThresh( x, t * lambda );
+  proxgConj = @(x,gamma) proxConjL2Sq( x, gamma, 1, b );
+
+  [~,s,~] = svd( A );
+  normA = sqrt( s(1,1) );
+  tau = 100;
+  sigma = 100;
+  [xStar,objValues] = pdhgAdaptive( x0, proxf, proxgConj, tau, 'sigma', sigma, 'A', A, ...
+    'N', 1000, 'normA', normA, 'f', f, 'g', g, 'verbose', true );   %#ok<ASGLU>
+  err = norm( x(:) - xStar(:) );
+  fprintf('\npdhgAdaptive ran to completion\n');
+
+  %% pdhgWLS
+  fprintf('\nTesting pdhgWLS: \n');
+  %minimize ||Ax - b||_2^2 + lambda ||x||
+  A = rand( 7, 3 ) * 100;
+  x = rand( 3, 1 ) * 1;
+  x0 = rand( size( x ) );
+  b = A * x;
+  lambda = 1;
+  f = @(x) lambda * norm( x, 1 );
+  g = @(x) 0.5 * norm( x - b, 2 )^2;
+  proxf = @(x,t) softThresh( x, t * lambda );
+  proxgConj = @(x,gamma) proxConjL2Sq( x, gamma, 1, b );
+  xStar = pdhgWLS( x0, proxf, proxgConj, 'A', A, 'N', 10000, 'f', f, 'g', g );   %#ok<NASGU>
+  err = norm( x(:) - xStar(:) );
+  fprintf('\npdhgWLS ran to completion\n');
+
+  
   %% plotnice
   x = 1:10; y = 2*x;
   figure; subplot(4,1,1); plotnice(x);
