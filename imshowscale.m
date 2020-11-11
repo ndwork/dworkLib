@@ -59,7 +59,12 @@ function imH = imshowscale( img, varargin )
   yAxis = p.Results.yAxis;
 
   img = double(img);
-  
+
+  if figureExists()
+    cf = gcf();
+    outerPos = cf.OuterPosition;
+  end
+
   if strcmp( 'nice', range )
     [~,imH] = imshownice( img, scale, 'method', method, 'sdevScale', sdevScale );
 
@@ -141,6 +146,12 @@ function imH = imshowscale( img, varargin )
     set( ca, 'units', beforeAxesUnits );
   end
 
+  if exist( 'outerPos', 'var' )
+    thisOuterPos = cf.OuterPosition;
+    thisOuterPos(1:2) = outerPos(1:2);
+    cf.OuterPosition = thisOuterPos;
+  end
+  
   drawnow; pause(0.02);
 
   % Now restore units to previously used values
