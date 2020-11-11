@@ -1,9 +1,21 @@
 
-function [ out, err ] = checkProx( x, prox, proxConj, varargin )
-  % [ out, err ] = checkProx( x, prox, proxConj [, 'tol', tol, 'nRand', nRand )
+
+function [ out, err ] = checkProx( x, prox, f, varargin )
+  % [ out, err ] = checkProx( x, prox [, 'nRand', nRand )
   %
-  % Uses the Moreau decomposition to see if the proximal operator and the proximal
-  % operation of the conjugate function are correctly related.
+  % u = prox_f(x)   iff   x - u in subderivative of h at u
+  %                 iff   f(z) >= f(u) + (x-u)^T (z-u)
+  %
+  % Note: if this function fails, then prox is faulty.  If it passes, it does
+  %   not guarantee that prox is correct.
+  %
+  % Inputs:
+  % x - argument for the proximal operator
+  % prox - function handle to proximal operator that accepts input and scalar
+  % f - function handle to the function for which prox is the proximal operator
+  %
+  % Optional Inputs:
+  % nRand - the number of randome vectors to evaluate
   %
   % Written by Nicholas Dwork, Copyright 2020
   %
@@ -16,50 +28,25 @@ function [ out, err ] = checkProx( x, prox, proxConj, varargin )
 
   p = inputParser;
   p.addParameter( 'nRand', 1, @ispositive );
-  p.addParameter( 't', [], @ispositive );
-  p.addParameter( 'tol', 1d-6, @ispositive );
+  p.addParameter( 't', 1, @(x) ispositive(x) || x==0 );
   p.parse( varargin{:} );
   nRand = p.Results.nRand;
   t = p.Results.t;
-  tol = p.Results.tol;
 
   out = false;
   err = 0;
-  sx = size( x );
 
-  if max( min( x(:) ) ) == 0
-    x = ones( sx );
-  end
-
-  v1 = prox( x, 1 );
-  v2 = proxConj( x, 1 );
-  thisErr = norm( v1(:) + v2(:) - x(:) );
-  if thisErr > tol, return; end
-  err = max( err, thisErr );
-
-  if numel( t ) > 0
-    v1 = prox( x, t );
-    v2 = t * proxConj( t*x, 1/t );
-    thisErr = norm( v1(:) + v2(:) - x(:) );
-    if thisErr > tol, return; end
-    err = max( err, thisErr );
-  end
-
-  y = rand( sx );
-  v1 = prox( y, 1 );
-  v2 = proxConj( y, 1 );
-  thisErr = norm( v1(:) + v2(:) - y(:) );
-  if thisErr > tol, return; end
-  err = max( err, thisErr );
+  u = prox( x, t );
 
   for randIndx = 1 : nRand
-    lambda = rand(1,1);
-    y = rand( sx );
-    v1 = prox( y, lambda );
-    v2 = lambda * proxConj( y / lambda, 1 / lambda );
-    thisErr = norm( v1(:) + v2(:) - y(:) );
-    if thisErr > tol, return; end
-    err = max( err, thisErr );
+    z = rand( size( u ) );
+
+    fu = f( u );
+    fz = f( z );
+    if fz < fu + dotP( z - u, x - u )
+      err = fu + dotP( z - u, x - u ) - fz;
+      return;
+    end
   end
 
   out = true;
