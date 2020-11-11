@@ -21,5 +21,5 @@ function out = proxConjL2( x, t )
     return;
   end
 
-  out = t / nx;
+  out = ( t / nx ) * x;
 end
