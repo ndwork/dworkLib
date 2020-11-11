@@ -1,6 +1,6 @@
 
-function [ out, err ] = checkProx( x, prox, proxConj, varargin )
-  % [ out, err ] = checkProx( x, prox, proxConj [, 'tol', tol, 'nRand', nRand )
+function [ out, err ] = checkProxConj( x, prox, proxConj, varargin )
+  % [ out, err ] = checkProxConj( x, prox, proxConj [, 'tol', tol, 'nRand', nRand )
   %
   % Uses the Moreau decomposition to see if the proximal operator and the proximal
   % operation of the conjugate function are correctly related.
