@@ -1,7 +1,7 @@
 
 
 function [ out, err ] = checkProx( x, prox, f, varargin )
-  % [ out, err ] = checkProx( x, prox [, 'nRand', nRand )
+  % [ out, err ] = checkProx( x, prox, f [, 'nRand', nRand )
   %
   % u = prox_f(x)   iff   x - u in subderivative of h at u
   %                 iff   f(z) >= f(u) + (x-u)^T (z-u)
