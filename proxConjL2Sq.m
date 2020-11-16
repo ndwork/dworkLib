@@ -14,6 +14,11 @@ function out = proxConjL2Sq( x, sigma, c, b )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp([ 'Usage:   out = proxConjL2Sq( x, sigma, c, b );' ]);
+    return;
+  end
+
   if nargin < 2, sigma=1; end
   if nargin < 3, c=1; end
   if nargin < 4, b=0; end
