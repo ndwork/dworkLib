@@ -16,12 +16,17 @@ function out = proxConjL2L1( x, sigma, t )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  if nargin < 1
+    disp( 'Usage:   out = proxConjL2L1( x [, sigma, t ] )' );
+  end
+
+  if nargin < 2, sigma = 1; end
+  if nargin < 3, t = 1; end
+
   if sigma == 0
     out = x;
     return;
   end
-
-  if nargin < 3, t = 1; end
 
   nx = norms( x );
   scalings = ones( size( nx ) );
