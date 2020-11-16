@@ -41,12 +41,16 @@ function [nrm,flag] = powerIteration( M, varargin )
   p.addParameter( 'symmetric', false, @islogical );
   p.addParameter( 'tolerance', defaultTolerance, @isnumeric );
   p.parse( varargin{:} );
+  x0 = p.Results.x0;
   maxIters = p.Results.maxIters;
   symmetric = p.Results.symmetric;
   tolerance = p.Results.tolerance;
 
+  if numel( x0 ) > 0 && max( abs( x0(:) ) ) == 0
+    error( 'x0 must be nonzero' );
+  end
+
   if isa( M, 'function_handle' )
-    x0 = p.Results.x0;
     if isempty( x0 )
       error('x0 is required if M is a function handle');
     end
@@ -58,8 +62,6 @@ function [nrm,flag] = powerIteration( M, varargin )
     end
 
   else
-    p.parse( varargin{:} );
-    x0 = p.Results.x0;
     if isempty( x0 )
       x0 = rand( size(M,2), 1 );
     end

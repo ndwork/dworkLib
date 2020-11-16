@@ -2,7 +2,7 @@
 function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'sigma', sigma, ...
-  %    'verbose', verbose ] )
+  %    'z', z, 'verbose', verbose ] )
   %
   % Implements the Primal Dual Hybrid Gradient (Chambolle-Pock) method that
   % solves problems of the form:  minimize f( x ) + g( A x )
@@ -20,6 +20,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
   % verbose - true or false
+  % z - initial value of dual variable
   %
   % Outputs:
   % xStar - the optimal point
@@ -44,6 +45,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'theta', 1, @(x) x > 0 && x < 2 );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
+  p.addParameter( 'z', [], @isnumeric );
   p.parse( varargin{:} );
   A = p.Results.A;
   f = p.Results.f;
@@ -54,6 +56,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   theta = p.Results.theta;
   printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
+  z = p.Results.z;
 
   if numel( A ) == 0
     applyA = @(x) x;
@@ -70,22 +73,12 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
     if numel( normA ) == 0
       error( 'If an A is supplied, you must supply sigma or normA' );
     end
-    sigma = ( 0.95 / normA^2 ) / tau;
+    sigma = ( 0.99 / normA^2 ) / tau;
   end
-
-  xBar = x;
-  z = 0;
 
   if nargout > 1,  objValues = zeros( N, 1 ); end
 
   for optIter = 1 : N
-    tmp = z + sigma * applyA( xBar );
-    z = proxgConj( tmp, sigma );
-
-    lastX = x;
-    tmp = x - tau * applyAT( z );
-    x = proxf( tmp, tau );
-
     if nargout > 1
       objValues( optIter ) = f( x ) + g( applyA( x ) );
     end
@@ -101,7 +94,22 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
       end
     end
 
+    lastX = x;
+    if optIter == 1 && numel( z ) == 0
+      % z == 0 => ATz=0 => tmp == x
+      z = 0;
+      tmp = x;
+    else
+      ATz = applyAT( z );
+      tmp = x - tau * ATz;
+    end
+    x = proxf( tmp, tau );
+
     xBar = x + theta * ( x - lastX );
+
+    AxBar = applyA( xBar );
+    tmp = z + sigma * AxBar;
+    z = proxgConj( tmp, sigma );
   end
 
   xStar = x;
