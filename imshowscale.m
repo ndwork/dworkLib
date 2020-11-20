@@ -62,7 +62,13 @@ function imH = imshowscale( img, varargin )
 
   if figureExists()
     cf = gcf();
-    outerPos = cf.OuterPosition;
+    
+    thisFrame = getframe( cf );
+    thisFrameData = thisFrame.cdata;
+    
+    if min( thisFrameData(:) ) ~= 240 || max( thisFrameData(:) ) ~= 240
+      outerPos = cf.OuterPosition;
+    end
   end
 
   if strcmp( 'nice', range )
