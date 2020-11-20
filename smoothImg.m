@@ -24,6 +24,11 @@ function out = smoothImg( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  out = smoothImg( in [, N, ''gaussian'', sigma, ''op'', op ] );' );
+    return
+  end
+
   defaultSigma = 0;
   p = inputParser;
   p.addOptional( 'N', [] );
