@@ -31,6 +31,9 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
   nCoils = size( data, 2 );
   if size( data, 1 ) ~= nTraj, error( 'Wrong input dimensions' ); end
 
+  nPixels = prod( sImg );
+  lambdaScaled = lambda / ( nPixels * nCoils );
+
   nData = numel( data );
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
@@ -85,7 +88,7 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
     parfor cIndx = 1 : nCoils
       WX(:,:,cIndx) = wtDeaubechies2( X(:,:,cIndx), wavSplit );
     end
-    out = ( lambda  / prod( [ sImg nCoils ] ) ) * normL2L1( WX );
+    out = lambdaScaled * normL2L1( WX );
   end
 
   wavSplit = zeros(4);  wavSplit(1,1) = 1;
