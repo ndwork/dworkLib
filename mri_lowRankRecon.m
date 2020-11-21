@@ -109,7 +109,7 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
 
   function out = h( in )
     X = reshape( in, [ nPixels nTimes ] );
-    out = nucNorm( X );
+    out = lambda * nucNorm( X );
   end
 
   innerProd = @(x,y) real( dotP( x, y ) );
