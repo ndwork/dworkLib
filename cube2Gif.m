@@ -22,6 +22,12 @@ function cube2Gif( cube, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  cube2Gif( cube, [ outFile, delayTime, ' );
+    disp( '  ''dim'', dim, ''loopCount'', loopCount ] )' );
+    return
+  end
+  
   defaultOutFile = 'cube2GifOut.gif';
   defaultDelayTime = 0.3;
   defaultLoopCount = Inf;
