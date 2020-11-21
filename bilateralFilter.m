@@ -16,6 +16,12 @@ function out = bilateralFilter( img, varargin )
   % Outputs
   %   out: the denoised image
 
+  if nargin < 1
+    disp( 'Usage:  out = bilateralFilter( img, [ ''S'', S, ''sigmaD'', sigmaD, ... ' );
+    disp( '  ''sigmaR'', sigmaR, ''verbose'', verbose ] );' );
+    return
+  end
+  
   isPositiveAndOdd = @(x) (x>0) && (mod(x,2) == 1);
   isNumericAndPositive = @(x) isnumeric(x) && (x>0);
 
