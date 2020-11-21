@@ -48,34 +48,34 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   nData = numel( data );
   function out = applyA( x, type )
     if nargin < 2 || strcmp( type, 'notransp' )
-      imgs = reshape( x, [ sImg nTimes ] );
+      %imgs = reshape( x, [ sImg nTimes ] );
       out = cell( 1, 1, nTimes );
       parfor timeIndx = 1 : nTimes
-        senseImgs = bsxfun( @times, sMaps, imgs(:,:,timeIndx) );
+        senseImgs = bsxfun( @times, sMaps, x(:,:,timeIndx) );
         tmp = zeros( nTraj, nCoils );
         for coilIndx = 1 : nCoils
           coilImg = senseImgs( :, :, coilIndx );
           tmp(:,coilIndx) = iGrid( coilImg, traj, 'alpha', alpha, 'W', W, 'nC', nC );
         end
-        out{ timeIndx } = tmp;
+        out{ 1, 1, timeIndx } = tmp;
       end
       out = cell2mat( out );
 
     elseif nargin > 1 && strcmp( type, 'transp' )
-      kData = reshape( x, [ nTraj nCoils nTimes ] );
+      %kData = reshape( x, [ nTraj nCoils nTimes ] );
       out = cell( 1, 1, nTimes );
       parfor timeIndx = 1 : nTimes
         tmp = zeros([ sImg nCoils ]);
         for coilIndx = 1 : nCoils
-          tmp(:,:,coilIndx) = iGridT( kData(:,coilIndx,timeIndx), traj, sImg, ...
+          tmp(:,:,coilIndx) = iGridT( x(:,coilIndx,timeIndx), traj, sImg, ...
             'alpha', alpha, 'W', W, 'nC', nC );
         end
-        out{timeIndx} = bsxfun( @times, tmp, sMaps );
+        out{ 1, 1, timeIndx } = bsxfun( @times, tmp, sMaps );
       end
       out = cell2mat( out );
 
     end
-    out = out(:) / sqrt( nData );
+    out = out / sqrt( nData );
   end
 
   doCheckAdjoint = false;
@@ -100,14 +100,15 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
     out = ATAin - ATb;
   end
 
+  nPixels = prod( sImg );
   function out = proxth( in, t )
-    X = reshape( in, [ prod( sImg ) nTimes ] );
+    X = reshape( in, [ nPixels nTimes ] );
     out = proxNucNorm( X, t * lambda );
-    out = out( : );
+    out = reshape( out, [ sImg nTimes ] );
   end
 
   function out = h( in )
-    X = reshape( in, [ prod( sImg ) nTimes ] );
+    X = reshape( in, [ nPixels nTimes ] );
     out = nucNorm( X );
   end
 
@@ -115,12 +116,13 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   x0 = zeros( [ sImg nTimes ] );
 
   ATA = @(x) applyA( applyA( x ), 'transp' );
-  L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
+  %L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
+L = 1;
   minStep = 0.95 / L;
   t0 = 10 / L;
 
   nIter = 30;
-  [xStar,objectiveValues] = fista_wLS( x0(:), @g, @gGrad, @proxth, 'N', nIter, ...
+  [xStar,objectiveValues] = fista_wLS( x0, @g, @gGrad, @proxth, 'N', nIter, ...
     't0', t0, 'innerProd', innerProd, 'minStep', minStep, 'h', @h, 'verbose', true );
 
   recon = reshape( xStar, [ sImg nTimes ] );
