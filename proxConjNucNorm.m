@@ -28,7 +28,8 @@ function out = proxConjNucNorm( in, sigma, t )
 
   [u,s,v] = svd( in, 'econ' );
 
-  sPrime = proxConjL1( diag(s), sigma, t );
+  sPrime = min( diag(s), t );  % singular values are always real and non-negative
+  %sPrime = proxConjL1( diag(s), sigma, t );
 
   out = u * diag( sPrime ) * v';
 end
