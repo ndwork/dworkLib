@@ -22,6 +22,7 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   % N - the number of iterations that ADMM will perform (default is 100)
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
+  % sigma - the second step size
   % y - initial values for dual variable
   % verbose - true or false
   %
