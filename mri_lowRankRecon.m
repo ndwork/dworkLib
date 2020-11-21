@@ -116,12 +116,11 @@ function [recon,objectiveValues] = mri_lowRankRecon( data, traj, sMaps, ...
   x0 = zeros( [ sImg nTimes ] );
 
   ATA = @(x) applyA( applyA( x ), 'transp' );
-  %L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
-L = 1;
+  L = powerIteration( ATA, ones( size( x0 ) ), 'symmetric', true );
   minStep = 0.95 / L;
   t0 = 10 / L;
 
-  nIter = 30;
+  nIter = 100;
   [xStar,objectiveValues] = fista_wLS( x0, @g, @gGrad, @proxth, 'N', nIter, ...
     't0', t0, 'innerProd', innerProd, 'minStep', minStep, 'h', @h, 'verbose', true );
 
