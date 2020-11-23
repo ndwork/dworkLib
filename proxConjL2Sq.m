@@ -23,6 +23,6 @@ function out = proxConjL2Sq( x, sigma, c, b )
   if nargin < 3, c=1; end
   if nargin < 4, b=0; end
 
-  out = c * ( x - sigma * b ) / ( sigma + c );
+  out = ( c / ( sigma + c ) ) * ( x - sigma * b ) ;
 
 end
