@@ -33,6 +33,14 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:   [xStar,objValues] = pdhgWLS( x, proxf, proxgConj [, ... ' );
+  	disp( '           ''N'', N, ''A'', A, ''beta'', beta, ''f'', f, ''g'', g, ... ' );
+    disp( '           ''mu'', mu, ''tau'', tau, ''theta'', theta, ''y'', y, ... ' );
+    disp( '           ''verbose'', verbose ] ) ' );
+    return;
+  end
+  
   p = inputParser;
   p.addParameter( 'A', [] );
   p.addParameter( 'beta', 1, @ispositive );
@@ -41,7 +49,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'innerProd', [] );
-  p.addParameter( 'mu', 0.7, @(x) x>0 && x<1 );
+  p.addParameter( 'mu', 0.8, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'tau', 1, @ispositive );
