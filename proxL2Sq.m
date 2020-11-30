@@ -10,7 +10,7 @@ function out = proxL2Sq( v, t, b, A )
   %
   % Optional Inputs:
   % t - scaling of the L2 norm squared function
-  %     Either a scalar or the same size as x
+  %     Either a scalar or a vector that is the same size as v
   % b - the shifting factor
   % A - the matrix
   %
@@ -30,16 +30,16 @@ function out = proxL2Sq( v, t, b, A )
     case 2
       out = v ./ ( 1 + t );
     case 3
-      out = ( v + t*b ) / ( 1 + t );
+      out = ( v + t .* b ) ./ ( 1 + t );
     case 4
       if isa( A, 'function_handle' )
         % solve with the conjugate gradient method
-        E = @(x) A( A( x ), 'transp' ) + 1/t * ones( size(x) );
-        v = applyA( b, 'transp' ) + v / t;
+        E = @(x) A( A( x ), 'transp' ) + ( 1 ./ t .* ones( size(x) ) ;
+        v = applyA( b, 'transp' ) + ( v ./ t );
         out = cgs( E, v );
         % TODO: If A is tight frame, this can be solved much faster
       else
-        out = ( A'*A + eye( size(A,2) ) / t ) \ ( A' * b + v / t );
+        out = ( A'*A + eye( size(A,2) ) ./ t ) \ ( A' * b + v ./ t );
       end
   end
 
