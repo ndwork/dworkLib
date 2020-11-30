@@ -19,6 +19,8 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   % N - the number of iterations that ADMM will perform (default is 100)
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
+  % lambda - relaxation parameter
+  % theta - acceleration parameter
   % verbose - true or false
   % z - initial value of dual variable
   %
@@ -42,7 +44,8 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'normA', [], @ispositive );
   p.addParameter( 'sigma', [], @ispositive );
-  p.addParameter( 'theta', 1, @(x) x > 0 && x < 2 );
+  p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 1 );
+  p.addParameter( 'lambda', 1, @(x) x >= 0 && x <= 2 );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'z', [], @isnumeric );
@@ -54,6 +57,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   normA = p.Results.normA;
   sigma = p.Results.sigma;
   theta = p.Results.theta;
+  lambda = p.Results.lambda;
   printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
   z = p.Results.z;
@@ -94,7 +98,6 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
       end
     end
 
-    lastX = x;
     if optIter == 1 && numel( z ) == 0
       % z == 0 => ATz=0 => tmp == x
       z = 0;
@@ -103,13 +106,15 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
       ATz = applyAT( z );
       tmp = x - tau * ATz;
     end
-    x = proxf( tmp, tau );
+    xBar = proxf( tmp, tau );
 
-    xBar = x + theta * ( x - lastX );
+    xTmp = xBar + theta * ( xBar - x );
+    AxTmp = applyA( xTmp );
+    tmp = z + sigma * AxTmp;
+    zBar = proxgConj( tmp, sigma );
 
-    AxBar = applyA( xBar );
-    tmp = z + sigma * AxBar;
-    z = proxgConj( tmp, sigma );
+    x = x + lambda * ( xBar - x );
+    z = z + lambda * ( zBar - z );
   end
 
   xStar = x;
