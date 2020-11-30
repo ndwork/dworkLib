@@ -104,7 +104,7 @@ function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance )
   for iter = 1:maxIters
     Mx = applyM(x);
     lambdaPrev = lambda;
-    lambda = norm(Mx,'fro');
+    lambda = norm( Mx(:) );
     if lambda==0, break; end
 
     x = Mx / lambda;
