@@ -44,7 +44,7 @@ function [xStar,objValues] = pdhgAdaptive( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'alpha', 0.5, @(x) x>0 && x<1 );
   p.addParameter( 'beta', 0.95, @(x) x>0 && x<1 );
   p.addParameter( 'Delta', 1.5, @(x) x>1 );
-  p.addParameter( 'eta', 0.95, @(x) x>0 && x<1 );
+  p.addParameter( 'eta', 0.999, @(x) x>0 && x<1 );
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'gamma', 0.75, @(x) x>0 && x<1 );

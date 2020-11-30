@@ -1,6 +1,7 @@
 
 function [out,err] = checkAdjoint( x, f_in, varargin )
-  % out = checkAdjoint( x, f [, fAdj, 'tol', tol, 'y', y, 'nRand', nRand ] )
+  % out = checkAdjoint( x, f [, fAdj, 'tol', tol, 'y', y, 'nRand', nRand, ...
+  %   'innerProd', innerProd ] )
   %
   % Check whether the adjoint of f is implemented correctly
   %
@@ -36,15 +37,19 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   
   p = inputParser;
   p.addOptional( 'fAdj', [] );
+  p.addParameter( 'innerProd', [] );
   p.addParameter( 'nRand', 1, @isnumeric );
   p.addParameter( 'tol', 1d-6, @isnumeric );
   p.addParameter( 'y', [], @isnumeric );
   p.parse( varargin{:} );
   fAdj = p.Results.fAdj;
+  innerProd = p.Results.innerProd;
   nRand = p.Results.nRand;
   tol = p.Results.tol;
   y = p.Results.y;
 
+  if numel( innerProd ) == 0, innerProd = @(x,y) dotP( x, y ); end
+  
   if numel( fAdj ) == 0
     f = @(x) f_in( x, 'notransp' );
     fAdj = @(x) f_in( x, 'transp' );
@@ -69,7 +74,7 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
     end
   else
     fTy1s = fAdj( y );
-    err = abs( dotP( fx, y ) - dotP( x, fTy1s ) );
+    err = abs( innerProd( fx, y ) - innerProd( x, fTy1s ) );
     if err > tol
       out = false;
       return;
@@ -81,8 +86,8 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   fx1s = f( x1s );
   y1s = ones( size( y ) );
   fTy1s = fAdj( y1s );
-  dp1 = dotP( fx1s, y1s );
-  dp2 = dotP( x1s, fTy1s );
+  dp1 = innerProd( fx1s, y1s );
+  dp2 = innerProd( x1s, fTy1s );
   if abs(dp1) > tol * 0.1
     tmpErr = abs( dp1 - dp2 ) / abs( dp1 );
   else
@@ -102,8 +107,8 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
     ry = rand( size ( y ) );
     if dataIsComplex, ry = ry + 1i * rand( size( y ) ); end
     fTry = fAdj( ry );
-    dp1 = dotP ( frx, ry );
-    dp2 = dotP( rx, fTry );
+    dp1 = innerProd ( frx, ry );
+    dp2 = innerProd( rx, fTry );
     if abs(dp1) > tol * 0.1
       tmpErr = abs( dp1 - dp2 ) / abs( dp1 );
     else

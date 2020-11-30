@@ -582,8 +582,8 @@ function testDworkLib
   tau = 0.01 / s(1);
   [xStar,objValues] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
     'N', 10000, 'f', f, 'g', g );   %#ok<ASGLU>
-  err = norm( x(:) - xStar(:) );
-  fprintf('\npdhg ran to completion\n');
+  xDiff = norm( x(:) - xStar(:) );
+  fprintf([ '\npdhg ran to completion with xDiff ', num2str(xDiff), '\n' ]);
 
   %% pdhgAdaptive
   fprintf('\nTesting pdhgAdaptive: \n');

@@ -18,6 +18,12 @@ function out = mri_gridRecon( data, traj, sImg, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:   out = mri_gridRecon( data, traj, sImg [, ''alpha'', alpha, ' );
+    disp( '           ''W'', W, ''nC'', nC, ''weights'', weights ' );
+    return
+  end
+  
   defaultAlpha = 1.5;
   defaultW = 8;
   defaultNc = 500;
