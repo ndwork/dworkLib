@@ -91,7 +91,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
       if mod(optIter,printEvery) == 0 || optIter == 1
         if nargout > 1
           disp([ 'pdhg: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
-            'objective value: ', num2str( objValues( optIter ), '%15.13f' ) ]);
+            'objective value: ', num2str( objValues( optIter ) ) ]);
         else
           disp([ 'pdhg: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
         end
