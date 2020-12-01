@@ -127,6 +127,4 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
     senseMaps(:,:,slice,:) = maskedSenseMap;
   end
   if verbose == true, pfObj.clean; end
-
-  senseMaps = max( min( senseMaps, 1 ), 0 );
 end
