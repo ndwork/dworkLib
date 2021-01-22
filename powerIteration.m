@@ -19,7 +19,7 @@ function [nrm,flag] = powerIteration( M, varargin )
   %   true if M is symmetric, false otherwise
   %
   % Optional Inputs:
-  % maxIters - The maximum number of iterations permitted
+  % maxIters - The maximum number of iterations permitted (default is 1000)
   % tolerance - if the residual is less than this tolerance, then return
   %
   % Outputs:
