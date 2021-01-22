@@ -126,9 +126,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
     subIter = 0;
     while true
       subIter = subIter + 1;
-      if verbose == true
-        disp([ '     sub iteration: ', num2str( subIter ), '  t: ', num2str(t) ]);
-      end
+      %if verbose == true
+      %  disp([ '     sub iteration: ', num2str( subIter ), '  t: ', num2str(t) ]);
+      %end
 
       if t < minStep, t = minStep; end
       
