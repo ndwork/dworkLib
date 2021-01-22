@@ -66,12 +66,13 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % A' * A = (RI)' * F' * M * F * RI
   % gGrad = A'*A*x - A'*b;
 
-  function Fx = F( x )
-    Fx = fftshift( fftshift( fft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
+  nSamples = numel( samples );
+  function out = F( x )
+    out = fftshift( fftshift( ufft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
   end
 
-  function Fadjy = Fadj( y )
-    Fadjy = fftshift( fftshift( ifft2( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
+  function out = Fadj( y )
+    out = fftshift( fftshift( uifft2( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
   end
 
   function out = A( x )
@@ -115,15 +116,15 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     error( 'Unrecognized wavelet type' );
   end
 
-  nSamples = sum( M(:) );
-  proxth = @(x,t) WT( proxL1Complex( W(x), t * lambda / nSamples ) );
+  nPixels = numel( samples );
+  proxth = @(x,t) WT( proxL1Complex( W(x), t * lambda / nPixels ) );
     % The proximal operator of || W x ||_1 was determined using
     % Vandenberghe's notes from EE 236C; slide of "The proximal mapping" entitled
     % "Composition with Affine Mapping"
 
   function out = h( x )
     Wx = W(x);
-    out = sum( abs( Wx(:) ) ) / nSamples;
+    out = sum( abs( Wx(:) ) ) * lambda / nPixels;
   end
 
   %x0 = zeros( size( samples ) );
