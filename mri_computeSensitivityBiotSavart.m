@@ -38,9 +38,8 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
   nLocs = size( locs, 1 );
   bs = cell( 1, 1, nCoilSegs );
 
-  s1 = segs( 1, : );
-  parfor segIndx = 1 : nCoilSegs
-    s2 = s1;
+  for segIndx = 1 : nCoilSegs
+    s2 = segs( segIndx, : );
     s1 = segs( segIndx+1, : );
     s = s2 - s1;
     sUnit = s(:) / norm( s(:) );
