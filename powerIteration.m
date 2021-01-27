@@ -16,7 +16,7 @@ function [nrm,flag] = powerIteration( M, varargin )
   %     If M is symmetric, then it need only accept one argument, the
   %       vector to apply M to.
   % symmetric - either true of false
-  %   true if M is symmetric, false otherwise
+  %   true if M is symmetric, false (default) otherwise
   %
   % Optional Inputs:
   % maxIters - The maximum number of iterations permitted (default is 1000)
@@ -32,6 +32,12 @@ function [nrm,flag] = powerIteration( M, varargin )
   % is offered without any warranty expressed or implied, including the 
   % implied warranties of merchantability or fitness for a particular 
   % purpose.
+
+  if nargin < 1
+    disp( 'Usage: [nrm,flag] = powerIteration( M [, x0, ''maxIters'', maxIters, ' );
+    disp( '  ''symmetric'', true/false, ''tolerance'', tolerance ])' );
+    return
+  end
 
   defaultMaxIters = 1000;
   defaultTolerance = 1d-4;
