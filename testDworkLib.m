@@ -779,11 +779,25 @@ function testDworkLib
   fprintf('\nTesting showLibFiles: \n');
   showLibFiles( 'dworkLib' );
 
+  %% smoothData
+  x = rand(50);
+  y = rand(50);
+  Ax = smoothData( x, [7 5] );
+  ATy = smoothData( y, [7 5], 'op', 'transp' );
+  tmp1 = dotP( x, ATy );
+  tmp2 = dotP( Ax, y );
+  err = abs( tmp1 - tmp2 );
+  if err < 1d-10
+    disp( 'smoothData passed' );
+  else
+    error([ 'smoothData failed with an error of ', num2str(err) ]);
+  end
+
   %% smoothImg
   x = rand(50);
   y = rand(50);
-  Ax = smoothImg( x, [6 5] );
-  ATy = smoothImg( y, [6 5], 'op', 'transp' );
+  Ax = smoothImg( x, [7 5] );
+  ATy = smoothImg( y, [7 5], 'op', 'transp' );
   tmp1 = dotP( x, ATy );
   tmp2 = dotP( Ax, y );
   err = abs( tmp1 - tmp2 );
