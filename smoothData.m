@@ -1,6 +1,6 @@
 
-function out = smoothImg( in, varargin )
-  % out = smoothImg( in [, N, 'gaussian', sigma, 'op', op ] );
+function out = smoothData( in, varargin )
+  % out = smoothData( in [, N, 'gaussian', sigma, 'op', op ] );
   %
   % Inputs:
   % in - either a 2D array (representing an image) or a 3D array (representing a color image)
@@ -15,7 +15,7 @@ function out = smoothImg( in, varargin )
   % op - either 'notransp' (default, meaning filter), or 'transp' (meaning return the
   %      adjoint of the filter)
   %
-  % Written by Nicholas - Copyright 2019
+  % Written by Nicholas - Copyright 2021
   %
   % https://github.com/ndwork/dworkLib.git
   %
@@ -25,7 +25,7 @@ function out = smoothImg( in, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  out = smoothImg( in [, N, ''gaussian'', sigma, ''op'', op ] );' );
+    disp( 'Usage:  out = smoothData( in [, N, ''gaussian'', sigma, ''op'', op ] );' );
     return
   end
 
@@ -44,42 +44,64 @@ function out = smoothImg( in, varargin )
     N( mod( N, 2 ) == 0 ) = N( mod( N, 2 ) == 0 ) + 1;
   end
 
+  numDims = ndims( in );
+  if numel( N ) == 1, N = N * ones( 1, numDims ); end
+  if numel( N ) ~= numDims
+    error( 'N must have one element or the same number of elements as dimensions of in' );
+  end
+
   if min( mod( N, 2 ) ) == 0, error( 'All values of N must be odd' ); end
-  if numel( N ) == 1, N = [ N N ]; end
 
   if sigma > 0
     % Gaussian filter with standard deviation sigma
-    h = fspecial( 'gaussian', N, sigma );
+    h = makeGaussFilter( N, sigma );
   else
     % Box car average (or mean) filter
-    h = fspecial( 'average', N );
+    h = ones( N ) / sum( N(:) );
   end
 
-  nChannels = size( in, 3 );
   out = zeros( size(in) );
 
   if strcmp( op, 'transp' )
 
+    nH = numel( h );
     halfN = ceil( N / 2 );
 
-    for i=1:N(2)
-      shiftI = i - halfN(2);
-
-      for j=1:N(1)
-        shiftJ = j - halfN(1);
-
-        shifted = shiftImg( in, [ shiftJ shiftI 0 ] );
-        out = out + h(j,i) * shifted;
-      end
+    cmd = '[ ';
+    for indx = 1 : numel(N)-1
+      cmd = [ cmd, 'I', num2str(indx), ', ' ];   %#ok<AGROW>
     end
+    cmd = [ cmd, 'I', num2str(numel(N)), ' ] = ind2sub( N, (1:nH)'' );' ];
+    eval( cmd );
+
+    cmd = 'hShifts = [ ';
+    for indx = 1 : numel(N)-1
+      cmd = [ cmd, 'I', num2str(indx), ' - halfN(', num2str(indx), '), ' ];   %#ok<AGROW>
+    end
+    cmd = [ cmd, 'I', num2str(numel(N)), ' - halfN(', num2str(numel(N)), ') ];' ];   %#ok<AGROW>
+    eval( cmd );
+
+    for hIndx = 1 : numel( h )
+      shifted = shiftImg( in, hShifts(hIndx,:) );
+      out = out + h( hIndx ) * shifted;
+    end
+
+
+
+%     for i=1:N(2)
+%       shiftI = i - halfN(2);
+% 
+%       for j=1:N(1)
+%         shiftJ = j - halfN(1);
+% 
+%         shifted = shiftImg( in, [ shiftJ shiftI 0 ] );
+%         out = out + h(j,i) * shifted;
+%       end
+%     end
 
   else
 
-    outCells = cell( 1, 1, nChannels );
-    parfor ch = 1 : nChannels
-      outCells{ch} = imfilter( in(:,:,ch), h, 'same' );
-    end
-    out = cell2mat( outCells );
+    out = convn( in, h, 'same' );  % ok to do convolution since h is symmetric
 
   end
 end
