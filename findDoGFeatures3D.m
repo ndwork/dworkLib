@@ -15,8 +15,8 @@ function features = findDoGFeatures3D( vol, varargin )
   nFeatures = p.Results.nFeatures;
   buffer = p.Results.buffer;
 
-  fBig = makeGaussFilter3D( 9, 5 );
-  fSmall = makeGaussFilter3D( 9, 3 );
+  fBig = makeGaussFilter( 9 * ones(3,1), 5 );
+  fSmall = makeGaussFilter( 9 * ones(3,1), 3 );
   gVol5 = imfilter(vol, fBig);
   gVol3 = imfilter(vol, fSmall);
   DoG = abs( gVol5 - gVol3 );
