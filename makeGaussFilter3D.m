@@ -11,6 +11,8 @@ function f = makeGaussFilter3D( N, C )
   %     diag(C.*C).
   %   Otherwise, it is assumed that C is the covariance matrix
 
+  error('This code looks buggy.  Either check it, or call makeGaussFilter instead.');
+
   if numel(N) == 1
     N = [N N N];
   end
@@ -38,9 +40,11 @@ function f = makeGaussFilter3D( N, C )
 
     v = [ x; y; z; ];
     Cinv = inv(C);
-    for i=1:numel(f)
-      f(i) = exp( -0.5 * v(i,:)' * Cinv * v(i,:) );
+    f = zeros( size( v, 1 ), 1 );
+    for i= 1 : numel( f )
+      f(i) = exp( -0.5 * v(i,:)' * Cinv * v(i,:) );   %#ok<MINV>
     end
+    f = reshape( f, N );
 
   end
 
