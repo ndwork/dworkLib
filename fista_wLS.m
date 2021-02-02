@@ -103,16 +103,12 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   iter = 0;
 
   while iter < N
-    if calculateObjectiveValues > 0
-      hx = h( x );
-      objectiveValues( k+1 ) = gx + hx;
-    end
-    if verbose>0 && mod( k, printEvery ) == 0
+    if verbose>0 && iter>0 && mod( iter, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
-      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(k,formatString) ];
+      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(iter,formatString) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', ...
-          num2str( objectiveValues(k+1) ), '   parts: ', num2str(gx), ...
+          num2str( objectiveValues(iter+1) ), '   parts: ', num2str(gx), ...
           ',  ', num2str( hx ) ];   %#ok<AGROW>
       end
       disp( verboseString );
@@ -142,6 +138,10 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
       Dgy = gGrad( y );
       x = proxth( y - t * Dgy, t );
+      if calculateObjectiveValues > 0
+        hx = h( x );
+        objectiveValues( iter+1 ) = gx + hx;
+      end
 
       gy = g( y );
       innerProdResult = innerProd( Dgy, x-y );
