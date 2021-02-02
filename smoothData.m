@@ -60,8 +60,6 @@ function out = smoothData( in, varargin )
     h = ones( N ) / sum( N(:) );
   end
 
-  out = zeros( size(in) );
-
   if strcmp( op, 'transp' )
 
     nH = numel( h );   %#ok<NASGU>
@@ -74,17 +72,29 @@ function out = smoothData( in, varargin )
     cmd = [ cmd, 'I', num2str(numel(N)), ' ] = ind2sub( N, (1:nH)'' );' ];
     eval( cmd );
 
+    hShifts = [];
     cmd = 'hShifts = [ ';
     for indx = 1 : numel(N)-1
       cmd = [ cmd, 'I', num2str(indx), ' - halfN(', num2str(indx), '), ' ];   %#ok<AGROW>
     end
-    cmd = [ cmd, 'I', num2str(numel(N)), ' - halfN(', num2str(numel(N)), ') ];' ];   %#ok<AGROW>
+    cmd = [ cmd, 'I', num2str(numel(N)), ' - halfN(', num2str(numel(N)), ') ];' ];
     eval( cmd );
 
-    for hIndx = 1 : numel( h )
-      shifted = shiftImg( in, hShifts(hIndx,:) );   %#ok<USENS>
-      out = out + h( hIndx ) * shifted;
+    nH = numel( h );
+    segLength = 100;
+    nSegs = ceil( nH / segLength );
+    cmd = [ 'segCells = cell( ', repmat( '1,', [ 1 numel(N) ] ), 'nSegs );' ];
+    eval( cmd );
+    parfor segIndx = 1 : nSegs
+      tmp = zeros( size(in) );
+      for hIndx = (segIndx-1) * segLength + 1 : min( segIndx * segLength, nH )
+        shifted = shiftImg( in, hShifts(hIndx,:) );   %#ok<PFBNS>
+        tmp = tmp + h( hIndx ) * shifted; %#ok<PFBNS>
+      end
+      segCells{ segIndx } = tmp;
     end
+    out = cell2mat( segCells );
+    out = sum( out, numel(N) + 1 );
 
   else
 
