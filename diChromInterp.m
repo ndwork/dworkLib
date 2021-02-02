@@ -167,8 +167,9 @@ function srImg = diChromInterp_contrast( highResImg, lowResImg, sigma, ...
     out = 0.5 * norm( A(x) - b, 2 ).^2;
   end
 
+  ATb = A( b, 'transp' );
   function out = gGrad( x )
-    out = A( A( x ), 'transp' ) - A( b, 'transp' );
+    out = A( A( x ), 'transp' ) - ATb;
   end
 
   function out = h( x )
