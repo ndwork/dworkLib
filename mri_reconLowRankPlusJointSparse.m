@@ -9,6 +9,8 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg,
   %   C is the number of coils
   % trajs - a vector of Nx2xT length specifying the k-space trajectory
   %   T is the number of time points
+  %   If trajs is of size Nx2, it is assumed that the same trajectory was used for
+  %     all time points.
   % sImg - the size of the output image
   % lambda - joint sparsity regularization parameter
   % sigma - low-rank regularization parameter
