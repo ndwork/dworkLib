@@ -1,5 +1,5 @@
 
-function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, traj, sImg, ...
+function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg, ...
   lambda, sigma, varargin )
 
   p = inputParser;
@@ -17,15 +17,25 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, traj, sImg, 
 
   nData = numel( data );
   sData = size( data );
-  nTraj = size( data, 1 );
+  nTraj = size( data, 1 );   %#ok<NASGU>
   nCoils = size( data, 2 );
   nTimes = size( data, 3 );
   sOut = [ sImg nCoils nTimes ];
   nPixels = prod( sImg );
   nOut = prod( sOut );
 
-  weights = sqrt( makePrecompWeights_2D( traj, sImg, ...
-    'alpha', alpha, 'W', W, 'nC', nC ) );
+  if ismatrix( trajs )
+    weights = sqrt( makePrecompWeights_2D( trajs, sImg, 'alpha', alpha, 'W', W, 'nC', nC ) );
+    trajs = repmat( trajs, [1 1 nTimes] );
+    weights = repmat( weights, [1 nTimes] );
+  else
+    weights = cell( 1, nTimes );
+    parfor ti = 1 : nTimes
+      weights{1,ti} = sqrt( makePrecompWeights_2D( trajs(:,:,ti), sImg, ...
+        'alpha', alpha, 'W', W, 'nC', nC ) );
+    end
+    weights = cell2mat( weights );
+  end
 
   sigmaScaled = sigma / ( nPixels * nCoils );
 
@@ -34,10 +44,10 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, traj, sImg, 
       in = reshape( in, sOut );
       out = cell( 1, nCoils, nTimes );
       parfor timeIndx = 1 : nTimes
+        traj = trajs(:,:,timeIndx);
         for coilIndx = 1 : nCoils
-            iGridIn = iGrid( in(:,:,coilIndx,timeIndx), ...
-              traj, 'alpha', alpha, 'W', W, 'nC', nC );
-          out{1,coilIndx,timeIndx} = weights .* iGridIn;
+          iGridIn = iGrid( in(:,:,coilIndx,timeIndx), traj, 'alpha', alpha, 'W', W, 'nC', nC );
+          out{1,coilIndx,timeIndx} = weights(:,timeIndx) .* iGridIn;
         end
       end
       out = cell2mat( out );
@@ -46,8 +56,9 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, traj, sImg, 
       out = cell( 1, 1, nCoils, nTimes );
       in = reshape( in, sData );
       parfor timeIndx = 1 : nTimes
+        traj = trajs(:,:,timeIndx);
         for coilIndx = 1 : nCoils
-          wIn = in(:,coilIndx,timeIndx) .* conj( weights );
+          wIn = in(:,coilIndx,timeIndx) .* conj( weights(:,timeIndx) );
           out{1,1,coilIndx,timeIndx} = iGridT( wIn, ...
             traj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
         end
@@ -119,7 +130,12 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, traj, sImg, 
     out = in - applyWav( Win - proxWin, 'transp' );
   end
 
-  b = bsxfun( @times, data, weights / sqrt( nData ) );
+  b = zeros( size( data ) );
+  for cIndx = 1 : nCoils
+    tmp = squeeze( data(:,cIndx,:) );
+    b(:,cIndx,:) = bsxfun( @rdivide, tmp, weights );
+  end
+  b = b / sqrt( nData );
   b = b(:);
   function out = g( in )
     in1 = in( 1 : nData );
@@ -163,14 +179,14 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, traj, sImg, 
 
   x0 = cell( 1, 1, 1, nTimes );
   parfor ti = 1 : nTimes
-    x0{1,1,1,ti} = mri_gridRecon( data(:,:,ti), traj, sImg, ...
+    x0{1,1,1,ti} = mri_gridRecon( data(:,:,ti), trajs(:,:,ti), sImg, ...
       'alpha', alpha, 'W', W, 'nC', nC );
   end
   x0 = cell2mat( x0 );
   %x0 = zeros( sOut );
 
   %normA = powerIteration( @applyA, ones( size( x0 ) ), 'maxIters', 100 );
-  normA = 9.932859118316804;
+  normA = 1.5;
   pdhgTau = 0.99 / ( normA * normA );  % value by Ong et al.
   theta = 1;
 
