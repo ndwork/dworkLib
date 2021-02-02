@@ -64,8 +64,8 @@ function out = smoothData( in, varargin )
 
   if strcmp( op, 'transp' )
 
-    nH = numel( h );
-    halfN = ceil( N / 2 );
+    nH = numel( h );   %#ok<NASGU>
+    halfN = ceil( N / 2 );   %#ok<NASGU>
 
     cmd = '[ ';
     for indx = 1 : numel(N)-1
@@ -82,22 +82,9 @@ function out = smoothData( in, varargin )
     eval( cmd );
 
     for hIndx = 1 : numel( h )
-      shifted = shiftImg( in, hShifts(hIndx,:) );
+      shifted = shiftImg( in, hShifts(hIndx,:) );   %#ok<USENS>
       out = out + h( hIndx ) * shifted;
     end
-
-
-
-%     for i=1:N(2)
-%       shiftI = i - halfN(2);
-% 
-%       for j=1:N(1)
-%         shiftJ = j - halfN(1);
-% 
-%         shifted = shiftImg( in, [ shiftJ shiftI 0 ] );
-%         out = out + h(j,i) * shifted;
-%       end
-%     end
 
   else
 
