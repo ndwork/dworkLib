@@ -1,6 +1,29 @@
 
 function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg, ...
   lambda, sigma, varargin )
+  % [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg, ...
+  %   lambda, sigma [, 'alpha', alpha, 'W', W, 'nC', nC ] )
+  %
+  % Inputs: 
+  % data - an NxC array of data values where N is the number of data points and
+  %   C is the number of coils
+  % trajs - a vector of Nx2xT length specifying the k-space trajectory
+  %   T is the number of time points
+  % sImg - the size of the output image
+  % lambda - joint sparsity regularization parameter
+  % sigma - low-rank regularization parameter
+  %
+  % Optional Inputs:
+  % alpha - oversampling factor in Gridding
+  % W - window width (in pixels) for Gridding
+  % nC - number of points to use in convolution kernel in Gridding
+  %
+  % Written by Nicholas Dwork, Copyright 2020
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   p = inputParser;
   p.addParameter( 'nIterPDHG', 100, @ispositive );
