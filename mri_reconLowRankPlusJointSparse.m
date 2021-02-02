@@ -18,12 +18,21 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg,
   % W - window width (in pixels) for Gridding
   % nC - number of points to use in convolution kernel in Gridding
   %
+  % Outputs:
+  % recon - a complex array of size sImg(1)xsImg(2)xCxT
+  %
   % Written by Nicholas Dwork, Copyright 2020
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 1
+    disp( 'Usage:  [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg, ...' );
+    disp( '          lambda, sigma [, ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
+    return
+  end
 
   p = inputParser;
   p.addParameter( 'nIterPDHG', 100, @ispositive );
