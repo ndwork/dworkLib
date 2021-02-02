@@ -6,7 +6,7 @@ function out = shiftImg( img, shifts )
   % Regions with unknown data are zero filled.
   %
   % Inputs:
-  % img - a 2D array
+  % img - an array of any number of dimensions
   % shifts - a 2 element array specifying vertical and horiztonal shift
   %
   % Outputs:
@@ -23,16 +23,20 @@ function out = shiftImg( img, shifts )
 
   out = circshift( img, shifts );
 
-  if shifts(1) > 0
-    out(1:shifts(1),:) = 0;
-  elseif shifts(1) < 0
-    out(end+shifts(1)+1:end,:) = 0;
-  end
+  for dim = 1 : ndims( img )
+    if shifts( dim ) == 0
+      continue;
 
-  if shifts(2) > 0
-    out(:,1:shifts(2)) = 0;
-  elseif shifts(2) < 0
-    out(:,end+shifts(2)+1:end) = 0;
+    elseif shifts( dim ) > 0
+      cmd = [ 'out( ', repmat( ':, ', [ 1, dim-1 ] ), '1:shifts(', num2str(dim), ')', ...
+        repmat( ', :', [ 1, ndims(img)-dim] ), ' ) = 0' ];
+      eval( cmd );
+
+    elseif shifts( dim ) < 0
+      cmd = [ 'out( ', repmat( ':, ', [ 1, dim-1 ] ), 'end+shifts(', num2str(dim), ')+1:end', ...
+        repmat( ', :', [ 1, ndims(img)-dim] ), ' ) = 0' ];
+      eval( cmd );
+    end
   end
 
 end
