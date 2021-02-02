@@ -1,6 +1,6 @@
 
-function wt = wtDeaubechies( sig, varargin )
-  % wt = wtDeaubechies( sig [, split] );
+function wt = wtDaubechies( sig, varargin )
+  % wt = wtDaubechies( sig [, split] );
   %
   % Performs a Daubechies wavelet transform of a signal with circular boundary conditions
   % Based on the Wikipedia page on the Daubechies wavelet transform and
@@ -56,10 +56,10 @@ function wt = wtDeaubechies( sig, varargin )
     split2 = split(nSplit/2+1:end);
 
     if sum(split1)>0
-      wt1 = wtDeaubechies( wt1, split1 );
+      wt1 = wtDaubechies( wt1, split1 );
     end    
     if sum(split2)>0
-      wt2 = wtDeaubechies( wt2, split2 );
+      wt2 = wtDaubechies( wt2, split2 );
     end
   end
 

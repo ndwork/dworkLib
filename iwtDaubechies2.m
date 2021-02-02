@@ -1,7 +1,7 @@
 
-function img = iwtDeaubechies2( wt, varargin )
-  % img = iwtDeaubechies2( wt[, split] );
-  % Performs an inverse Deaubechies wavelet transform of an image (with circular boundary conditions)
+function img = iwtDaubechies2( wt, varargin )
+  % img = iwtDaubechies2( wt[, split] );
+  % Performs an inverse Daubechies wavelet transform of an image (with circular boundary conditions)
   %
   % Inputs:
   % img - 2D array representing the wavelet transform of the image
@@ -51,16 +51,16 @@ function img = iwtDeaubechies2( wt, varargin )
     split22 = split(sSplit(2)/2+1:end,sSplit(2)/2+1:end);
 
     if sum(split11(:))>0
-      wt11 = iwtDeaubechies2( wt11, split11 );
+      wt11 = iwtDaubechies2( wt11, split11 );
     end
     if sum(split12(:))>0
-      wt12 = iwtDeaubechies2( wt12, split12 );
+      wt12 = iwtDaubechies2( wt12, split12 );
     end
     if sum(split21(:))>0
-      wt21 = iwtDeaubechies2( wt21, split21 );
+      wt21 = iwtDaubechies2( wt21, split21 );
     end
     if sum(split22(:))>0
-      wt22 = iwtDeaubechies2( wt22, split22 );
+      wt22 = iwtDaubechies2( wt22, split22 );
     end
   end
 

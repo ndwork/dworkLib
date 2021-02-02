@@ -1,7 +1,7 @@
 
-function sig = iwtDeaubechies( wt, varargin )
-  % sig = iwtDeaubechies( wt [, split] );
-  % Performs an inverse Deaubechies wavelet transform of a signal with 
+function sig = iwtDaubechies( wt, varargin )
+  % sig = iwtDaubechies( wt [, split] );
+  % Performs an inverse Daubechies wavelet transform of a signal with 
   %   circular boundary conditions
   % Note that this is a unitary transform
   %
@@ -40,10 +40,10 @@ function sig = iwtDeaubechies( wt, varargin )
     split2 = split(nSplit/2+1:end);
 
     if sum(split1)>0
-      wt1 = iwtDeaubechies( wt1, split1 );
+      wt1 = iwtDaubechies( wt1, split1 );
     end
     if sum(split2)>0
-      wt2 = iwtDeaubechies( wt2, split2 );
+      wt2 = iwtDaubechies( wt2, split2 );
     end
   end
 

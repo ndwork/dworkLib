@@ -1,8 +1,8 @@
 
-function wt = wtDeaubechies2( img, varargin )
-  % wt = wtDeaubechies2( sig [, split] );
+function wt = wtDaubechies2( img, varargin )
+  % wt = wtDaubechies2( sig [, split] );
   %
-  % Performs a Deaubechies wavelet transform of an image (with circular boundary conditions)
+  % Performs a Daubechies wavelet transform of an image (with circular boundary conditions)
   % Based on the Wikipedia page on the Daubechies wavelet transform and
   % (http://wavelets.pybytes.com/wavelet/db2/)
   %
@@ -107,27 +107,27 @@ function wt = wtDeaubechies2( img, varargin )
 
     if sum(s11(:))>0
       if max( mod(size(wt11),2) ) > 0
-        error('wtDeaubechies2: improper dimensions of image');
+        error('wtDaubechies2: improper dimensions of image');
       end
-      wt11 = wtDeaubechies2( wt11, s11 );
+      wt11 = wtDaubechies2( wt11, s11 );
     end
     if sum(s12(:))>0
       if max( mod(size(wt12),2) ) > 0
-        error('wtDeaubechies2: improper dimensions of image');
+        error('wtDaubechies2: improper dimensions of image');
       end
-      wt12 = wtDeaubechies2( wt12, s12 );
+      wt12 = wtDaubechies2( wt12, s12 );
     end
     if sum(s21(:))>0
       if max( mod(size(wt21),2) ) > 0
-        error('wtDeaubechies2: improper dimensions of image');
+        error('wtDaubechies2: improper dimensions of image');
       end
-      wt21 = wtDeaubechies2( wt21, s21 );
+      wt21 = wtDaubechies2( wt21, s21 );
     end
     if sum(s22(:))>0
       if max( mod(size(wt22),2) ) > 0
-        error('wtDeaubechies2: improper dimensions of image');
+        error('wtDaubechies2: improper dimensions of image');
       end
-      wt22 = wtDeaubechies2( wt22, s22 );
+      wt22 = wtDaubechies2( wt22, s22 );
     end
   end
 
