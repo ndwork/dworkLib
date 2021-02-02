@@ -29,12 +29,12 @@ function out = shiftImg( img, shifts )
 
     elseif shifts( dim ) > 0
       cmd = [ 'out( ', repmat( ':, ', [ 1, dim-1 ] ), '1:shifts(', num2str(dim), ')', ...
-        repmat( ', :', [ 1, ndims(img)-dim] ), ' ) = 0' ];
+        repmat( ', :', [ 1, ndims(img)-dim] ), ' ) = 0;' ];
       eval( cmd );
 
     elseif shifts( dim ) < 0
       cmd = [ 'out( ', repmat( ':, ', [ 1, dim-1 ] ), 'end+shifts(', num2str(dim), ')+1:end', ...
-        repmat( ', :', [ 1, ndims(img)-dim] ), ' ) = 0' ];
+        repmat( ', :', [ 1, ndims(img)-dim] ), ' ) = 0;' ];
       eval( cmd );
     end
   end
