@@ -70,21 +70,21 @@ function testDworkLib
   %% deaubechies
   sig = rand(8,1);
   split = [1 0];
-  wt = wtDeaubechies( sig, split );
-  sigHat = iwtDeaubechies( wt, split );
+  wt = wtDaubechies( sig, split );
+  sigHat = iwtDaubechies( wt, split );
   err = norm( sig - sigHat, 2 );
   if err > 1d-12
-    error( ['wtDeaubechies error: ', num2str(err,2)] );
+    error( ['wtDaubechies error: ', num2str(err,2)] );
   else
-    disp('wtDeaubechies test passed');
+    disp('wtDaubechies test passed');
   end
 
   %% deaubechies adjoint
   x = rand(8,1);
   y = rand(8,1);
   split = [ 1 0 ];
-  wtx = wtDeaubechies( x, split );
-  iwty = iwtDeaubechies( y, split );
+  wtx = wtDaubechies( x, split );
+  iwty = iwtDaubechies( y, split );
   err = abs( dotP( wtx, y ) - dotP( x, iwty ) );
   if err > 1d-12
     error( 'wtHaar is not orthogonal' );

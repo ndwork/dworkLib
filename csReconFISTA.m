@@ -2,7 +2,7 @@
 function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % recon = csReconFISTA( samples, lambda [, 'debug', debug, 'nIter', nIter, ...
   %   'polish', polish, 'printEvery', printEvery, 'verbose', verbose, ...
-  %   'waveletType', waveletType ] )
+  %   'transformType', transformType ] )
   %
   % This routine minimizes 0.5 * || Ax - b ||_2^2 + lambda || W x ||_1
   %   where A is sampleMask * Fourier Transform * real part, and
@@ -18,8 +18,11 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % nIter - the number of iterations that FISTA will perform (default is 100)
   % polish - if set to true, adds a polishing step (default is false)
   % printEvery - FISTA prints a verbose statement every printEvery iterations
+  % transformType - either 'Daubechies' for for Daubechies-4 (default), 'Haar', 
+  %   or 'Curvelet'.
   % verbose - if true, prints informative statements
-  % waveletType - either 'Deaubechies' for Deaubechies-4 (default) or 'Haar'
+  % waveletType - (deprecated) either 'Daubechies' for Daubechies-4 (default) or 'Haar'
+  %   If transformType is set, it overrides this option.
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -39,9 +42,10 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'printEvery', 1, @ispositive );
+  p.addParameter( 'transformType', 'Daubechies', @(x) true );
   p.addParameter( 'wavSplit', wavSplit, @isnumeric );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
-  p.addParameter( 'waveletType', 'Deaubechies', @(x) true );
+  p.addParameter( 'waveletType', 'Daubechies', @(x) true );
   p.parse( varargin{:} );
   checkAdjoints = p.Results.checkAdjoints;
   debug = p.Results.debug;
@@ -104,9 +108,9 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     out = Aadj( A( x ) ) - Aadjb;
   end
 
-  if strcmp( waveletType, 'Deaubechies' )
-    W = @(x) wtDeaubechies2( x, wavSplit );
-    WT = @(y) iwtDeaubechies2( y, wavSplit );
+  if strcmp( waveletType, 'Daubechies' )
+    W = @(x) wtDaubechies2( x, wavSplit );
+    WT = @(y) iwtDaubechies2( y, wavSplit );
 
   elseif strcmp( waveletType, 'Haar' )
     W = @(x) wtHaar2( x, wavSplit );

@@ -20,10 +20,10 @@ function fused = wavFusion( cImg, mImg )
   nChannels = size( cImg, 3 );
   wtColor = zeros( sImg );
   for i = 1 : nChannels
-    wtColor(:,:,i) = wtDeaubechies2( cImg(:,:,i), split );
+    wtColor(:,:,i) = wtDaubechies2( cImg(:,:,i), split );
   end
 
-  wtMono = wtDeaubechies2( mImg, split );
+  wtMono = wtDaubechies2( mImg, split );
 
   fused = zeros( sImg );
   activityMono = abs(wtMono);
@@ -32,7 +32,7 @@ function fused = wavFusion( cImg, mImg )
     wtFused = wtColor(:,:,i);
     wtFused( activityMono > activityColor(:,:,i) ) = ...
       wtMono( activityMono > activityColor(:,:,i) );
-    fused(:,:,i) = iwtDeaubechies2( wtFused, split );
+    fused(:,:,i) = iwtDaubechies2( wtFused, split );
   end
 
   fused = min( max( fused, 0 ), 1 );

@@ -109,13 +109,13 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg,
     if nargin < 2 || strcmp( type, 'notransp' )
       parfor timeIndx = 1 : nTimes
         for coilIndx = 1 : nCoils
-          out{1,1,coilIndx,timeIndx} = wtDeaubechies2( in(:,:,coilIndx,timeIndx), wavSplit );
+          out{1,1,coilIndx,timeIndx} = wtDaubechies2( in(:,:,coilIndx,timeIndx), wavSplit );
         end
       end
     else
       parfor timeIndx = 1 : nTimes
         for coilIndx = 1 : nCoils
-          out{1,1,coilIndx,timeIndx} = iwtDeaubechies2( in(:,:,coilIndx,timeIndx), wavSplit );
+          out{1,1,coilIndx,timeIndx} = iwtDaubechies2( in(:,:,coilIndx,timeIndx), wavSplit );
         end
       end
     end

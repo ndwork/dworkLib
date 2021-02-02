@@ -86,7 +86,7 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
     X = reshape( in, [ sImg nCoils ] );
     WX = zeros( [ sImg nCoils ] );
     parfor cIndx = 1 : nCoils
-      WX(:,:,cIndx) = wtDeaubechies2( X(:,:,cIndx), wavSplit );
+      WX(:,:,cIndx) = wtDaubechies2( X(:,:,cIndx), wavSplit );
     end
     out = lambdaScaled * normL2L1( WX );
   end
@@ -96,12 +96,12 @@ function [recons,objectiveValues] = mri_reconJointSparse( data, traj, sImg, ...
     X = reshape( in, [ sImg nCoils ] );
     WX = zeros( [ sImg nCoils ] );
     parfor cIndx = 1 : nCoils
-      WX(:,:,cIndx) = wtDeaubechies2( X(:,:,cIndx), wavSplit );
+      WX(:,:,cIndx) = wtDaubechies2( X(:,:,cIndx), wavSplit );
     end
     proxL2L1WX = proxL2L1( WX, t * lambda / prod( [ sImg nCoils ] ) );
     out = zeros( [ sImg nCoils ] );
     parfor cIndx = 1 : nCoils
-      out(:,:,cIndx) = iwtDeaubechies2( proxL2L1WX(:,:,cIndx), wavSplit );
+      out(:,:,cIndx) = iwtDaubechies2( proxL2L1WX(:,:,cIndx), wavSplit );
     end
     out = out( : );
   end
