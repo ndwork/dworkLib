@@ -75,21 +75,21 @@ function recons = mri_gridRecon( kData, trajs, sImg, varargin )
     parfor imgIndx = 1 : nImgs
       if verbose == true, p.progress( imgIndx ); end   %#ok<PFBNS>
       thisTraj = trajs(:,:,imgIndx);
+      theseWeights = weights(:,imgIndx);
       for coilIndx = 1 : nCoils
-        recons{1,1,coilIndx,imgIndx} = grid_2D( kData(:,:,imgIndx), thisTraj, sImg, ...
-          weights(:,:,imgIndx), 'alpha', alpha, 'W', W, 'nC', nC );
+        recons{1,1,coilIndx,imgIndx} = grid_2D( kData(:,coilIndx,imgIndx), thisTraj, sImg, ...
+          theseWeights, 'alpha', alpha, 'W', W, 'nC', nC );
       end
     end
 
   else
 
     recons = cell( 1, 1, nCoils, nImgs );
-    p = parforProgress( nCoils );  
-    thisTraj = trajs(:,:,imgIndx);
+    p = parforProgress( nCoils );
     for coilIndx = 1 : nCoils
       if verbose == true, p.progress( coilIndx ); end
-      recons{imgIndx} = grid_2D( kData(:,:,imgIndx), thisTraj, sImg, ...
-        weights(:,:,imgIndx), 'alpha', alpha, 'W', W, 'nC', nC );
+      recons{coilIndx} = grid_2D( kData(:,coilIndx), trajs, sImg, ...
+        weights, 'alpha', alpha, 'W', W, 'nC', nC );
     end
 
   end
