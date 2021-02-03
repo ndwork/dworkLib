@@ -7,14 +7,15 @@ function recons = mri_gridRecon( kData, trajs, sImg, varargin )
   %
   % Inputs:
   % data - Several options:
-  %   A complex N x D1 x D2 x ... x DN array of data values
-  % trajs - a vector of N x 2 x D1 x D2 x ... x DN specifying the k-space trajectory
+  %   A complex N x C x D1 x D2 x ... x DN array of data values
+  % trajs - a vector of N x 2 x C x D1 x D2 x ... x DN specifying the k-space trajectory
   %   If trajs is size N x 2, it is assumed the same trajectory was used for all
-  %   other dimensions.
+  %     other dimensions.
+  %   C is the number of coils used during the acquisition.
   % sImg - the size of the output image
   %
   % Output:
-  % recons is an array of reconstructed images of size sImg(1) x sImg(2) x D1 x D2 x ... x DN
+  % recons is an array of reconstructed images of size sImg(1) x sImg(2) x C x D1 x D2 x ... x DN
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
@@ -41,8 +42,15 @@ function recons = mri_gridRecon( kData, trajs, sImg, varargin )
   verbose = p.Results.verbose;
 
   sData = size( kData );
-  nImgs = prod( sData(2:end) );
-  kData = reshape( kData, [ sData(1), nImgs ] );
+  nCoils = size( kData, 2 );
+  nImgs = prod( sData(3:end) );
+  kData = reshape( kData, [ sData(1), nCoils, nImgs ] );
+
+  if ~isreal( trajs )
+    trajs = [ real( trajs(:) ) imag( trajs(:) ) ];
+  end
+  trajs = reshape( trajs, [ sData(1) 2 nImgs ] );
+  
   if ismatrix( trajs )
     weights = makePrecompWeights_2D( trajs, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
     trajs = repmat( trajs, [ 1 1 nImgs ] );
@@ -60,12 +68,30 @@ function recons = mri_gridRecon( kData, trajs, sImg, varargin )
     weights = cell2mat( weights );
   end
 
-  recons = cell( 1, 1, nImgs );
-  p = parforProgress( nImgs );
-  parfor imgIndx = 1 : nImgs
-    if verbose == true, p.progress( imgIndx ); end   %#ok<PFBNS>
-    recons{imgIndx} = grid_2D( F, trajs(:,:,imgIndx), sImg, weights(:,:,imgIndx), ...
-      'alpha', alpha, 'W', W, 'nC', nC );
+  recons = cell( 1, 1, nCoils, nImgs );
+  if nImgs > 1
+
+    p = parforProgress( nImgs );
+    parfor imgIndx = 1 : nImgs
+      if verbose == true, p.progress( imgIndx ); end   %#ok<PFBNS>
+      thisTraj = trajs(:,:,imgIndx);
+      for coilIndx = 1 : nCoils
+        recons{1,1,coilIndx,imgIndx} = grid_2D( kData(:,:,imgIndx), thisTraj, sImg, ...
+          weights(:,:,imgIndx), 'alpha', alpha, 'W', W, 'nC', nC );
+      end
+    end
+
+  else
+
+    recons = cell( 1, 1, nCoils, nImgs );
+    p = parforProgress( nCoils );  
+    thisTraj = trajs(:,:,imgIndx);
+    for coilIndx = 1 : nCoils
+      if verbose == true, p.progress( coilIndx ); end
+      recons{imgIndx} = grid_2D( kData(:,:,imgIndx), thisTraj, sImg, ...
+        weights(:,:,imgIndx), 'alpha', alpha, 'W', W, 'nC', nC );
+    end
+
   end
   p.clean;
   recons = cell2mat( recons );
