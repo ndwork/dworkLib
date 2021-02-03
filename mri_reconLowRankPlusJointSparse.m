@@ -5,7 +5,7 @@ function [recon,objValues] = mri_reconLowRankPlusJointSparse( data, trajs, sImg,
   %   lambda, sigma [, 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % Inputs: 
-  % data - an NxC array of data values where N is the number of data points and
+  % data - an NxCxT array of data values where N is the number of data points and
   %   C is the number of coils
   % trajs - a vector of Nx2xT length specifying the k-space trajectory
   %   T is the number of time points
