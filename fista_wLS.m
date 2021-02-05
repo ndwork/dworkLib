@@ -138,6 +138,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
       Dgy = gGrad( y );
       x = proxth( y - t * Dgy, t );
+      gx = g( x );
       if calculateObjectiveValues > 0
         hx = h( x );
         objectiveValues( iter+1 ) = gx + hx;
@@ -148,7 +149,6 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       normDiffSq = innerProd( x-y, x-y );
       breakThresh = gy + innerProdResult + (1/(2*t)) * normDiffSq;
 
-      gx = g( x );
       if ( gx <= breakThresh ) || ...
          ( subIter >= subIterThresh ) || ...
          ( t <= minStep )
