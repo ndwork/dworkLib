@@ -26,7 +26,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
   % innerProd - function handle to the inner product.
-  %     (default is a function handle to dotP)
+  %     ( default is real( dotP( x, y ) ) )
   %     Note: for complex vectors, innerProd should be real( dotP( x, y ) )
   % N - the number of iterations that FISTA will perform (default is 100)
   % r - the backtracking line search parameter; must be between 0 and 1
