@@ -1,8 +1,7 @@
 
 function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % recon = csReconFISTA( samples, lambda [, 'debug', debug, 'nIter', nIter, ...
-  %   'polish', polish, 'printEvery', printEvery, 'verbose', verbose, ...
-  %   'transformType', transformType ] )
+  %   'printEvery', printEvery, 'verbose', verbose, 'transformType', transformType ] )
   %
   % This routine minimizes 0.5 * || Ax - b ||_2^2 + lambda || W x ||_1
   %   where A is sampleMask * Fourier Transform * real part, and
@@ -16,10 +15,9 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % debug - if true, reduces the default number of iterations to 30 and forces verbose
   %         statements during optimization
   % nIter - the number of iterations that FISTA will perform (default is 100)
-  % polish - if set to true, adds a polishing step (default is false)
   % printEvery - FISTA prints a verbose statement every printEvery iterations
   % transformType - either 'Daubechies' for for Daubechies-4 (default), 'Haar', 
-  %   or 'Curvelet'.
+  %   or 'Curvelet'.  Note that curvelet requires the Curvelab library.
   % verbose - if true, prints informative statements
   % waveletType - (deprecated) either 'Daubechies' for Daubechies-4 (default) or 'Haar'
   %   If transformType is set, it overrides this option.
@@ -40,20 +38,27 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   p.addParameter( 'checkAdjoints', false, @islogical );
   p.addParameter( 'debug', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'nIter', [], @ispositive );
-  p.addParameter( 'polish', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'printEvery', 1, @ispositive );
-  p.addParameter( 'transformType', 'Daubechies', @(x) true );
+  p.addParameter( 'transformType', [], @(x) true );
   p.addParameter( 'wavSplit', wavSplit, @isnumeric );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
-  p.addParameter( 'waveletType', 'Daubechies', @(x) true );
+  p.addParameter( 'waveletType', [], @(x) true );
   p.parse( varargin{:} );
   checkAdjoints = p.Results.checkAdjoints;
   debug = p.Results.debug;
   nIter = p.Results.nIter;
-  polish = p.Results.polish;
   printEvery = p.Results.printEvery;
+  transformType = p.Results.transformType;
   waveletType = p.Results.waveletType;
   verbose = p.Results.verbose;
+
+  if numel( transformType ) == 0
+    if numel( waveletType ) > 0
+      transformType = waveletType;
+    else
+      transformType = 'Daubechies';
+    end
+  end
 
   if numel( nIter ) == 0
     if debug == true
@@ -98,6 +103,9 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
 
   b = samples( M == 1 );
 
+  %x0 = zeros( size( samples ) );
+  x0 = Fadj( samples );
+
   function out = g( x )
     diff = A( x ) - b;
     out = 0.5 * norm( diff(:), 2 ).^2;
@@ -108,56 +116,106 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     out = Aadj( A( x ) ) - Aadjb;
   end
 
-  if strcmp( waveletType, 'Daubechies' )
-    W = @(x) wtDaubechies2( x, wavSplit );
-    WT = @(y) iwtDaubechies2( y, wavSplit );
+  function out = findCellSizes( in )
+    if iscell( in )
+      out = cell( size(in) );
+      for indx = 1 : numel( in )
+        theseCellSizes = findCellSizes( in{ indx } );
+        out{ indx } = theseCellSizes;
+      end
+    else
+      out = size( in );
+    end
+  end
 
-  elseif strcmp( waveletType, 'Haar' )
-    W = @(x) wtHaar2( x, wavSplit );
-    WT = @(y) iwtHaar2( y, wavSplit );
+  function nTotal = sumCurvCellSizes( cellSizes )
+    nTotal = 0;
+    if iscell( cellSizes )
+      for indx = 1 : numel( cellSizes )
+        thisCell = cellSizes{ indx };  
+        nTotal = nTotal + sumCurvCellSizes( thisCell );
+      end
+    else
+      nTotal = nTotal + prod( cellSizes );
+    end
+  end
+
+  function out = curvCell2Vec( cx )
+    if iscell( cx )
+      out = cell( numel( cx ), 1 );
+      for indx = 1 : numel( cx )
+        out{ indx } = curvCell2Vec( cx{ indx } );
+      end
+      out = cell2mat( out );
+    else
+      out = cx(:);
+    end
+  end
+  
+  function out = vec2CurvCell( v, curvCellSizes )
+    if iscell( curvCellSizes )
+      out = cell( size( curvCellSizes ) );
+      thisIndx = 1;
+      for indx = 1 : numel( curvCellSizes )
+        nSubVec = sumCurvCellSizes( curvCellSizes{ indx } );
+        subVec = v( thisIndx : thisIndx + nSubVec - 1 );
+        out{ indx } = vec2CurvCell( subVec, curvCellSizes{ indx } );
+        thisIndx = thisIndx + nSubVec;
+      end
+    else
+      out = reshape( v, curvCellSizes );
+    end
+  end
+
+  function out = curvelet( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      cx = fdct_wrapping( x, false );
+      out = curvCell2Vec( cx );
+    else
+      cx = vec2CurvCell( x, curvCellSizes );
+      out = ifdct_wrapping( cx, false );
+    end
+  end
+
+  if strcmp( transformType, 'Curvelet' )
+    sparsifier = @(x) curvelet( x );
+    sparsifierH = @(x) curvelet( x, 'transp' );
+
+    cx0 = fdct_wrapping( x0, false );
+    curvCellSizes = findCellSizes( cx0 );
+
+  elseif strcmp( transformType, 'Haar' )
+    sparsifier = @(x) wtHaar2( x, wavSplit );
+    sparsifierH = @(y) iwtHaar2( y, wavSplit );
+
+  elseif strcmp( transformType, 'Daubechies' )
+    sparsifier = @(x) wtDaubechies2( x, wavSplit );
+    sparsifierH = @(y) iwtDaubechies2( y, wavSplit );
 
   else
     error( 'Unrecognized wavelet type' );
   end
 
   nPixels = numel( samples );
-  proxth = @(x,t) WT( proxL1Complex( W(x), t * lambda / nPixels ) );
+  proxth = @(x,t) sparsifierH( proxL1Complex( sparsifier(x), t * lambda / nPixels ) );
     % The proximal operator of || W x ||_1 was determined using
     % Vandenberghe's notes from EE 236C; slide of "The proximal mapping" entitled
     % "Composition with Affine Mapping"
 
   function out = h( x )
-    Wx = W(x);
-    out = sum( abs( Wx(:) ) ) * lambda / nPixels;
+    psi_x = sparsifier(x);
+    out = sum( abs( psi_x(:) ) ) * lambda / nPixels;
   end
 
-  %x0 = zeros( size( samples ) );
-  x0 = Fadj( samples );
-
-  innerProd = @(x,y) real( dotP( x, y ) );
-  
   t0 = 1;
   if debug
     %[recon,oValues] = fista( x0, @g, @gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
     [recon,oValues] = fista_wLS( x0, @g, @gGrad, proxth, 'h', @h, ...
-      'innerProd', innerProd, 't0', t0, 'N', nIter, 'verbose', true, ...
-      'printEvery', printEvery );
+      't0', t0, 'N', nIter, 'verbose', true, 'printEvery', printEvery );
   else
     %recon = fista( x0, @g, @gGrad, proxth );   %#ok<UNRCH>
     recon = fista_wLS( x0, @g, @gGrad, proxth, 't0', t0, 'N', nIter, ...
-      'innerProd', innerProd, 'verbose', verbose, 'printEvery', printEvery );
-  end
-
-  if polish
-    maskW = proxL1Complex( W(recon), t*lambda ) ~= 0;
-    proxth = @(x,t) WT( maskW .* W(x) );
-    if debug
-      [recon,oValues2] = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, ...
-        'N', nIter, 't0', t, 'verbose', verbose, 'printEvery', printEvery );   %#ok<ASGLU>
-    else
-      recon = fista_wLS( recon, @g, gGrad, proxth, 'h', @h, 'N', nIter, 't0', t, ...
-        'verbose', verbose, 'printEvery', printEvery );
-    end
+      'verbose', verbose, 'printEvery', printEvery );
   end
 end
 
