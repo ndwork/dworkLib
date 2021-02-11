@@ -41,7 +41,11 @@ function [roots,roots2] = quadRoots( p, b, c )
     sb( sb==0 ) = 1;
 
     q = -0.5 * ( p(2,:) + sb .* sqrtd );
-    roots = [ q ./ p(3,:)  p(1,:) / q ];
+    if nargout > 1
+      roots = q ./ p(3,:);   roots2 = p(1,:) ./ q;
+    else
+      roots = [ q ./ p(3,:);  p(1,:) / q; ];
+    end
 
   else
     % a is p
@@ -51,7 +55,12 @@ function [roots,roots2] = quadRoots( p, b, c )
     sb( d<0 ) = -sign( real( conj( b( d<0 ) ) .* sqrtd( d<0 ) ) );
     sb( sb==0 ) = 1;
     q = -0.5 * ( b + sb .* sqrtd );
-    roots = [ q./p; c./q; ];
+    
+    if nargout > 1
+      roots = q ./ p;   roots2 = c ./ q;
+    else
+      roots = [ q ./ p;  c ./ q; ];
+    end
   end
 
 end
