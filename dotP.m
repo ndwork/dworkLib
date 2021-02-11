@@ -14,7 +14,7 @@ function out = dotP( a, b )
   % purpose.
 
   if numel( a ) ~= numel( b )
-    error( 'Inputs to dot product must be the same size.' );
+    error( 'Inputs to dot product must have the same number of elements.' );
   end
 
   out = sum( a(:) .* conj(b(:)) );
