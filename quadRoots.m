@@ -1,5 +1,5 @@
 
-function roots = quadRoots( p, varargin )
+function roots = quadRoots( p, b, c )
   % roots = quadRoots( a, b, c ) or
   % roots = quadRoots( p )
   %
@@ -22,14 +22,7 @@ function roots = quadRoots( p, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  myParser = inputParser;
-  myParser.addOptional( 'b', [], @isnumeric );
-  myParser.addOptional( 'c', [], @isnumeric );
-  myParser.parse( varargin{:} );
-  b = myParser.Results.b;
-  c = myParser.Results.c;
-
-  if numel( c ) == 0
+  if nargin < 3
     d = p(2,:) .* p(2,:) - 4 .* p(1,:) .* p(3,:);  % discriminant
     sqrtd = sqrt( d );
     sb = sign( p(2,:) );
