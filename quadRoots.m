@@ -10,7 +10,7 @@ function [roots,roots2] = quadRoots( p, b, c )
   %
   % Inputs:
   %   Quadratic is either a x^2 + b x + c or
-  %   p(1) + p(2) x + p(3) x^2
+  %     p(1) + p(2) x + p(3) x^2
   % a - a 1D array (or scalar)
   % b - a 1D array (or scalar)
   % c - a 1D array (or scalar)
