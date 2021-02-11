@@ -1,7 +1,9 @@
 
-function roots = quadRoots( p, b, c )
+function [roots,roots2] = quadRoots( p, b, c )
   % roots = quadRoots( a, b, c ) or
-  % roots = quadRoots( p )
+  % roots = quadRoots( p ) or
+  % [roots1,roots2] = quadRoots( a, b, c ) or
+  % [roots1,roots2] = quadRoots( p );
   %
   % Numerically stable method of Determining the roots of a quadratic polynomial
   % Written according to equation 5.6.4 of Numerical Recipes in C
@@ -21,6 +23,15 @@ function roots = quadRoots( p, b, c )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 1
+    disp( 'Usage: ' );
+    disp( '   roots = quadRoots( a, b, c ) or' );
+    disp( '   roots = quadRoots( p ) or' );
+    disp( '   [roots1,roots2] = quadRoots( a, b, c ) or' );
+    disp( '   [roots1,roots2] = quadRoots( p )' );
+    return
+  end
 
   if nargin < 3
     d = p(2,:) .* p(2,:) - 4 .* p(1,:) .* p(3,:);  % discriminant
