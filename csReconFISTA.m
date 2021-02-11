@@ -69,51 +69,21 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   end
 
   M = ( samples ~= 0 );
+  b = samples( M == 1 );
+  %x0 = zeros( size( samples ) );
+  x0 = Fadj( samples );
 
   % RI = [ Re; Im; ]
   % A = M F RI , A' = (RI)' * F' * M
   % A' * A = (RI)' * F' * M * F * RI
   % gGrad = A'*A*x - A'*b;
 
-  nSamples = numel( samples );
   function out = F( x )
     out = fftshift( fftshift( ufft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
   end
 
   function out = Fadj( y )
     out = fftshift( fftshift( uifft2( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
-  end
-
-  function out = A( x )
-    Fx = F( x );
-    out = Fx( M == 1 );
-  end
-
-  MTy = zeros( size( samples ) );
-  function out = Aadj( y )
-    MTy( M==1 ) = y;
-    out = Fadj( MTy );
-  end
-
-  if checkAdjoints == true
-    % Variable used during debugging of this routine
-    checkResult = csReconFISTA_checkAdjoints( samples, @F, @Fadj, @A, @Aadj );
-    if checkResult ~= false, disp( 'Adjoints test passed' ); end
-  end
-
-  b = samples( M == 1 );
-
-  %x0 = zeros( size( samples ) );
-  x0 = Fadj( samples );
-
-  function out = g( x )
-    diff = A( x ) - b;
-    out = 0.5 * norm( diff(:), 2 ).^2;
-  end
-
-  Aadjb = Aadj( b );
-  function out = gGrad( x )
-    out = Aadj( A( x ) ) - Aadjb;
   end
 
   function out = findCellSizes( in )
@@ -195,43 +165,62 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   else
     error( 'Unrecognized wavelet type' );
   end
+  
+  function out = A( x )
+    PsiHx = sparsifierH( x );
+    FPsiHx = F( PsiHx );
+    out = FPsiHx( M == 1 );
+  end
+
+  MTy = zeros( size(M) );
+  function out = Aadj( y )
+    MTy( M == 1 ) = y;
+    FadjMTy = Fadj( MTy );
+    out = sparsifier( FadjMTy );
+  end
+  
+  if checkAdjoints == true
+    x1 = rand( size(samples) ) + 1i * rand( size( samples ) );
+    if checkAdjoint( x1, sparsifier, sparsifierH ) ~= true, error( 'sparsifier adjoint is incorrect' ); end
+    if checkAdjoint( x1, @F, @Fadj ) ~= true, error( 'Fadj is not the transpose of F' ); end
+
+    xA = sparsifier( x1 );
+    if checkAdjoint( xA, @A, @Aadj ) ~= true, error( 'Aadj is not the transpose of A' ); end
+  end
+
+
+  function out = g( x )
+    diff = A( x ) - b;
+    out = 0.5 * norm( diff(:), 2 ).^2;
+  end
+
+  Aadjb = Aadj( b );
+  function out = gGrad( x )
+    out = Aadj( A( x ) ) - Aadjb;
+  end
 
   nPixels = numel( samples );
-  proxth = @(x,t) sparsifierH( proxL1Complex( sparsifier(x), t * lambda / nPixels ) );
-    % The proximal operator of || W x ||_1 was determined using
-    % Vandenberghe's notes from EE 236C; slide of "The proximal mapping" entitled
-    % "Composition with Affine Mapping"
+  proxth = @(x,t) proxL1Complex( x, t * lambda / nPixels );
 
   function out = h( x )
-    psi_x = sparsifier(x);
-    out = sum( abs( psi_x(:) ) ) * lambda / nPixels;
+    out = sum( abs( x(:) ) ) * lambda / nPixels;
   end
 
   t0 = 1;
+  PsiX0 = sparsifier( x0 );
   if debug
-    %[recon,oValues] = fista( x0, @g, @gGrad, proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
-    [recon,oValues] = fista_wLS( x0, @g, @gGrad, proxth, 'h', @h, ...
-      't0', t0, 'N', nIter, 'verbose', true, 'printEvery', printEvery );
-  else
-    %recon = fista( x0, @g, @gGrad, proxth );   %#ok<UNRCH>
-    recon = fista_wLS( x0, @g, @gGrad, proxth, 't0', t0, 'N', nIter, ...
+    [xStar,oValues] = pogm( PsiX0, @g, @gGrad, proxth, nIter, 'h', @h, 't', t0, ...
       'verbose', verbose, 'printEvery', printEvery );
-  end
-end
-
-
-function out = csReconFISTA_checkAdjoints( samples, F, Fadj, A, Aadj )
-  % Check to make sure that Fadj is the adjoint of F
-  randSamples = rand( size(samples) ) + 1i * rand( size(samples) );
-
-  if checkAdjoint( randSamples, F, Fadj ) ~= true
-    error( 'Fadj is not the transpose of F' );
+    %[recon,oValues] = fista( PsiX0, @g, @gGrad, proxth, 'N', nIter, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
+    %[xStar,oValues] = fista_wLS( PsiX0, @g, @gGrad, proxth, 'h', @h, ...
+    %  't0', t0, 'N', nIter, 'verbose', true, 'printEvery', printEvery );
+  else
+    xStar = pogm( PsiX0, @g, @gGrad, proxth, nIter, 't', t0 );
+    %recon = fista( PsiX0, @g, @gGrad, proxth, 'N', nIter );   %#ok<UNRCH>
+    %xStar = fista_wLS( PsiX0, @g, @gGrad, proxth, 't0', t0, 'N', nIter, ...
+    %  'verbose', verbose, 'printEvery', printEvery );
   end
 
-  if checkAdjoint( randSamples, A, Aadj ) ~= true
-    error( 'Aadj is not the transpose of A' );
-  end
-
-  out = true;
+  recon = sparsifierH( xStar );
 end
 
