@@ -5,7 +5,7 @@ function roots = quarticRoots( poly, a, b, c, d )
   % roots = quarticRoots( p )
   %
   % Solves problems of the form:  a x^4 + b x^3 + c x^2 + d x + e
-  % 
+  % Based on "An analytic solution to Wahba?s problem" by Yang and Zhou 
   %
   % Inputs:
   %   Quartic is either a x^4 + b x^3 + c x^2 + d x + e or
