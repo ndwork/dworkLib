@@ -1,6 +1,6 @@
 
 function [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = fista( x, g, gGrad, proxth, N [, ...
+  % [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, N [, ...
   %   'h', h, 't', t, 'verbose', verbose ] )
   %
   % This function implements the POGM optimization algorithm
