@@ -59,7 +59,7 @@ function [roots,roots2] = quadRoots( p, b, c )
     if nargout > 1
       roots = q ./ p;   roots2 = c ./ q;
     else
-      roots = [ q ./ p  c ./ q ];
+      roots = [ q ./ p;  c ./ q; ];
     end
   end
 
