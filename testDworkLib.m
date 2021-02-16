@@ -691,13 +691,13 @@ function testDworkLib
   r2s = roots( [a b c ] );
   r2s = sort( r2s );
   err = norm( rs - r2s, 2 );
-  if min( err ) < 1d-14
+  if err < 1d-14
     disp('quadRoots passed');
   else
     error('quadRoots failed');
   end
-  
-  
+
+
   %% ransacDltHomographyFromPts2D
   pts1 = [ [0 0]; [0 1]; [1 0]; [1 1]; ];
   pts1 = [ pts1; rand(5,2); ];
