@@ -15,7 +15,14 @@ function k = iGrid( img, traj, varargin )
   % W is the window width in pixels
   % nC is the number of points to sample the convolution kernel
   %
-  % Written by Nicholas Dwork (c) 2015
+  % Written by Nicholas Dwork, Copyright 2015
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   if size( traj, 1 ) == 1, traj=transpose( traj ); end
 

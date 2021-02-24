@@ -5,6 +5,9 @@ function out = iGridT( k, traj, N, varargin )
   % Gridding (without density correction) is the adjoint of MRI encoding
   % (often called inverse gridding).  This function applies the transpose 
   % of inverse gridding to the input data.
+  % Detailed in the following document http://nicholasdwork.com/tutorials/dworkGridding.pdf
+  %
+  % Inputs:
   % k is a 1D array of M elements specifying the k-space data values
   % traj is a MxV array specifying the k-space trajectory.
   %   V is the number of dimensions of the trajectory elements
@@ -16,6 +19,15 @@ function out = iGridT( k, traj, N, varargin )
   % alpha is an optional float parameter specifying the oversampling factor
   % w is an integer specifying the kernel's width
   % nC specifies the number of samples in the kernel
+  %
+  % Written by Nicholas Dwork, Copyright 2015
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   if size( traj, 1 ) == 1, traj=transpose(traj); end
   
