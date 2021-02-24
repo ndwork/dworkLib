@@ -73,7 +73,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   verbose = p.Results.verbose;
 
   if numel( innerProd ) == 0
-    innerProd = @(x,y) dotP( x, y );
+    innerProd = @(x,y) real( dotP( x, y ) );
   end
 
   if numel( A ) == 0

@@ -2,7 +2,7 @@
 function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'sigma', sigma, ...
-  %    'z', z, 'verbose', verbose ] )
+  %    'lambda', lambda, 'theta', theta, 'verbose', verbose, 'z', z ] )
   %
   % Implements the Primal Dual Hybrid Gradient (Chambolle-Pock) method that
   % solves problems of the form:  minimize f( x ) + g( A x )
