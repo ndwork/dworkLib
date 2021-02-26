@@ -58,8 +58,6 @@ function out = linInterp( X, V, Xq, varargin )
   else
     % V are the perviously queried interpolation values
     out = zeros( numel( X ), 1 );
-    %out( lowerIndxs ) = lowerWeights .* V;  % this is almost right, would be right if indxs were unique
-    %out( upperIndxs ) = upperWeights .* V;  % this is almost right, would be right if indxs were unique
     vLowerWeights = V( Xq >= minX & Xq <= maxX ) .* lowerWeights;
     vUpperWeights = V( Xq >= minX & Xq <= maxX ) .* upperWeights;
     for i = 1 : numel( lowerIndxs )
