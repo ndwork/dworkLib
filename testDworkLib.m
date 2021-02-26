@@ -419,6 +419,30 @@ function testDworkLib
     disp('isOdd (2D) passed');
   end
 
+  %% linInterp
+  rng(1);
+  x = rand( 10, 1 );  x = sort( x );
+  v = rand( 10, 1 );
+  xq = sort( rand(5,1) );
+  y = rand( 5, 1 );
+
+  Av = linInterp( x, v, xq );
+  Av_correct = interp1( x, v, xq, 'linear', 0 );
+  errInterp = norm( Av(:) - Av_correct(:) ) / norm( Av(:) );
+  if errInterp > 1d-14
+    error([ 'linInterp failed with error ', num2str( errInterp ) ]);
+  end
+  ATy = linInterp( x, y, xq, 'op', 'transp' );
+  dp1 = dotP( Av, y );
+  dp2 = dotP( v, ATy );
+  err = abs( dp1 - dp2 );
+  if err > 1d-14
+    error([ 'linInterp adjoint failed with error ', num2str( errInterp ) ]);
+  else
+    disp( 'linInterp passed' );
+  end
+
+
   %% lsqrTikhonov
   damping = 0;
   A = rand(20,5);
