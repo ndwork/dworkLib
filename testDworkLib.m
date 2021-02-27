@@ -28,6 +28,31 @@ function testDworkLib
   figure; imshowscale( [noisyImg, denoisedImg], 3 );
   title('Bilateral Filter Result');
 
+  %% bilinInterp2
+  rng(6);
+  x = rand( 4, 1 );  x = sort( x );
+  y = rand( 3, 1 );  y = sort( y );
+  v = rand( numel(y), numel(x) );
+  xq = sort( rand(5,1) );  xq = [ xq; rand(1);  max(x); max(x); ];
+  yq = sort( rand(5,1) );  yq = [ yq;  max(y); rand(1); max(y); ];
+  u = rand( numel(yq), 1 );
+
+  Av = bilinInterp2( x, y, v, xq, yq );
+  Av_correct = interp2( x, y, v, xq, yq, 'bilinear', 0 );
+  errInterp = norm( Av(:) - Av_correct(:) ) / norm( Av(:) );
+  if errInterp > 1d-14
+    error([ 'linInterp failed with error ', num2str( errInterp ) ]);
+  end
+  ATu = bilinInterp2( x, y, u, xq, yq, 'op', 'transp' );
+  dp1 = dotP( Av,   u );
+  dp2 = dotP(  v, ATu );
+  err = abs( dp1 - dp2 );
+  if err > 1d-14
+    error([ 'bilinInterp adjoint failed with error ', num2str( errInterp ) ]);
+  else
+    disp( 'bilinInterp passed' );
+  end
+
   %% binarySearch
   fprintf( '\nTesting binarySearch: \n' );
   trueRoot = 3;
@@ -423,8 +448,8 @@ function testDworkLib
   rng(1);
   x = rand( 10, 1 );  x = sort( x );
   v = rand( 10, 1 );
-  xq = sort( rand(5,1) );
-  y = rand( 5, 1 );
+  xq = rand(4,1);  xq = [ xq; x(2); max(x) ];
+  y = rand( numel( xq ), 1 );
 
   Av = linInterp( x, v, xq );
   Av_correct = interp1( x, v, xq, 'linear', 0 );
@@ -437,7 +462,7 @@ function testDworkLib
   dp2 = dotP( v, ATy );
   err = abs( dp1 - dp2 );
   if err > 1d-14
-    error([ 'linInterp adjoint failed with error ', num2str( errInterp ) ]);
+    error([ 'linInterp adjoint failed with error ', num2str( err ) ]);
   else
     disp( 'linInterp passed' );
   end
