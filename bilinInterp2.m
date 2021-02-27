@@ -45,13 +45,13 @@ function out = bilinInterp2( X, Y, V, Xq, Yq, varargin )
   [ lowerDiffsX, lowerIndxsX ] = min( xDiffs );  
   upperIndxsX = lowerIndxsX + 1;
   upperIndxsX( upperIndxsX > Nx ) = Nx;
-  upperDiffsX = X( upperIndxsX ) - subXq;
+  upperDiffsX = X( upperIndxsX ) - subXq(:);
 
   yDiffs( yDiffs < 0 ) = Inf;
   [ lowerDiffsY, lowerIndxsY ] = min( yDiffs );  
   upperIndxsY = lowerIndxsY + 1;
   upperIndxsY( upperIndxsY > Ny ) = Ny;
-  upperDiffsY = Y( upperIndxsY ) - subYq;
+  upperDiffsY = Y( upperIndxsY ) - subYq(:);
 
   lowerDiffsX = lowerDiffsX(:);   lowerIndxsX = lowerIndxsX(:);
   lowerDiffsY = lowerDiffsY(:);   lowerIndxsY = lowerIndxsY(:);
@@ -83,10 +83,12 @@ function out = bilinInterp2( X, Y, V, Xq, Yq, varargin )
   else
     % V are the perviously queried interpolation values
     out = zeros( numel( Y ), numel( X ) );
-    vWeightsLxLy = V( Xq >= minX & Xq <= maxX & Yq >= minY & Yq <= maxY ) .* weightsLxLy;
-    vWeightsLxUy = V( Xq >= minX & Xq <= maxX & Yq >= minY & Yq <= maxY ) .* weightsLxUy;
-    vWeightsUxLy = V( Xq >= minX & Xq <= maxX & Yq >= minY & Yq <= maxY ) .* weightsUxLy;
-    vWeightsUxUy = V( Xq >= minX & Xq <= maxX & Yq >= minY & Yq <= maxY ) .* weightsUxUy;
+    subV = V( Xq >= minX & Xq <= maxX & Yq >= minY & Yq <= maxY );
+    subV = subV(:);
+    vWeightsLxLy = subV .* weightsLxLy;
+    vWeightsLxUy = subV .* weightsLxUy;
+    vWeightsUxLy = subV .* weightsUxLy;
+    vWeightsUxUy = subV .* weightsUxUy;
 
     indxsLxLy = sub2ind( [Ny,Nx], lowerIndxsY, lowerIndxsX );
     indxsLxUy = sub2ind( [Ny,Nx], upperIndxsY, lowerIndxsX );

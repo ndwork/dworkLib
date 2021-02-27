@@ -41,7 +41,7 @@ function out = linInterp( X, V, Xq, varargin )
   [ lowerXDiffs, lowerIndxs ] = min( xDiffs );  
   upperIndxs = lowerIndxs + 1;
   upperIndxs( upperIndxs > Nx ) = Nx;
-  upperXDiffs = X( upperIndxs ) - subXq;
+  upperXDiffs = X( upperIndxs ) - subXq(:);
 
   lowerXDiffs = lowerXDiffs(:);   lowerIndxs = lowerIndxs(:);
   upperXDiffs = upperXDiffs(:);   upperIndxs = upperIndxs(:);

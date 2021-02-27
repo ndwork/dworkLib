@@ -41,16 +41,16 @@ function testDworkLib
   Av_correct = interp2( x, y, v, xq, yq, 'bilinear', 0 );
   errInterp = norm( Av(:) - Av_correct(:) ) / norm( Av(:) );
   if errInterp > 1d-14
-    error([ 'linInterp failed with error ', num2str( errInterp ) ]);
+    error([ 'bilinInterp2 failed with error ', num2str( errInterp ) ]);
   end
   ATu = bilinInterp2( x, y, u, xq, yq, 'op', 'transp' );
   dp1 = dotP( Av,   u );
   dp2 = dotP(  v, ATu );
-  err = abs( dp1 - dp2 );
+  err = abs( dp1 - dp2 ) / abs( dp1 );
   if err > 1d-14
-    error([ 'bilinInterp adjoint failed with error ', num2str( errInterp ) ]);
+    error([ 'bilinInterp2 adjoint failed with error ', num2str( errInterp ) ]);
   else
-    disp( 'bilinInterp passed' );
+    disp( 'bilinInterp2 passed' );
   end
 
   %% binarySearch
@@ -460,7 +460,7 @@ function testDworkLib
   ATy = linInterp( x, y, xq, 'op', 'transp' );
   dp1 = dotP( Av, y );
   dp2 = dotP( v, ATy );
-  err = abs( dp1 - dp2 );
+  err = abs( dp1 - dp2 ) / abs( dp1 );
   if err > 1d-14
     error([ 'linInterp adjoint failed with error ', num2str( err ) ]);
   else
@@ -810,6 +810,22 @@ function testDworkLib
   else
     error('rootsOfQuadratic failed');
   end
+
+  %% rotImg
+  x = rand( 256 );
+  y = rand( 256 );
+  angle = 30 * pi/180;
+  Ax = rotImg( x, angle );
+  ATy = rotImg( y, angle, 'op', 'transp' );
+  dp1 = dotP( Ax, y );
+  dp2 = dotP( x, ATy );
+  err = abs( dp1 - dp2 ) / abs( dp1 );
+  if err < 1d-12
+    disp('rotImg passed');
+  else
+    error('rotImg failed');
+  end
+
 
   %% shearImg
   imgFile = '/Applications/MATLAB_R2016a.app/toolbox/images/imdata/moon.tif';
