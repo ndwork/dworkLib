@@ -30,8 +30,8 @@ function out = linInterp( X, V, Xq, varargin )
   p.parse( varargin{:} );
   op = p.Results.op;
 
-  minX = min( X );  maxX = max( X );
-  subXq = Xq( Xq >= minX & Xq < maxX );
+  Nx = numel( X );  minX = min( X );  maxX = max( X );
+  subXq = Xq( Xq >= minX & Xq <= maxX );
   nQ = numel( subXq );
 
   Xs = X(:) * ones(1,nQ);
@@ -40,34 +40,33 @@ function out = linInterp( X, V, Xq, varargin )
   xDiffs( xDiffs < 0 ) = Inf;
   [ lowerXDiffs, lowerIndxs ] = min( xDiffs );  
   upperIndxs = lowerIndxs + 1;
+  upperIndxs( upperIndxs > Nx ) = Nx;
   upperXDiffs = X( upperIndxs ) - subXq;
 
   lowerXDiffs = lowerXDiffs(:);   lowerIndxs = lowerIndxs(:);
   upperXDiffs = upperXDiffs(:);   upperIndxs = upperIndxs(:);
 
   wDenom = lowerXDiffs + upperXDiffs;
-  lowerWeights = upperXDiffs ./ wDenom;
-  upperWeights = lowerXDiffs ./ wDenom;
+  lowerWeights = upperXDiffs ./ wDenom;  lowerWeights( upperXDiffs == 0 ) = 1;
+  upperWeights = lowerXDiffs ./ wDenom;  upperWeights( upperXDiffs == 0 ) = 0;
 
   if strcmp( op, 'notransp' )
     % V are the values of the function at the domain indices of X
     out = zeros( numel( Xq ), 1 );
-    out( Xq >= minX & Xq < maxX ) = ...
+    out( Xq >= minX & Xq <= maxX ) = ...
       V( lowerIndxs ) .* lowerWeights + V( upperIndxs ) .* upperWeights;
-    out( Xq == maxX ) = V( end );
 
   else
     % V are the perviously queried interpolation values
     out = zeros( numel( X ), 1 );
-    vLowerWeights = V( Xq >= minX & Xq < maxX ) .* lowerWeights;
-    vUpperWeights = V( Xq >= minX & Xq < maxX ) .* upperWeights;
+    vLowerWeights = V( Xq >= minX & Xq <= maxX ) .* lowerWeights;
+    vUpperWeights = V( Xq >= minX & Xq <= maxX ) .* upperWeights;
     for i = 1 : numel( lowerIndxs )
       indxLower = lowerIndxs( i );
       indxUpper = upperIndxs( i );
       out( indxLower ) = out( indxLower ) + vLowerWeights( i );
       out( indxUpper ) = out( indxUpper ) + vUpperWeights( i );
     end
-    out( end ) = out( end ) + sum( V( Xq == maxX ) );
   end
 
 end
