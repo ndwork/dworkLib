@@ -46,25 +46,8 @@ function bp = ctBackProject( sinogram, thetas, dSize, cx, cy, Nx, Ny, ...
   p.addRequired( 'dy', @isnumeric );
   p.addOptional( 'type', defaultType, @(x) any( validatestring(x,expectedTypes) ) );
 
-  p.parse( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, varargin{:} );
-  inputs = p.Results;
-  type = inputs.type;
-
-  if strcmp(type, 'fast')
-    bp = ctBackProjectFast( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy );
-  elseif strcmp(type, 'iso')
-    bp = ctBackProjectIso( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy );
-  end
-
-end
-
-function bp = ctBackProjectIso( sinogram, thetas, dSize, cx, cy, Nx, Ny, ...
-  dx, dy )
-
   if dx ~= dy
-    err = MException('ctCodes:ctBackProjectIso', ...
-        'dx and dy must be equal for this version of back projection');
-    throw(err);
+    error( 'ctBackProject: dx and dy must be equal for this version of back projection' );
   end
 
   [nThetas, nDetectors] = size(sinogram);
@@ -93,49 +76,8 @@ function bp = ctBackProjectIso( sinogram, thetas, dSize, cx, cy, Nx, Ny, ...
     line = sinogram( thIndx, : );
     tmp = Bt * line';
     smeared = ( dy * ones(Ny,1) ) * tmp';
-    bp = bp + isoRot( smeared, -theta );
+    bp = bp + rotImg( smeared, theta, 'op', 'transp' );
     if mod( thIndx, 5 ) == 0
-      disp([ 'ctBackProject Theta Indx / Theta: ', num2str(thIndx), '/', num2str(theta) ]);
-    end
-  end
-
-end
-
-
-function bp = ctBackProjectFast( sinogram, thetas, dSize, cx, cy, Nx, Ny, ...
-  dx, dy )
-
-  [nThetas, nDetectors] = size(sinogram);
-
-  dOffset = 0;   % detector center offset
-  dLocs = ( ( 0 : nDetectors-1 ) - floor( 0.5 * nDetectors ) ) * dSize - dOffset;
-
-  % Make arrays of x and y positions of each pixel
-  if mod( Nx, 2 )==0
-    lineXs = ( ( 0 : Nx-1) - 0.5*Nx + 0.5 ) * dx + cx;
-  else
-    lineXs = ( ( 0 : Nx-1 ) - floor( 0.5 * Nx ) ) * dx + cx;
-  end
-  if mod( Ny, 2 )==0
-    lineYs = ( ( 0 : Ny-1 ) - 0.5*Ny + 0.5 ) * dy + cy;
-  else
-    lineYs = ( ( 0 : Ny-1 ) - floor( 0.5 * Ny ) ) * dy + cy;
-  end
-  xs = ones(Ny,1) * lineXs;
-  ys = lineYs' * ones(1,Nx);
-  xs=xs(:) + cx;
-  ys=ys(:) + cy;
-
-  angles = atan2(ys,xs);
-  pixDs = sqrt( xs.*xs + ys.*ys );
-
-  bp = zeros(Ny,Nx);
-  parfor thIndx = 1:nThetas
-    theta = thetas( thIndx );
-    projections = pixDs .* cos( angles - theta );
-    interped = interp1( dLocs, sinogram(thIndx,:), projections, 'linear', 0);
-    bp = bp + reshape( interped, Ny, Nx );
-    if mod(thIndx,10)==0
       disp([ 'ctBackProject Theta Indx / Theta: ', num2str(thIndx), '/', num2str(theta) ]);
     end
   end

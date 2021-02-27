@@ -17,7 +17,6 @@ function out = ctIRadon( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, vararg
   % dx - the horizontal size of each pixel in meters
   % dy - the vertical size of each pixel in meters
   % window - the window to be applied to the ramp filter
-  % type - 'fast' or 'iso' (default), describes the rotation method
   %
   % Written by Nicholas Dwork - Copyright 2013
   %
@@ -28,8 +27,6 @@ function out = ctIRadon( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, vararg
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultType = 'fast';
-  expectedTypes = { 'iso', 'fast' };
   defaultWin = 'none';
   expectedWins = { 'Hanning', 'none' };
   p = inputParser;
@@ -43,9 +40,7 @@ function out = ctIRadon( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, vararg
   p.addRequired( 'dx', @isnumeric );
   p.addRequired( 'dy', @isnumeric );
   p.addOptional( 'window', defaultWin, @(x) any( validatestring(x,expectedWins) ) );
-  p.addOptional( 'type', defaultType, @(x) any( validatestring(x,expectedTypes) ) );
   p.parse( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, varargin{:} );
-  type = p.Results.type;
   window = p.Results.window;
 
   [nThetas, nDetectors] = size(sinogram);
@@ -64,7 +59,7 @@ function out = ctIRadon( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, vararg
   hZP = zeros(1,nPadded);
   hZP(1:nDetectors) = h;
 
-  if strcmp(window,'Hanning')
+  if strcmp( window, 'Hanning' )
     df = 1 / ( dSize * nPadded );
     halfP = floor(nPadded / 2) + 1;
     fIndxs = ( (1:nPadded) - halfP );
@@ -92,6 +87,6 @@ function out = ctIRadon( sinogram, thetas, dSize, cx, cy, Nx, Ny, dx, dy, vararg
   filtSino = filtSino( :, 1:nDetectors );
 
   %% Perform backprojection
-  out = ctBackProject( filtSino, thetas, dSize, cx, cy, Nx, Ny, dx, dy, type );
+  out = ctBackProject( filtSino, thetas, dSize, cx, cy, Nx, Ny, dx, dy );
   out = out * pi / nThetas;
 end
