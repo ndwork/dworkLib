@@ -4,6 +4,7 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   %   [ 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % MRI reconstruction with Gridding
+  % Based on EE369C notes by John Pauly and Beatty et. al., IEEE TMI, 2005
   %
   % Inputs:
   %   in is a 1D array representing the Fourier values
@@ -23,8 +24,14 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   % Output:
   %   out is the uniformly spaced data in the space domain
   %
-  % Written by Nicholas Dwork (c) 2015
-  % Based on EE369C notes by John Pauly and Beatty et. al., IEEE TMI, 2005
+  % Written by Nicholas Dwork - Copyright 2015
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   defaultAlpha = 1.5;
   defaultW = 8;

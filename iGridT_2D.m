@@ -5,6 +5,8 @@ function out = iGridT_2D( F, traj, N, varargin )
   % Gridding (without density correction) is the adjoint of MRI encoding
   % with inverse gridding.  This function applies the transpose of
   % inverse gridding to the input data.
+  % Based on EE369C notes written by John Pauly
+  % Detailed in the following document http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
   %   F is a 1D array of M elements specifying the k-space data values
@@ -21,8 +23,15 @@ function out = iGridT_2D( F, traj, N, varargin )
   %   nC - specifies the number of samples in the kernel
   %   verbose - if set to true, outputs processing status
   %
-  % Written by Nicholas Dwork (c) 2016
-  % Based on EE369C notes written by John Pauly
+  % Written by Nicholas Dwork - Copyright 2016
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
+  
 
   if numel(N)==1
     Ny=N;  Nx=N; 

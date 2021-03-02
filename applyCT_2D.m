@@ -1,7 +1,8 @@
 
-
 function out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx, varargin )
   % out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx [, gridKs, 'type', type ] )
+  %
+  % Detailed in the following document http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
   % fftData - Mx1 array specifying Fourier value at traj(indx,:)
@@ -10,6 +11,13 @@ function out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx, varargin )
   % N - 2 element array specifying [Ny Nx] points in grid
   %
   % Written by Nicholas Dwork - Copyright 2016
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   defaultGridKs = [];
   defaultType = [];
