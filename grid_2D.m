@@ -34,9 +34,11 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultAlpha = 1.5;
+
   checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x > 1) );
   p = inputParser;
-  p.addParameter( 'alpha', 1.5, checknum );
+  p.addParameter( 'alpha', defaultAlpha, checknum );
   p.addParameter( 'W', [], checknum );
   p.addParameter( 'nC', [], checknum );
   p.parse( varargin{:} );
@@ -44,6 +46,8 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   W = p.Results.W;
   nC = p.Results.nC;
 
+  if numel( alpha ) == 0, alpha = defaultAlpha; end
+  
   nGrid = ceil( alpha * N );
   trueAlpha = max( nGrid ./ N );
 

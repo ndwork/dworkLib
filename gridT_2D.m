@@ -32,14 +32,18 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultAlpha = 1.5;
+
   p = inputParser;
-  p.addParameter( 'alpha', 1.5 );
+  p.addParameter( 'alpha', defaultAlpha );
   p.addParameter( 'W', [] );
   p.addParameter( 'nC', [] );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
+
+  if numel( alpha ) == 0, alpha = defaultAlpha; end
 
   nGrid = ceil( alpha * N );
   trueAlpha = max( nGrid ./ N );

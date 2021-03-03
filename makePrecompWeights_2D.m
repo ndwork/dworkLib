@@ -34,36 +34,36 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   %   res - residual
   %
   % Written by Nicholas Dwork - Copyright 2016
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
   defaultAlg = 'FP';
   defaultNIter = 5;
   radImg = makeRadialImg( 2 * N );
 	defaultPsfMask = radImg < abs(min(N));
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x >= 1);
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'W', defaultW, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'nC', defaultNc, @(x) numel(x) == 0 || checknum(x) );
+  p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
   p.addParameter( 'alg', defaultAlg );
   p.addParameter( 'nIter', defaultNIter, checknum );
   p.addParameter( 'psfMask', defaultPsfMask );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
+  alg = p.Results.alg;
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
-  alg = p.Results.alg;
   nIter = p.Results.nIter;
   psfMask = p.Results.psfMask;
   verbose = p.Results.verbose;
 
-  if numel( alpha ) == 0, alpha = defaultAlpha; end
-  if numel( W ) == 0, W = defaultW; end
-  if numel( nC ) == 0, nC = defaultNc; end
-  
   flag = 0;
   res = 0;
   switch alg
@@ -74,8 +74,8 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
 
     case 'FP'
       % Pipe's method
-      [weights,flag,res] = makePrecompWeights_2D_FP( ...
-        kTraj, N, psfMask, 'W', W, 'nC', nC, 'nIter', nIter );
+      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, psfMask, ...
+        'alpha', alpha, 'W', W, 'nC', nC, 'nIter', nIter, 'verbose', verbose );
 
     case 'SAMSANOV'
       % Method from Samsanov's abstract
@@ -114,9 +114,9 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
   kbN = 2*N;
   Ny=kbN(1);  Nx=kbN(2);
   Gy = Ny;
-  [kCy,Cy,~] = makeKbKernel( Gy, Ny, alpha, W, nC );
+  [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,~] = makeKbKernel( Gx, Nx, alpha, W, nC );
+  [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
   iteration = 0;
   function out = applyA( in, type )
@@ -179,16 +179,12 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
   % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  defaultNIter = 8;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x >= 1);
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, checknum );
-  p.addParameter( 'W', defaultW, checknum );
-  p.addParameter( 'nC', defaultNc, checknum );
-  p.addParameter( 'nIter', defaultNIter, checknum );
+  p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
+  p.addParameter( 'nIter', 8, checknum );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
@@ -199,26 +195,25 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
 
   % Make the Kaiser Bessel convolution kernel
   % alpha specifies the transition band of the KB filter
-  kbN = 2*N;
-  Ny=kbN(1);  Nx=kbN(2);
+  kbN = 2 * N;
+  Ny = kbN(1);  Nx = kbN(2);
   Gy = Ny;
-  [kCy,Cy,~] = makeKbKernel( Gy, Ny, alpha, W, nC );
+  [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,~] = makeKbKernel( Gx, Nx, alpha, W, nC );
+  [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
   nTraj = size( traj, 1 );
   weights = ones( nTraj, 1 );
 
   flag = 1;
   for iteration=1:nIter
-    if verbose ~= 0 && mod( iteration, 5 ) == 0
+    if verbose ~= 0
       disp(['makePrecompWeights_2D_FP working on iteration ', ...
         num2str(iteration) ]);
     end
 
     oldWeights = weights;
-    denom = applyC_2D( oldWeights, traj, N, kCy, kCx, Cy, Cx, traj, ...
-      'type', 'noCirc' );
+    denom = applyC_2D( oldWeights, traj, N, kCy, kCx, Cy, Cx, traj );
     weights = oldWeights ./ denom;
   end
 
@@ -239,13 +234,11 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
   kTraj, N, varargin )
 
   defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x > 1);
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x > 1) );
   p = inputParser;
   p.addParameter( 'alpha', defaultAlpha, checknum );
-  p.addParameter( 'W', defaultW, checknum );
-  p.addParameter( 'nC', defaultNc, checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
@@ -253,16 +246,16 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
   nC = p.Results.nC;
   verbose = p.Results.verbose;
 
-  kbN = 2*N;
+  kbN = 2 * N;
   nGrid = ceil( alpha * kbN );
   trueAlpha = max( nGrid ./ kbN );
 
   % Make the Kaiser Bessel convolution kernel
   Ny=kbN(1);  Nx=kbN(2);
   Gy = Ny;
-  [kCy,Cy,~] = makeKbKernel( Gy, Ny, trueAlpha, W, nC );
+  [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', trueAlpha, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,~] = makeKbKernel( Gx, Nx, trueAlpha, W, nC );
+  [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', trueAlpha, 'W', W, 'nC', nC );
 
   iteration = 0;
   function out = applyA( in, type )
