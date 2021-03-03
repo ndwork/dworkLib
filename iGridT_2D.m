@@ -34,27 +34,20 @@ function out = iGridT_2D( F, traj, N, varargin )
   
 
   if numel(N)==1
-    Ny=N;  Nx=N; 
+    Ny = N;     Nx = N; 
   else
-    Ny=N(1); Nx=N(2);
+    Ny = N(1);  Nx = N(2);
   end
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x >= 1);
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'W', defaultW, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'nC', defaultNc, @(x) numel(x) == 0 || checknum(x) );
+  p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
-
-  if numel( alpha ) == 0, alpha = defaultAlpha; end
-  if numel( W ) == 0, W = defaultW; end
-  if numel( nC ) == 0, nC = defaultNc; end
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
@@ -66,10 +59,13 @@ function out = iGridT_2D( F, traj, N, varargin )
   fftGridded = applyC_2D( F, traj, [Ny Nx], kCy, kCx, Cy, Cx );
 
   % Perform an inverse fft
-  data = ( Nx * Ny ) * fftshift( ifft2( ifftshift( fftGridded ) ) );
+  data = ( Nx * Ny ) * fftshift( fftshift( ifft( ifft( ifftshift( ifftshift( ...
+    fftGridded, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
+  %data = ( Nx * Ny ) * fftshift( ifft2( ifftshift( fftGridded ) ) );
 
   % Perform deapodization
   denom = cImgY * transpose(cImgX);
-  out = ( Nx * Ny ) * data ./ denom;
+  out = bsxfun( @times, data, Nx * Ny ./ denom );
+  %out = ( Nx * Ny ) * data ./ denom;
 end
 

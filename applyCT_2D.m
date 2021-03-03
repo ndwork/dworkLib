@@ -1,13 +1,14 @@
 
-function out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx, varargin )
-  % out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx [, gridKs, 'type', type ] )
+function out = applyCT_2D( f, kTraj, N, kCy, kCx, Cy, Cx, varargin )
+  % out = applyCT_2D( f, traj, N, kCy, kCx, Cy, Cx [, gridKs, 'type', type ] )
   %
-  % Detailed in the following document http://nicholasdwork.com/tutorials/dworkGridding.pdf
+  % Applies the adjoint of a continuous circular convolution of a kernel as detailed in
+  % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
-  % fftData - Mx1 array specifying Fourier value at traj(indx,:)
-  % traj - Mx2 array where first/second column represents ky/kx location
-  %   of trajectory
+  % f - an array of size N
+  % kTraj - Mx2 array where first/second column represents ky/kx location
+  %         of trajectory
   % N - 2 element array specifying [Ny Nx] points in grid
   %
   % Written by Nicholas Dwork - Copyright 2016
@@ -19,73 +20,49 @@ function out = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultGridKs = [];
-  defaultType = [];
   p = inputParser;
-  p.addOptional( 'gridKs', defaultGridKs );
-  p.addParameter( 'type', defaultType );
+  p.addOptional( 'gridKs', [] );
   p.parse( varargin{:} );
   gridKs = p.Results.gridKs;
-  type = p.Results.type;
 
   if numel( gridKs ) == 0
     gridKs = size2fftCoordinates( N );
-    gridKy=gridKs{1};  gridKx=gridKs{2};
-    [gridKx,gridKy] = meshgrid(gridKx,gridKy);
+    %[ gridKx, gridKy ] = meshgrid( gridKs{2}, gridKs{1} );
+    gridKy = gridKs{1};
+    gridKx = gridKs{2};
   else
     gridKy = gridKs(:,1);
     gridKx = gridKs(:,2);
   end
 
-  kws = [ max(kCy), max(kCx) ];
-  kDistThreshY = kws(1);
-  kDistThreshX = kws(2);
+  kTrajY = kTraj(:,1);
+  kyDists = min( cat( 3, ...
+    abs(   kTrajY         - gridKy' ), ...
+    abs( ( kTrajY + 1.0 ) - gridKy' ), ...
+    abs( ( kTrajY - 1.0 ) - gridKy' ) ), [], 3 );
+  CValsY = interp1( kCy, Cy, kyDists, 'linear', 0 );
 
-  nTraj = size( traj, 1 );
-  out = zeros( nTraj, 1 );
-  parfor trajIndx = 1:nTraj
-    kDistsY = abs( traj(trajIndx,1) - gridKy );
-    kDistsX = abs( traj(trajIndx,2) - gridKx );  %#ok<PFBNS>
-    shortDistIndxs = find( kDistsY < kDistThreshY & kDistsX < kDistThreshX );
-    shortDistsKy = kDistsY( shortDistIndxs );
-    shortDistsKx = kDistsX( shortDistIndxs );
-    CValsY = interp1( kCy, Cy, shortDistsKy, 'linear', 0 );
-    CValsX = interp1( kCx, Cx, shortDistsKx, 'linear', 0 );
-    kVals = fftData( shortDistIndxs );   %#ok<PFBNS>
-    out( trajIndx ) = sum( kVals .* CValsY .* CValsX );
+  kTrajX = kTraj(:,2);
+  kxDists = min( cat( 3, ...
+    abs(   kTrajX         - gridKx' ), ...
+    abs( ( kTrajX + 1.0 ) - gridKx' ), ...
+    abs( ( kTrajX - 1.0 ) - gridKx' ) ), [], 3 );
+  CValsX = interp1( kCx, Cx, kxDists, 'linear', 0 );
+
+  nTraj = size( kTraj, 1 );
+  out = zeros( nTraj, size(f,3) );
+  for trajIndx = 1 : nTraj
+    CValsYX = CValsY(trajIndx,:)' * CValsX(trajIndx,:);
+    fCVals = bsxfun( @times, f, CValsYX );
+    out(trajIndx,:) = sum( sum( fCVals, 2 ), 1 );
   end
 
-  onesCol = ones(nTraj,1);
-  if ~strcmp( type, 'noCirc' )
-    for dim=1:2
-      alt = zeros( size(traj) );
-      alt(:,dim) = onesCol;
-
-      for altDir=[-1 1]
-        NewTraj = traj + altDir*alt;
-        if altDir < 0
-          NewTrajIndxs = find( NewTraj(:,dim) > -0.5-kws(dim) );
-        else
-          NewTrajIndxs = find( NewTraj(:,dim) < 0.5+kws(dim) );
-        end
-
-        NewTraj = NewTraj( NewTrajIndxs, : );
-        for i=1:numel(NewTrajIndxs)
-          trajIndx = NewTrajIndxs(i);
-          NewDistsKy = abs( NewTraj(i,1) - gridKy );
-          NewDistsKx = abs( NewTraj(i,2) - gridKx );
-          NewShortDistIndxs = find( NewDistsKy < kDistThreshY & ...
-                                    NewDistsKx < kDistThreshX );
-          NewShortDistsKy = NewDistsKy( NewShortDistIndxs );
-          NewShortDistsKx = NewDistsKx( NewShortDistIndxs );
-          NewCValsY = interp1( kCy, Cy, NewShortDistsKy, 'linear', 0 );
-          NewCValsX = interp1( kCx, Cx, NewShortDistsKx, 'linear', 0 );
-          NewKVals = fftData( NewShortDistIndxs );
-          out(trajIndx) = out(trajIndx) + sum( NewKVals .* NewCValsY .* NewCValsX );
-        end
-      end
-    end
-  end
-
+  %nTraj = size( kTraj, 1 );
+  %fCVals = zeros( nTraj, size(CValsY,2), size(CValsX,2) );
+  %for trajIndx = 1 : nTraj
+  %  fCVals(trajIndx,:,:) = f .* ( CValsY(trajIndx,:)' * CValsX(trajIndx,:) );
+  %end
+  %
+  %out = squeeze( sum( sum( fCVals, 2 ), 3 ) );
 end
 

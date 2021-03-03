@@ -1,10 +1,9 @@
 
 function out = gridT_2D( in, traj, N, weights, varargin )
-  % out = gridT_2D( in, traj, N, weights, ...
-  %   [ 'alpha', alpha, 'W', W, 'nC', nC ] )
+  % out = gridT_2D( in, traj, N, weights, [ 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
-  % MRI reconstruction with Gridding
-  % Based on EE369C notes by John Pauly and Beatty et. al., IEEE TMI, 2005
+  % Adjoint of gridding operation.  Definitions and details according to
+  % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
   %   in is a 1D array representing the Fourier values
@@ -33,14 +32,10 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x > 1);
   p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, checknum );
-  p.addParameter( 'W', defaultW, checknum );
-  p.addParameter( 'nC', defaultNc, checknum );
+  p.addParameter( 'alpha', 1.5 );
+  p.addParameter( 'W', [] );
+  p.addParameter( 'nC', [] );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
@@ -49,8 +44,11 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   nGrid = ceil( alpha * N );
   trueAlpha = max( nGrid ./ N );
 
-  padded = padData(in, nGrid);
+  nOut = N(1) * N(2);
+  padded = padData( in, [ nGrid size(in,3) ] ) / ( nOut * nOut );
+
   tmp = iGrid_2D( padded, traj, 'alpha', trueAlpha, 'W', W, 'nC', nC );
+
   out = tmp .* weights;
 end
 

@@ -28,40 +28,36 @@ function F = iGrid_2D( data, traj, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x >= 1);
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'W', defaultW, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'nC', defaultNc, @(x) numel(x) == 0 || checknum(x) );
+  p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
 
-  if numel( alpha ) == 0, alpha = defaultAlpha; end
-  if numel( W ) == 0, W = defaultW; end
-  if numel( nC ) == 0, nC = defaultNc; end
-  
-  [Ny,Nx] = size( data );
+  [ Ny, Nx, ~ ] = size( data );
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
-  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, alpha, W, nC );
+  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, alpha, W, nC );
+  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
-  denom = cImgY * transpose(cImgX);
-  preEmphasized = ( Nx * Ny ) * ( data ./ denom );
+  denom = cImgY * cImgX';
+  preEmphasized = ( Nx * Ny ) * bsxfun( @rdivide, data, denom );
+  %preEmphasized = ( Nx * Ny ) * ( data ./ denom );
 
   % Perform an fft
-  fftData = fftshift( fft2( ifftshift( preEmphasized ) ) );
+  fftData = fftshift( fftshift( fft( fft( ifftshift( ifftshift( ...
+    preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
+  %fftData = fftshift( fft2( ifftshift( preEmphasized ) ) );
 
   % Perform a circular convolution
-  N = [Ny Nx];
+  N = [ Ny Nx ];
   F = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx );
 end
 

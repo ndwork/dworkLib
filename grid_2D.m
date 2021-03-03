@@ -1,10 +1,11 @@
 
 function recon = grid_2D( F, kTraj, N, weights, varargin )
-  % recon = grid_2D( F, kTraj, N, weights, ...
-  %   [ 'alpha', alpha, 'W', W, 'nC', nC ] )
+  % recon = grid_2D( F, kTraj, N, weights, [ 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
-  % Image reconstruction with Gridding
+  % The gridding non-uniform fft algorithm
   % Based on EE369C notes by John Pauly and Beatty et. al., IEEE TMI, 2005
+  % Adjoint of gridding operation.  Definitions and details according to
+  % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
   %   F is a 1D array representing the Fourier values
@@ -33,34 +34,26 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x > 1);
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x > 1) );
   p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'W', defaultW, @(x) numel(x) == 0 || checknum(x) );
-  p.addParameter( 'nC', defaultNc, @(x) numel(x) == 0 || checknum(x) );
+  p.addParameter( 'alpha', 1.5, checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
 
-  if numel( alpha ) == 0, alpha = defaultAlpha; end
-  if numel( W ) == 0, W = defaultW; end
-  if numel( nC ) == 0, nC = defaultNc; end
-
   nGrid = ceil( alpha * N );
   trueAlpha = max( nGrid ./ N );
 
-  weightedF = F .* weights;
+  weightedF = bsxfun( @times, F, weights );
 
-  padded = iGridT_2D( weightedF, kTraj, nGrid, ...
-    'alpha', trueAlpha, 'W', W, 'nC', nC );
+  padded = iGridT_2D( weightedF, kTraj, nGrid, 'alpha', trueAlpha, 'W', W, 'nC', nC );
 
   nOut = N(1) * N(2);
-  padded = padded / ( nOut^2 );
+  padded = padded / ( nOut * nOut );
 
-  recon = cropData( padded, N );
+  recon = cropData( padded, [ N size(F,2) ] );
 end
 
