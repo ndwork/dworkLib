@@ -43,38 +43,52 @@ function out = applyC_2D( F, kTraj, N, kCy, kCx, Cy, Cx, varargin )
     gridKsSupplied = true;
   end
 
-  kTrajY = kTraj(:,1);
-  kyDists = min( cat( 3, ...
-    abs(   kTrajY         - newKy' ), ...
-    abs( ( kTrajY + 1.0 ) - newKy' ), ...
-    abs( ( kTrajY - 1.0 ) - newKy' ) ), [], 3 );
-  CValsY = interp1( kCy, Cy, kyDists, 'linear', 0 );
+  kTrajY = kTraj(:,1);    kyDistThresh = max( kCy );
+  kTrajX = kTraj(:,2);    kxDistThresh = max( kCx );
 
-  kTrajX = kTraj(:,2);
-  kxDists = min( cat( 3, ...
-    abs(   kTrajX         - newKx' ), ...
-    abs( ( kTrajX + 1.0 ) - newKx' ), ...
-    abs( ( kTrajX - 1.0 ) - newKx' ) ), [], 3 );
-  CValsX = interp1( kCx, Cx, kxDists, 'linear', 0 );
+  kyDists = min( abs( kTrajY - newKy' ), ...
+                 abs( kTrajY + 1.0 - newKy' ) );
+  kyDists = min( kyDists, ...
+                 abs( kTrajY - 1.0 - newKy' ) );
 
+  kxDists = min( abs( kTrajX - newKx' ), ...
+                 abs( kTrajX + 1.0 - newKx' ) );
+  kxDists = min( kxDists, ...
+                 abs( kTrajX - 1.0 - newKx' ) );
+
+	nTraj = size( kTraj, 1 );
   nFs = size( F,2 );
+
   if gridKsSupplied == false
-    nTraj = size( kTraj, 1 );
-    out = zeros( [ numel(newKy) numel(newKx) size(F,2) ] );
+
+    sOut = [ numel(newKy) numel(newKx) size(F,2) ];
+    out = zeros( sOut );
+    F = reshape( F, size(F,1), 1, size(F,2) );
     for trajIndx = 1 : nTraj
-      CValsYX = CValsY(trajIndx,:)' * CValsX(trajIndx,:);
-      thisF = reshape( F(trajIndx,:), [ 1 1 nFs ] );
-      out = out + bsxfun( @times, thisF, CValsYX );
+      
+      shortIndxsY = find( kyDists(trajIndx,:) < kyDistThresh );
+      shortIndxsX = find( kxDists(trajIndx,:) < kxDistThresh );
+
+      CValsY = interp1( kCy, Cy, kyDists( trajIndx, shortIndxsY ), 'linear', 0 );
+      CValsX = interp1( kCx, Cx, kxDists( trajIndx, shortIndxsX ), 'linear', 0 );
+      CValsYX = CValsY' * CValsX;
+
+      outValues = bsxfun( @times, F(trajIndx,1,:), CValsYX );
+      out( shortIndxsY, shortIndxsX, : ) = out( shortIndxsY, shortIndxsX, : ) + outValues;
     end
 
   else
-    CValsYX = CValsY .* CValsX;
-    out = zeros( numel(newKx), nFs );
-    for indxF = 1 : nFs
-      FCValsYX = bsxfun( @times, F(:,indxF), CValsYX );
-      out(:,indxF) = transpose( sum( FCValsYX, 1 ) );
-    end
 
+    shortIndxs = find( kyDists < kyDistThresh & kxDists < kxDistThresh );
+
+    CValsY = interp1( kCy, Cy, kyDists( shortIndxs ), 'linear', 0 );
+    CValsX = interp1( kCx, Cx, kxDists( shortIndxs ), 'linear', 0 );
+    CValsYX = CValsY .* CValsX;
+    FCValsYX = bsxfun( @times, F( mod( shortIndxs-1, nTraj ) + 1, : ), CValsYX );
+
+    out = zeros( size( kxDists ) );
+    out( shortIndxs ) = FCValsYX;
+    out = sum( out, 2 );
   end
 
 end
