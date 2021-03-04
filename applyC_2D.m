@@ -84,9 +84,14 @@ function out = applyC_2D( F, kTraj, N, kCy, kCx, Cy, Cx, varargin )
     CValsYX = CValsY .* CValsX;
     FCValsYX = bsxfun( @times, F( mod( shortIndxs-1, nTraj ) + 1, : ), CValsYX );
 
-    out = zeros( size( kxDists ) );
-    out( shortIndxs ) = FCValsYX;
-    out = sum( out, 2 );
+    nFs = size( F, 2 );
+    nDists = numel( kxDists );
+    sOut = [ size( kxDists ) nFs ];
+    out = zeros( sOut );
+    for indxF = 1 : nFs
+      out( shortIndxs + ( indxF - 1 ) * nDists ) = FCValsYX( :, indxF );
+    end
+    out = squeeze( sum( out, 2 ) );
   end
 
 end
