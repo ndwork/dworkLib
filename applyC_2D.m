@@ -57,8 +57,6 @@ function out = applyC_2D( F, kTraj, N, kCy, kCx, Cy, Cx, varargin )
                  abs( kTrajX - 1.0 - newKx' ) );
 
 	nTraj = size( kTraj, 1 );
-  nFs = size( F,2 );
-
   if gridKsSupplied == false
 
     sOut = [ numel(newKy) numel(newKx) size(F,2) ];
