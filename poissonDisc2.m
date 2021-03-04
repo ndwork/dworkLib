@@ -3,10 +3,11 @@ function pts = poissonDisc2( r, varargin )
   % pts = poissonDisc2( r [, 'bounds', bounds, 'bIncSize', bIncSize, 'nK', nK, ...
   %   'incSize', incSize, 'min_r', min_r ] )
   %
-  % For scalar (constant) $r$, the algorithm implemented 
-  % Written according to "Fast Poisson Disk Sampling in Arbitrary Dimensions" by Robert Bridson
-  % and "Poisson Disk Sampling" written by Herman Tulleken located at
-  % http://devmag.org.za/2009/05/03/poisson-disk-sampling/
+  % For scalar (constant) r, the algorithm implemented is "Fast Poisson Disk Sampling in
+  % Arbitrary Dimensions" by Robert Bridson and for a variable r, the algorithm implemented
+  % is "Fast Variable Density Poisson-Disc Sample Generation with Directional Variation for
+  % Compressed Sensing in MRI" by Dwork et al., inspired by "Poisson Disk Sampling" written by
+  % Herman Tulleken located at http://devmag.org.za/2009/05/03/poisson-disk-sampling/
   %
   % Inputs:
   % r - a scalar specifying the minimum size between points
@@ -22,6 +23,7 @@ function pts = poissonDisc2( r, varargin )
   %   bounds(2,2) is the upper vertical bound
   %   If r is an image and bounds is supplied then bounds must have the same aspect ratio as r
   % k - the number of points before rejection (default is 30)
+  % bIncSize - vector memory allocation increment size for background grid (default is 50)
   % incSize - vector memory allocation increment size (default is 5000)
   % min_r - if r is a function handle, then the user must also supply the minimum
   %   possible r (must be positive)
