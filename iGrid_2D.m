@@ -58,6 +58,6 @@ function F = iGrid_2D( data, traj, varargin )
 
   % Perform a circular convolution
   N = [ Ny Nx ];
-  F = applyCT_2D( fftData, traj, N, kCy, kCx, Cy, Cx );
+  F = applyCT_2D( fftData, traj, kCy, kCx, Cy, Cx );
 end
 

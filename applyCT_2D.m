@@ -1,5 +1,5 @@
 
-function out = applyCT_2D( f, kTraj, N, kCy, kCx, Cy, Cx, varargin )
+function out = applyCT_2D( f, kTraj, kCy, kCx, Cy, Cx, varargin )
   % out = applyC_2D( f, kTraj, N, kCy, kCx, Cy, Cx [, newKs ] )
   %
   % Applies a continuous circular convolution of a kernel as detailed in
