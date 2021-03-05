@@ -49,7 +49,11 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   trueAlpha = max( nGrid ./ N );
 
   nOut = N(1) * N(2);
-  padded = padData( in, [ nGrid size(in,3) ] ) / ( nOut * nOut );
+  if ismatrix( in )
+    padded = padData( in, nGrid ) / ( nOut * nOut );
+  else
+    padded = padData( in, [ nGrid size(in,3) ] ) / ( nOut * nOut );
+  end
 
   tmp = iGrid_2D( padded, traj, 'alpha', trueAlpha, 'W', W, 'nC', nC );
 

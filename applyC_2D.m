@@ -91,7 +91,7 @@ function out = applyC_2D( F, kTraj, N, kCy, kCx, Cy, Cx, varargin )
     for indxF = 1 : nFs
       out( shortIndxs + ( indxF - 1 ) * nDists ) = FCValsYX( :, indxF );
     end
-    out = squeeze( sum( out, 2 ) );
+    out = squeeze( sum( out, 1 ) );
   end
 
 end

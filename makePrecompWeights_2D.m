@@ -1,8 +1,7 @@
 
 function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   % [weights,flag,res] = makePrecompWeights_2D( kTraj, N, ...
-  %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg, , ...
-  %     'psfMask', psfMask ] )
+  %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg, 'psfMask', psfMask ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
   %
@@ -100,7 +99,7 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
   defaultAlpha = 1.5;
   defaultW = 8;
   defaultNc = 500;
-  checknum = @(x) isnumeric(x) && isscalar(x) && (x > 1);
+  checknum = @(x) numel(x)==0 || ( isnumeric(x) && isscalar(x) && (x > 1) );
   p = inputParser;
   p.addParameter( 'alpha', defaultAlpha, checknum );
   p.addParameter( 'W', defaultW, checknum );
