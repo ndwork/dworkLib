@@ -120,9 +120,9 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
   iteration = 0;
   function out = applyA( in, type )
     if nargin > 1 && strcmp( type, 'transp' )
-      out = applyCT_2D( in, traj, 0, kCy, kCx, Cy, Cx, traj, 'type', 'noCirc' );
+      out = applyCT_2D( in, traj, kCy, kCx, Cy, Cx, traj );
     else
-      out = applyC_2D( in, traj, 0, kCy, kCx, Cy, Cx, traj, 'type', 'noCirc' );
+      out = applyC_2D( in, traj, 0, kCy, kCx, Cy, Cx, traj );
 
       iteration = iteration + 1;
       if verbose ~= 0 && mod( iteration, 5 ) == 0
@@ -212,7 +212,7 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
     end
 
     oldWeights = weights;
-    denom = applyC_2D( oldWeights, traj, N, kCy, kCx, Cy, Cx, traj );
+    denom = applyC_2D( oldWeights, traj, traj, kCy, kCx, Cy, Cx );
     weights = oldWeights ./ denom;
   end
 
