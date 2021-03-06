@@ -207,18 +207,13 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   flag = 1;
   for iteration=1:nIter
     if verbose ~= 0
-      disp(['makePrecompWeights_2D_FP working on iteration ', ...
-        num2str(iteration) ]);
+      disp(['makePrecompWeights_2D_FP working on iteration ', num2str(iteration) ]);
     end
 
     oldWeights = weights;
     denom = applyC_2D( oldWeights, traj, traj, kCy, kCx, Cy, Cx );
     weights = oldWeights ./ denom;
   end
-
-  scale = getScaleOfPSF( weights, traj, N, psfMask, 'imgTitle', 'FP' );
-  %close
-  weights = scale * weights;
 
   if nargout > 1
     flag = 0;
