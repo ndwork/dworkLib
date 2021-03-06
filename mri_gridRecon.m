@@ -52,7 +52,7 @@ function recons = mri_gridRecon( kData, trajs, sImg, varargin )
     trajs = [ real( trajs(:) ) imag( trajs(:) ) ];
   end
 
-  if numel( weights ) ~= 0
+  if numel( weights ) == 0
     if ismatrix( trajs )
       weights = makePrecompWeights_2D( trajs, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
       trajs = repmat( trajs, [ 1 1 nImgs ] );
