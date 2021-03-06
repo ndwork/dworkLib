@@ -47,17 +47,14 @@ function F = iGrid_2D( data, traj, varargin )
   [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
-  denom = cImgY * cImgX';
-  preEmphasized = ( Nx * Ny ) * bsxfun( @rdivide, data, denom );
-  %preEmphasized = ( Nx * Ny ) * ( data ./ denom );
+  preEmphasis = ( Nx * Ny ) ./ ( cImgY * cImgX' ) ;
+  preEmphasized = bsxfun( @times, data, preEmphasis );
 
   % Perform an fft
   fftData = fftshift( fftshift( fft( fft( ifftshift( ifftshift( ...
     preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
-  %fftData = fftshift( fft2( ifftshift( preEmphasized ) ) );
 
   % Perform a circular convolution
-  N = [ Ny Nx ];
   F = applyCT_2D( fftData, traj, kCy, kCx, Cy, Cx );
 end
 

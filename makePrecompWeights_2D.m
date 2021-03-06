@@ -193,7 +193,6 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   verbose = p.Results.verbose;
 
   % Make the Kaiser Bessel convolution kernel
-  % alpha specifies the transition band of the KB filter
   kbN = 2 * N;
   Ny = kbN(1);  Nx = kbN(2);
   Gy = Ny;
@@ -214,6 +213,9 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
     denom = applyC_2D( oldWeights, traj, traj, kCy, kCx, Cy, Cx );
     weights = oldWeights ./ denom;
   end
+
+  scale = getScaleOfPSF( weights, traj, N, 'imgTitle', 'rtbLSDC');
+  weights = scale * weights;
 
   if nargout > 1
     flag = 0;
@@ -347,7 +349,7 @@ function [scale,mse] = getScaleOfPSF( weights, traj, N, varargin )
   psf = iGridT_2D( weights, traj, nGrid, 'W', W, 'nC', nC );
   psf = cropData( psf, 2*N );
   if isempty(mask), mask = ones( size(psf) ); end
-  mask = cropData( mask, nGrid );
+  mask = cropData( mask, N );
   psf = mask .* psf;
   scale = 1 ./ max(real(psf(:)));
 

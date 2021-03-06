@@ -59,13 +59,11 @@ function out = iGridT_2D( F, traj, N, varargin )
   fftGridded = applyC_2D( F, traj, [Ny Nx], kCy, kCx, Cy, Cx );
 
   % Perform an inverse fft
-  data = ( Nx * Ny ) * fftshift( fftshift( ifft( ifft( ifftshift( ifftshift( ...
+  data = fftshift( fftshift( ifft( ifft( ifftshift( ifftshift( ...
     fftGridded, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
-  %data = ( Nx * Ny ) * fftshift( ifft2( ifftshift( fftGridded ) ) );
 
   % Perform deapodization
-  denom = cImgY * transpose(cImgX);
-  out = bsxfun( @times, data, Nx * Ny ./ denom );
-  %out = ( Nx * Ny ) * data ./ denom;
+  deapod = ( Nx * Ny ).^2 ./ ( cImgY * transpose( cImgX ) ) ;
+  out = bsxfun( @times, data, deapod );
 end
 
