@@ -59,17 +59,28 @@ function out = applyCT_2D( f, kTraj, kCy, kCx, Cy, Cx, varargin )
   if gridKsSupplied == false
 
     nfs = size( f, 3 );
-    out = zeros( nTraj, nfs );
-    for trajIndx = 1 : nTraj
-      shortIndxsY = find( kyDists( trajIndx, : ) < kyDistThresh );
-      shortIndxsX = find( kxDists( trajIndx, : ) < kxDistThresh );
+    segLength = 250;
+    nSegs = ceil( nTraj / segLength );
+    out = cell( nSegs, 1 );
+    parfor segIndx = 1 : nSegs
+      sIndx = ( segIndx - 1 ) * segLength + 1;
+      eIndx = min( segIndx * segLength, nTraj );
+      nSegTraj = eIndx - sIndx + 1;
+      tmp = zeros( nSegTraj, nfs );
 
-      CValsY = interp1( kCy, Cy, kyDists( trajIndx, shortIndxsY ), 'linear', 0 );
-      CValsX = interp1( kCx, Cx, kxDists( trajIndx, shortIndxsX ), 'linear', 0 );
-      CValsYX = CValsY' * CValsX;
-      fCValsYX = bsxfun( @times, f( shortIndxsY, shortIndxsX, : ), CValsYX );
-      out( trajIndx, : ) = reshape( sum( sum( fCValsYX, 1 ), 2 ), [ 1 nfs ] );
+      for trajIndx = sIndx : eIndx
+        shortIndxsY = find( kyDists( trajIndx, : ) < kyDistThresh );   %#ok<PFBNS>
+        shortIndxsX = find( kxDists( trajIndx, : ) < kxDistThresh );   %#ok<PFBNS>
+
+        CValsY = interp1( kCy, Cy, kyDists( trajIndx, shortIndxsY ), 'linear', 0 );
+        CValsX = interp1( kCx, Cx, kxDists( trajIndx, shortIndxsX ), 'linear', 0 );
+        CValsYX = CValsY' * CValsX;
+        fCValsYX = bsxfun( @times, f( shortIndxsY, shortIndxsX, : ), CValsYX );
+        tmp( trajIndx - sIndx + 1, : ) = reshape( sum( sum( fCValsYX, 1 ), 2 ), [ 1 nfs ] );
+      end
+      out{ segIndx } = tmp;
     end
+    out = cell2mat( out );
 
   else
 
