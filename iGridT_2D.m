@@ -72,7 +72,7 @@ function out = iGridT_2D( F, traj, N, varargin )
     fftGridded, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
 
   % Perform deapodization
-  deapod = ( Nx * Ny ).^2 ./ ( cImgY * transpose( cImgX ) ) ;
+  deapod = 1 ./ ( cImgY * transpose( cImgX ) ) ;
   out = bsxfun( @times, data, deapod );
 
   if ( alphaY ~= 1 ) || ( alphaX ~= 1 )

@@ -62,14 +62,13 @@ function F = iGrid_2D( data, traj, varargin )
   [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
-  preEmphasis = ( Nx * Ny ) ./ ( cImgY * cImgX' ) ;
-  %preEmphasis = 1 ./ ( Nx * Ny * cImgY * cImgX' ) ;  % This works but I don't know why
+  preEmphasis = 1 ./ ( cImgY * cImgX' );
   preEmphasized = bsxfun( @times, data, preEmphasis );
   preEmphasized( data == 0 ) = 0;
 
   % Perform an fft
   fftData = fftshift( fftshift( fft( fft( ifftshift( ifftshift( ...
-    preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
+    preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 ) / ( Nx * Ny );
 
   % Perform a circular convolution
   sData = size( fftData );
