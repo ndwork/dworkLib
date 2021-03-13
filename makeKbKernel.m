@@ -21,7 +21,7 @@ function [kC,C,c] = makeKbKernel( G, N, varargin )
   %   C - The intensity values of the kernel at the frequencies of kC
   %   c - The fourier transform of the KB kernel C
   %
-  % Written by Nciholas Dwork - Copyright 2016
+  % Written by Nicholas Dwork - Copyright 2016
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
@@ -55,13 +55,14 @@ function [kC,C,c] = makeKbKernel( G, N, varargin )
   beta = pi * sqrt( W*W / (alpha*alpha) * (alpha-0.5)^2 - 0.8 );
   C = kwInv * besseli( 0, beta * sqrt( 1 - ( 2 * kC * kwInv ).^2 ) );
 
-  maxC = max( C );
-  C = C / maxC;
+  %maxC = max( C );
+  %C = C ./ maxC;
 
   if nargout > 2
     x = size2imgCoordinates( N );
-    tmp = sqrt( ( pi * kw * x ).^2 - beta * beta );
+    tmp = sqrt( pi * pi * kw * kw * x .* x - beta * beta );
     c = sinc( tmp / pi );
-    c = c / maxC;
+    %c = c / maxC;
   end
+
 end
