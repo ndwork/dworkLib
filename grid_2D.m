@@ -47,9 +47,9 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   nC = p.Results.nC;
 
   if numel( alpha ) == 0, alpha = defaultAlpha; end
-  
+
   nGrid = ceil( alpha * N );
-  trueAlpha = max( nGrid ./ N );
+  trueAlpha = nGrid ./ N;
 
   weightedF = bsxfun( @times, F, weights );
 
