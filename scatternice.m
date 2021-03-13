@@ -45,4 +45,6 @@ function out = scatternice( in1, in2, varargin )
   else
     set( gca, 'fontsize', 14 );
   end
+
+  addToolbarExplorationButtons( gcf );  % Restore the missing toolbar
 end
