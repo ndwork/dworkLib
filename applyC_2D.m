@@ -2,16 +2,18 @@
 function out = applyC_2D( F, traj, newTraj, kCy, kCx, Cy, Cx )
   % out = applyC_2D( F, traj, N, kCy, kCx, Cy, Cx )
   % or
+  % out = applyC_2D( F, N, newTraj, kCy, kCx, Cy, Cx )
+  % or
   % out = applyC_2D( F, traj, newTraj, kCy, kCx, Cy, Cx )
   %
   % Applies a continuous circular convolution of a kernel as detailed in
   % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
-  %   F - 
-  %   traj - 
-  %   N - 
-  %   newTraj - An nK x 2 array specifying the ky / kx (first / second column) coordinates
+  %   F - An nTraj array representing the values of the function evaluated at each point in traj
+  %   traj - An nTraj x 2 array specifying the ky / kx (first / second column) coordinates
+  %          of the source trajectory points
+  %   newTraj - An nNew x 2 array specifying the ky / kx (first / second column) coordinates
   %             of the new points
   %   kCy -
   %   kCx -
@@ -27,22 +29,38 @@ function out = applyC_2D( F, traj, newTraj, kCy, kCx, Cy, Cx )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel( newTraj ) == 2 && max( mod( newTraj, 1 ) ) == 0
+  if numel( traj ) == 2 && max( mod( traj, 1 ) ) == 0 && min( abs( traj ) ) > 0
+    % newTraj is a two element array specifying the size of the grid
+    N = traj;
+    traj = size2fftCoordinates( N );
+    trajKy = traj{1};  trajKx = traj{2};
+    trajIsGrid = true;
+  else
+    trajKy = newTraj(:,1);  trajKx = newTraj(:,2);
+    trajIsGrid = false;
+  end
+
+  if numel( newTraj ) == 2 && max( mod( newTraj, 1 ) ) == 0 && min( abs( newTraj ) ) > 0
     % newTraj is a two element array specifying the size of the grid
     N = newTraj;
     newTraj = size2fftCoordinates( N );
     newKy = newTraj{1};  newKx = newTraj{2};
-    gridKsSupplied = true;
+    newTrajIsGrid = true;
   else
     newKy = newTraj(:,1);  newKx = newTraj(:,2);
-    gridKsSupplied = false;
+    newTrajIsGrid = false;
+  end
+  
+  if trajIsGrid == true && newTrajIsGrid == true
+    error( 'This feature is not yet implemented.' );
   end
 
   kyDistThresh = max( kCy );
   kxDistThresh = max( kCx );
 
 	nTraj = size( traj, 1 );
-  if gridKsSupplied == true
+  if newTrajIsGrid == true
+    % newTraj is a grid and traj is not
 
     sOut = [ numel(newKy) numel(newKx) size(F,2) ];
     out = zeros( sOut );
@@ -73,11 +91,44 @@ function out = applyC_2D( F, traj, newTraj, kCy, kCx, Cy, Cx )
       out( shortIndxsY, shortIndxsX, : ) = out( shortIndxsY, shortIndxsX, : ) + outValues;
     end
 
+  elseif trajIsGrid == true
+    % traj is a grid and newTraj is not
+
+    nNew = size( newTraj, 1 );
+    nFs = size( F, 3 );
+    out = zeros( nNew, nFs );
+
+    for newTrajIndx = 1 : nNew
+      kyDists = min( abs( newTraj(newTrajIndx,1)       - trajKy ), ...
+                     abs( newTraj(newTrajIndx,1) + 1.0 - trajKy ) );
+      kyDists = min( kyDists, ...
+                     abs( newTraj(newTrajIndx,1) - 1.0 - trajKy ) );
+
+      kxDists = min( abs( newTraj(newTrajIndx,2)       - trajKx ), ...
+                     abs( newTraj(newTrajIndx,2) + 1.0 - trajKx ) );
+      kxDists = min( kxDists, ...
+                     abs( newTraj(newTrajIndx,2) - 1.0 - trajKx ) );
+
+      shortIndxsY = find( kyDists < kyDistThresh );
+      if numel( shortIndxsY ) == 0, continue; end
+
+      shortIndxsX = find( kxDists < kxDistThresh );
+      if numel( shortIndxsX ) == 0, continue; end
+
+      CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
+      CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
+      CValsYX = CValsY * CValsX';
+      FCVals = bsxfun( @times, F( shortIndxsY, shortIndxsX, : ), CValsYX );
+
+      out( newTrajIndx, : ) = sum( sum( FCVals, 1 ), 2 );
+    end
+
   else
+    % Neither traj nor newTraj are a grid
 
     nNew = size( newTraj, 1 );
     nFs = size( F, 2 );
-    
+
     segLength = 2000;
     nSegs = ceil( nTraj / segLength );
 
