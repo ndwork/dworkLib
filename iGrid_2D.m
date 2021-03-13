@@ -28,6 +28,11 @@ function F = iGrid_2D( data, traj, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  F = iGrid_2D( data, traj, [ ''alpha'', alpha, ''W'', W, ''nC'', nC ] ) ');
+    return;
+  end
+  
   checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
   p.addParameter( 'alpha', [], checknum );
@@ -38,23 +43,36 @@ function F = iGrid_2D( data, traj, varargin )
   W = p.Results.W;
   nC = p.Results.nC;
 
+  if numel( alpha ) == 0, alphaY = 1.5; alphaX = 1.5;
+  elseif numel( alpha ) == 1, alphaY = alpha; alphaX = alpha;
+  elseif numel( alpha ) == 2, alphaY = alpha(1);  alphaX = alpha(2);
+  end
+
+  if ( alphaY ~= 1 ) || ( alphaX ~= 1 )
+    sData = size( data );
+    sData( 1 : 2 ) = ceil( [ alphaY alphaX ] .* sData( 1 : 2 ) );
+    data = padData( data, sData );
+  end
   [ Ny, Nx, ~ ] = size( data );
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
-  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, 'alpha', alphaY, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
+  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
   preEmphasis = ( Nx * Ny ) ./ ( cImgY * cImgX' ) ;
+  %preEmphasis = 1 ./ ( Nx * Ny * cImgY * cImgX' ) ;  % This works but I don't know why
   preEmphasized = bsxfun( @times, data, preEmphasis );
+  preEmphasized( data == 0 ) = 0;
 
   % Perform an fft
   fftData = fftshift( fftshift( fft( fft( ifftshift( ifftshift( ...
     preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
 
   % Perform a circular convolution
-  F = applyCT_2D( fftData, traj, kCy, kCx, Cy, Cx );
+  sData = size( fftData );
+  F = applyC_2D( fftData, sData(1:2), traj, kCy, kCx, Cy, Cx );
 end
 

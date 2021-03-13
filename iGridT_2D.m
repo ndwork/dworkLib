@@ -33,7 +33,7 @@ function out = iGridT_2D( F, traj, N, varargin )
   % purpose.
   
 
-  if numel(N)==1
+  if numel(N) == 1
     Ny = N;     Nx = N; 
   else
     Ny = N(1);  Nx = N(2);
@@ -49,11 +49,20 @@ function out = iGridT_2D( F, traj, N, varargin )
   W = p.Results.W;
   nC = p.Results.nC;
 
+  if numel( alpha ) == 0, alphaY = 1.5;  alphaX = 1.5;
+  elseif numel( alpha ) == 1, alphaY = alpha;  alphaX = alpha;
+  elseif numel( alpha ) == 2, alphaY = alpha(1); alphaX = alpha(2);
+  end
+  alphaY = ceil( alphaY * Ny ) / Ny;
+  alphaX = ceil( alphaX * Nx ) / Nx;
+  Ny = alphaY * Ny;
+  Nx = alphaX * Nx;
+
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
-  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, 'alpha', alphaY, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
+  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
 
   % Perform a circular convolution
   fftGridded = applyC_2D( F, traj, [Ny Nx], kCy, kCx, Cy, Cx );
@@ -65,5 +74,12 @@ function out = iGridT_2D( F, traj, N, varargin )
   % Perform deapodization
   deapod = ( Nx * Ny ).^2 ./ ( cImgY * transpose( cImgX ) ) ;
   out = bsxfun( @times, data, deapod );
+
+  if ( alphaY ~= 1 ) || ( alphaX ~= 1 )
+    Ny = Ny / alphaY;  Nx = Nx / alphaX;
+    sOut = size( out );
+    sOut( 1 : 2 ) = [ Ny Nx ];
+    out = cropData( out, sOut );
+  end
 end
 
