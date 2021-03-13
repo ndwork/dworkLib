@@ -1,8 +1,8 @@
 
 function out = applyCT_2D( f, kTraj, kCy, kCx, Cy, Cx, varargin )
-  % out = applyC_2D( f, kTraj, N, kCy, kCx, Cy, Cx [, newKs ] )
+  % out = applyCT_2D( f, kTraj, N, kCy, kCx, Cy, Cx [, newKs ] )
   %
-  % Applies a continuous circular convolution of a kernel as detailed in
+  % Applies adjoint of a continuous circular convolution of a kernel as detailed in
   % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
@@ -16,8 +16,6 @@ function out = applyCT_2D( f, kTraj, kCy, kCx, Cy, Cx, varargin )
   % Optional Inputs:
   %  newKs - An nK x 2 array specifying the ky / kx (first / second column) coordinates
   %          of the new points
-  %  type -  by default, performs a circular convolution  If type=='noCirc',
-  %          then it performs a regular(non-circular) convolution.
   %
   % Written by Nicholas Dwork - Copyright 2016
   %
