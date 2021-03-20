@@ -32,7 +32,7 @@ function F = iGrid_2D( data, traj, varargin )
     disp( 'Usage:  F = iGrid_2D( data, traj, [ ''alpha'', alpha, ''W'', W, ''nC'', nC ] ) ');
     return;
   end
-  
+
   checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
   p.addParameter( 'alpha', [], checknum );
@@ -42,6 +42,8 @@ function F = iGrid_2D( data, traj, varargin )
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
+
+  [ Ny, Nx, ~ ] = size( data );
 
   if numel( alpha ) == 0, alphaY = 1.5; alphaX = 1.5;
   elseif numel( alpha ) == 1, alphaY = alpha; alphaX = alpha;
@@ -53,7 +55,6 @@ function F = iGrid_2D( data, traj, varargin )
     sData( 1 : 2 ) = ceil( [ alphaY alphaX ] .* sData( 1 : 2 ) );
     data = padData( data, sData );
   end
-  [ Ny, Nx, ~ ] = size( data );
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
@@ -68,10 +69,9 @@ function F = iGrid_2D( data, traj, varargin )
 
   % Perform an fft
   fftData = fftshift( fftshift( fft( fft( ifftshift( ifftshift( ...
-    preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 ) / ( Nx * Ny );
+    preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 ) / ( numel( data ) );
 
   % Perform a circular convolution
   sData = size( fftData );
   F = applyC_2D( fftData, sData(1:2), traj, kCy, kCx, Cy, Cx );
 end
-

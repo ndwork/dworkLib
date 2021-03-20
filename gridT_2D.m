@@ -1,6 +1,6 @@
 
-function out = gridT_2D( in, traj, N, weights, varargin )
-  % out = gridT_2D( in, traj, N, weights, [ 'alpha', alpha, 'W', W, 'nC', nC ] )
+function out = gridT_2D( in, traj, weights, varargin )
+  % out = gridT_2D( in, traj, weights, [ 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % Adjoint of gridding operation.  Definitions and details according to
   % http://nicholasdwork.com/tutorials/dworkGridding.pdf
@@ -32,31 +32,7 @@ function out = gridT_2D( in, traj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultAlpha = 1.5;
+  tmp = iGrid_2D( in, traj, varargin{:} );
 
-  p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha );
-  p.addParameter( 'W', [] );
-  p.addParameter( 'nC', [] );
-  p.parse( varargin{:} );
-  alpha = p.Results.alpha;
-  W = p.Results.W;
-  nC = p.Results.nC;
-
-  if numel( alpha ) == 0, alpha = defaultAlpha; end
-
-  nGrid = ceil( alpha * N );
-  trueAlpha = max( nGrid ./ N );
-
-  nOut = N(1) * N(2);
-  if ismatrix( in )
-    padded = padData( in, nGrid ) / ( nOut * nOut );
-  else
-    padded = padData( in, [ nGrid size(in,3) ] ) / ( nOut * nOut );
-  end
-
-  tmp = iGrid_2D( padded, traj, 'alpha', trueAlpha, 'W', W, 'nC', nC );
-
-  out = tmp .* weights;
+  out = bsxfun( @times, tmp, weights );
 end
-

@@ -1,5 +1,5 @@
 function areas = voronoiAreas( pts )
-  % areas = voronoidens( pts );
+  % areas = voronoiAreas( pts );
   %
   % input:  pts is a N x 2 array specifying the x and y locations of the points
   % output: area of cells for each point 

@@ -41,7 +41,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultAlg = 'FP';
+  defaultAlg = 'VORONOI';
   defaultNIter = 5;
   radImg = makeRadialImg( 2 * N );
 	defaultPsfMask = radImg < abs(min(N));
@@ -50,7 +50,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   p.addParameter( 'alpha', [], checknum );
   p.addParameter( 'W', [], checknum );
   p.addParameter( 'nC', [], checknum );
-  p.addParameter( 'alg', defaultAlg );
+  p.addParameter( 'alg', defaultAlg, @(x) true );
   p.addParameter( 'nIter', defaultNIter, checknum );
   p.addParameter( 'psfMask', defaultPsfMask );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
@@ -81,7 +81,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
       [weights,flag,res] = makePrecompWeights_2D_SAMSANOV(...
         kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
 
-    case 'voronoi'
+    case 'VORONOI'
       % Voronoi Density compensation implementation
       weights = makePrecompWeights_2D_VORONOI( kTraj, N );
 
@@ -167,8 +167,6 @@ function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
     residual = norm( psf(:) - b(:), 2 ) / norm(b(:),2);
   end
 
-  scale = getScaleOfPSF( weights, traj, N, 'imgTitle', 'rtbLSDC');
-  weights = scale * weights;
   close;
 end
 
@@ -193,8 +191,7 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   verbose = p.Results.verbose;
 
   % Make the Kaiser Bessel convolution kernel
-  kbN = 2 * N;
-  Ny = kbN(1);  Nx = kbN(2);
+  Ny = N(1);  Nx = N(2);
   Gy = Ny;
   [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
   Gx = Nx;
@@ -214,8 +211,8 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
     weights = oldWeights ./ denom;
   end
 
-  scale = getScaleOfPSF( weights, traj, N, 'imgTitle', 'rtbLSDC');
-  weights = scale * weights;
+  scale = getScaleOfPSF( weights, traj, N );
+  weights = weights .* scale;
 
   if nargout > 1
     flag = 0;
@@ -311,20 +308,15 @@ function [weights,flag,res] = makePrecompWeights_2D_VORONOI( kTraj, N )
   % Voronoi density compensation
 
   weights = voronoidens( kTraj );
-	weights = min( weights, 1/size(kTraj,1) );
+	weights = min( weights, 1 / size( kTraj, 1 ) );
 
-  radialImg = makeRadialImg( 2*N );
-  mask = double( radialImg <= min(N) );
-
-  scale = getScaleOfPSF( weights, kTraj, N, mask, 'imgTitle', 'FP' );
-  weights = scale * weights;
-  close
+  %nTraj = size( kTraj, 1 );
+  %weights( ~isfinite( weights ) ) = 1 / nTraj;
   
+  weights( ~isfinite( weights ) ) = max( weights( isfinite( weights ) ) );
+
   flag = 0;  res = -1;
 end
-
-
-
 
 
 function [scale,mse] = getScaleOfPSF( weights, traj, N, varargin )
@@ -347,7 +339,7 @@ function [scale,mse] = getScaleOfPSF( weights, traj, N, varargin )
   nC = 500;
 
   psf = iGridT_2D( weights, traj, nGrid, 'W', W, 'nC', nC );
-  psf = cropData( psf, 2*N );
+  psf = cropData( psf, N );
   if isempty(mask), mask = ones( size(psf) ); end
   mask = cropData( mask, N );
   psf = mask .* psf;

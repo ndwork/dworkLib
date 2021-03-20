@@ -34,30 +34,7 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultAlpha = 1.5;
+  Fw = bsxfun( @times, F, weights );
 
-  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x > 1) );
-  p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, checknum );
-  p.addParameter( 'W', [], checknum );
-  p.addParameter( 'nC', [], checknum );
-  p.parse( varargin{:} );
-  alpha = p.Results.alpha;
-  W = p.Results.W;
-  nC = p.Results.nC;
-
-  if numel( alpha ) == 0, alpha = defaultAlpha; end
-
-  nGrid = ceil( alpha * N );
-  trueAlpha = nGrid ./ N;
-
-  weightedF = bsxfun( @times, F, weights );
-
-  padded = iGridT_2D( weightedF, kTraj, nGrid, 'alpha', trueAlpha, 'W', W, 'nC', nC );
-
-  nOut = N(1) * N(2);
-  padded = padded / ( nOut * nOut );
-
-  recon = cropData( padded, [ N size(F,2) ] );
+  recon = iGridT_2D( Fw, kTraj, N, varargin{:} );
 end
-
