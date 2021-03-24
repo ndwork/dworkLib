@@ -211,9 +211,11 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
     weights = oldWeights ./ denom;
   end
 
-  scale = getScaleOfPSF( weights, traj, N );
-  weights = weights .* scale;
+  %scale = getScaleOfPSF( weights, traj, N );
+  %weights = weights .* scale;
 
+  weights = weights ./ sum( weights(:) );
+  
   if nargout > 1
     flag = 0;
   end
@@ -312,8 +314,12 @@ function [weights,flag,res] = makePrecompWeights_2D_VORONOI( kTraj, N )
 
   %nTraj = size( kTraj, 1 );
   %weights( ~isfinite( weights ) ) = 1 / nTraj;
-  
-  weights( ~isfinite( weights ) ) = max( weights( isfinite( weights ) ) );
+
+  sumFiniteWeights = sum( weights( isfinite( weights ) ) );
+  leftover = 1 - sumFiniteWeights;
+
+  nNotFinite = sum( ~isfinite( weights ) );
+  weights( ~isfinite( weights ) ) = leftover / nNotFinite;
 
   flag = 0;  res = -1;
 end
