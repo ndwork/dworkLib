@@ -74,7 +74,14 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
     end
   else
     fTy1s = fAdj( y );
-    err = abs( innerProd( fx, y ) - innerProd( x, fTy1s ) );
+    dp1 = innerProd( fx, y );
+    dp2 = innerProd( x, fTy1s );
+    
+    if abs(dp1) > tol * 0.1
+      err = abs( dp1 - dp2 ) / abs( dp1 );
+    else
+      err = abs( dp1 - dp2 );
+    end
     if err > tol
       out = false;
       return;
