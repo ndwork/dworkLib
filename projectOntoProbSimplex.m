@@ -23,9 +23,9 @@ function out = projectOntoProbSimplex( y )
   end
 
   u = sort( y, 'descend' );
-  j = 1 : numel(y);
+  j = ( 1 : numel(y) )';
 
-  rho = find( u + ( 1 ./ j ) .* ( 1 - cumsum( u ) ) > 0, 1, 'last' );
+  rho = find( ( u + ( 1 ./ j ) .* ( 1 - cumsum( u(:) ) ) ) > 0, 1, 'last' );
 
   lambda = (1/rho) * ( 1 - sum( u(1:rho) ) );
 
