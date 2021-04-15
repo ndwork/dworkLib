@@ -1,7 +1,7 @@
 
-function [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, N [, ...
-  %   'h', h, 't', t, 'verbose', verbose ] )
+function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
+  % [xStar,objectiveValues] = pogm( x, g, gGrad, proxth [, N, ...
+  %   'g', g, 'h', h, 't', t, 'verbose', verbose ] )
   %
   % This function implements the POGM optimization algorithm
   % POGM finds the x that minimizes functions of form g(x) + h(x) where
@@ -14,8 +14,6 @@ function [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, varargin )
   %
   % Inputs:
   % x - the starting point
-  % g - a function handle representing the g function; accepts a vector x
-  %     as input and returns a scalar.
   % gGrad - a function handle representing the gradient function of g;
   %     input: the point to evaluation, output: the gradient vector
   % proxth - the proximal operator of the h function (with parameter t);
@@ -23,6 +21,9 @@ function [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, varargin )
   % N - the number of iterations that FISTA will perform (default is 100)
   %
   % Optional Inputs:
+  % g - a function handle representing the g function; accepts a vector x
+  %     as input and returns a scalar.  This is needed to calculate the
+  %     objective values.
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
   % t - step size (default is 1)
@@ -42,11 +43,13 @@ function [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, varargin )
 
   p = inputParser;
   p.addOptional( 'N', 100, @ispositive );
+  p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
+  g = p.Results.g;
   h = p.Results.h;
   N = p.Results.N;
   printEvery = p.Results.printEvery;  % display result printEvery iterations
@@ -94,7 +97,8 @@ function [xStar,objectiveValues] = pogm( x, g, gGrad, proxth, varargin )
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'POGM Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0
-        verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+        verboseString = [ verboseString, ',  objective: ', ...
+          num2str( objectiveValues(k+1), 15 ) ];   %#ok<AGROW>
       end
       disp( verboseString );
     end
