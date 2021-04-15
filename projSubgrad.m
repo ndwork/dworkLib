@@ -1,6 +1,6 @@
 
-function xStar = projSubgrad( x, gGrad, proj, varargin )
-  % xStar = projSubgrad( x, gGrad, proj [, 'N', N, 't', t ] )
+function [xStar,objValues] = projSubgrad( x, gGrad, proj, varargin )
+  % [xStar,objValues] = projSubgrad( x, gGrad, proj [, 'g', g, 'N', N, 't', t ] )
   %
   % This function implements the projected subgradient method
   %
@@ -25,20 +25,30 @@ function xStar = projSubgrad( x, gGrad, proj, varargin )
   % purpose.
 
   p = inputParser;
+  p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @(x) isnumeric(x) && x>0 );
   p.addParameter( 't', 1, @(x) isnumeric(x) && x>0 );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
+  g = p.Results.g;
   N = p.Results.N;
   t = p.Results.t;
   verbose = p.Results.verbose;
+
+  if nargout > 1
+    objValues = zeros( N+1, 1 );
+    objValues( 1 ) = g( x );
+  end
 
   for n = 1:N
     if verbose ~= 0
       disp([ 'Working on iteration ', num2str(n), ' of ', num2str(N) ]);
     end
+
     x = x - t * gGrad( x );  % Gradient update
     x = proj( x );  % projection
+
+    if nargout > 1, objValues( n+1 ) = g( x ); end
   end
 
   xStar = x;
