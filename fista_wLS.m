@@ -1,6 +1,6 @@
 
 function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
-  % [xStar,optValue] = fista( x, g, gGrad, proxth [, ...
+  % [xStar,objValues] = fista_wLS( x, g, gGrad, proxth [, ...
   %   'h', h, 'innerProd', 'N', N, 'r', r, 's', s, 't0', t0, 'restart', true/false, ...
   %   'verbose', verbose ] )
   %
@@ -52,6 +52,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   defaultSubIterThresh = 100;
 
   p = inputParser;
+  p.addParameter( 'gradNorm', Inf, @ispositive );
   p.addParameter( 'h', [] );
   p.addParameter( 'innerProd', [] );
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x) == 0 );
@@ -64,6 +65,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   p.addParameter( 'subIterThresh', defaultSubIterThresh, @ispositive );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
+  gradNorm = p.Results.gradNorm;
   h = p.Results.h;
   innerProd = p.Results.innerProd;
   N = p.Results.N;  % total number of iterations
@@ -108,7 +110,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(iter,formatString) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', ...
-          num2str( objectiveValues(iter+1) ), '   parts: ', num2str(gx), ...
+          num2str( objectiveValues(iter), 15 ), '   parts: ', num2str(gx), ...
           ',  ', num2str( hx ) ];   %#ok<AGROW>
       end
       disp( verboseString );
@@ -122,9 +124,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
     subIter = 0;
     while true
       subIter = subIter + 1;
-      %if verbose == true
-      %  disp([ '     sub iteration: ', num2str( subIter ), '  t: ', num2str(t) ]);
-      %end
+      if verbose == true
+        disp([ '     sub iteration: ', num2str( subIter ), '  t: ', num2str(t) ]);
+      end
 
       if t < minStep, t = minStep; end
       
@@ -154,6 +156,9 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
          ( t <= minStep )
        break;
       end
+
+      if t < 1 / gradNorm, break; end
+
       t = r*t;
       if verbose>1 && mod( k, printEvery ) == 0
         disp([ '  Step size change to: ', num2str(t) ]);
