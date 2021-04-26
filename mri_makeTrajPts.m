@@ -1,5 +1,4 @@
 
-
 function traj = mri_makeTrajPts( nDim, type, varargin )
   % traj = makeTrajPts( nDim, type, parameters );
   %
@@ -80,7 +79,7 @@ function traj = makeTrajPts_propeller( nDim, nReadout, nLines, dkLine, nAngles )
   if nDim ~= 2, error('Propeller is a 2D Trajectory'); end
 
   nKperAngle = nReadout * nLines;
-  dAngle = pi/nAngles;
+  dAngle = pi / nAngles;
 
   kx = ones(nLines,1) * linspace(-0.5,0.5,nReadout);
   kyExtent = dkLine * (nLines-1);
@@ -126,7 +125,8 @@ end
 function traj = makeTrajPts_radial( nDim, nSpokes, nPtsPerSpoke )
   if nDim ~= 2, error('Radial trajectory just for 2 dimensions'); end
 
-  thetas = linspace( 0, 2*pi, nSpokes );
+  thetas = linspace( 0, 2*pi, nSpokes + 1 );
+  thetas = thetas( 1 : end-1 );
   rs = linspace( 0, 0.5, nPtsPerSpoke );
 
   traj = zeros( nSpokes*nPtsPerSpoke, 2 );
