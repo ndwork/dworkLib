@@ -19,7 +19,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
   %     CLSDC (default) - Constrainted Least Squares on trajectory points
   %     FP - specifies fixed point iteration
   %     SAMSANOV - Constrainted Least Squares on grid points
-  %     VORONOI
+  %     VORONOI - uses the area of each voronoi cell as the metric of density
   %   nIter - specifies the number of iterations of fp method
   %   psfMask - only used by space domain optimizations
   %   verbose - true/false
@@ -76,6 +76,11 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
       [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, psfMask, ...
         'alpha', alpha, 'W', W, 'nC', nC, 'nIter', nIter, 'verbose', verbose );
 
+    case 'JACKSON'
+      % Pipe's method
+      [weights,flag] = makePrecompWeights_2D_JACKSON( kTraj, N, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
+
     case 'SAMSANOV'
       % Method from Samsanov's abstract
       [weights,flag,res] = makePrecompWeights_2D_SAMSANOV(...
@@ -83,7 +88,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
 
     case 'VORONOI'
       % Voronoi Density compensation implementation
-      weights = makePrecompWeights_2D_VORONOI( kTraj, N );
+      weights = makePrecompWeights_2D_VORONOI( kTraj );
 
     otherwise
       error('makePrecompWeights: Algorithm not recognized');
@@ -225,6 +230,39 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
 end
 
 
+
+function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
+  % Fixed point iteration defined in "Sampling Density Compensation in MRI:
+  % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
+
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
+  p = inputParser;
+  p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
+  p.parse( varargin{:} );
+  alpha = p.Results.alpha;
+  W = p.Results.W;
+  nC = p.Results.nC;
+
+  % Make the Kaiser Bessel convolution kernel
+  Ny = N(1);  Nx = N(2);
+  Gy = Ny;
+  [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  Gx = Nx;
+  [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
+
+  nTraj = size( traj, 1 );
+  weights = 1 ./ applyC_2D( ones( nTraj, 1 ), traj, traj, kCy, kCx, Cy, Cx );
+
+  weights = weights / sum( weights(:) );
+  
+  if nargout > 1
+    flag = 0;
+  end
+end
+
+
 function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
   kTraj, N, varargin )
 
@@ -306,22 +344,40 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
 end
 
 
-function [weights,flag,res] = makePrecompWeights_2D_VORONOI( kTraj, N )
-  % Voronoi density compensation
+function weights = makePrecompWeights_2D_VORONOI( kTraj )
+  
 
-  weights = voronoidens( kTraj );
-	weights = min( weights, 1 / size( kTraj, 1 ) );
 
-  %nTraj = size( kTraj, 1 );
-  %weights( ~isfinite( weights ) ) = 1 / nTraj;
+  nTraj = size( kTraj, 1 );
 
-  sumFiniteWeights = sum( weights( isfinite( weights ) ) );
-  leftover = 1 - sumFiniteWeights;
+  simpleHullWeights = false;
+  if simpleHullWeights == true   
+    % Voronoi density compensation according to "A Gridding Algorithm for Efficient Density
+    % Compensation of Arbitrarily Sampled Fourier-Domain Data" by Malik et al.
 
-  nNotFinite = sum( ~isfinite( weights ) );
-  weights( ~isfinite( weights ) ) = leftover / nNotFinite;
+    %weights = voronoidens( kTraj );
+    weights = calculateVoronoiAreas( kTraj, [ -0.5 0.5 -0.5 0.5 ] );
 
-  flag = 0;  res = -1;
+    maxWeight = max( weights( isfinite( weights ) ) );
+    weights( ~isfinite( weights ) ) = maxWeight;
+
+  else
+    % Voronoi density compensation according to "Resampling of Data Between
+    % Arbitrary Grids Using Convolution Interpolation" by Rasche et al.
+
+    [ outerConvHullIndxs, areaOuter ] = convhull( kTraj, 'Simplify', true );
+    outerConvHullIndxs = sort( outerConvHullIndxs );
+    outerTraj = kTraj(outerConvHullIndxs,:);
+    innerTraj = setdiff( kTraj, outerTraj, 'rows' );
+
+    [ ~, areaInner ] = convhull( innerTraj, 'Simplify', true );
+    alpha = sqrt( areaOuter / areaInner );
+    newOuterTraj = alpha * outerTraj;
+
+    augTraj = [ kTraj; newOuterTraj; ];
+    augWeights = calculateVoronoiAreas( augTraj );
+    weights = augWeights( 1 : nTraj );
+  end
 end
 
 
