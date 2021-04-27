@@ -58,6 +58,10 @@ function [nrm,flag] = powerIteration( M, varargin )
   if numel( x0 ) > 0 && max( abs( x0(:) ) ) == 0
     error( 'x0 must be nonzero' );
   end
+  
+  if verbose == true
+    disp( 'Starting powerIteration.' );
+  end
 
   if isa( M, 'function_handle' )
     if isempty( x0 )
