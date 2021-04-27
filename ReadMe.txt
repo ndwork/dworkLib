@@ -1,5 +1,5 @@
 
-This directory is the dworkLib, a library made by Nicholas Dwork.
+This directory is the dworkLib, a Matlab library made by Nicholas Dwork.
 You can see his website at www.nicholasdwork.com.
 
 You can get an updated version of the library at the following git link:
