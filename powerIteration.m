@@ -89,7 +89,7 @@ function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance, verbose )
   flag = 1;
   for iter = 1:maxIters
     if verbose == true
-      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
     end
 
     MtMx = applyM( applyM(x), 'transp' );
@@ -117,7 +117,7 @@ function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance, verbose )
   flag = 1;
   for iter = 1:maxIters
     if verbose == true
-      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
     end
 
     Mx = applyM(x);
@@ -145,7 +145,7 @@ function [nrm,flag] = pI_mat( M, x, maxIters, tolerance, verbose )
   flag = 1;
   for iter = 1:maxIters
     if verbose == true
-      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
     end
 
     MtMx = M'*M*x;
@@ -173,7 +173,7 @@ function [nrm,flag] = pI_matSymm( M, x, maxIters, tolerance, verbose )
   flag = 1;
   for iter = 1:maxIters
     if verbose == true
-      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
     end
 
     Mx = M*x;
