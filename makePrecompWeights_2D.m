@@ -366,6 +366,7 @@ function weights = makePrecompWeights_2D_VORONOI( kTraj )
     % Arbitrary Grids Using Convolution Interpolation" by Rasche et al.
 
     [ outerConvHullIndxs, areaOuter ] = convhull( kTraj, 'Simplify', true );
+    outerConvHullIndxs = outerConvHullIndxs( 1 : end - 1 );
     outerConvHullIndxs = sort( outerConvHullIndxs );
     outerTraj = kTraj(outerConvHullIndxs,:);
     innerTraj = setdiff( kTraj, outerTraj, 'rows' );
