@@ -101,6 +101,7 @@ function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance, verbose )
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
+      if verbose == true, disp([ 'powerIteration finished early' ]); end
       flag = 0;
       break;
     end
@@ -128,6 +129,7 @@ function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance, verbose )
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
+      if verbose == true, disp([ 'powerIteration finished early' ]); end
       flag = 0;
       break;
     end
@@ -155,6 +157,7 @@ function [nrm,flag] = pI_mat( M, x, maxIters, tolerance, verbose )
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
+      if verbose == true, disp([ 'powerIteration finished early' ]); end
       flag = 0;
       break;
     end
@@ -182,6 +185,7 @@ function [nrm,flag] = pI_matSymm( M, x, maxIters, tolerance, verbose )
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
+      if verbose == true, disp([ 'powerIteration finished early' ]); end
       flag = 0;
       break;
     end
