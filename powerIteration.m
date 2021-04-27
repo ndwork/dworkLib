@@ -84,24 +84,24 @@ end
 
 
 function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance, verbose )
-
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
-    if verbose == true
-      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
-    end
-
     MtMx = applyM( applyM(x), 'transp' );
     lambdaPrev = lambda;
     lambda = norm( MtMx(:), 2 );
     if lambda==0, break; end
 
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters), ...
+        '   current norm estimate: ', num2str( sqrt( lambda ) ) ]);
+    end
+
     x = MtMx / lambda;
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
-      if verbose == true, disp([ 'powerIteration finished early' ]); end
+      if verbose == true, disp( 'powerIteration finished early' ); end
       flag = 0;
       break;
     end
@@ -112,24 +112,24 @@ end
 
 
 function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance, verbose )
-
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
-    if verbose == true
-      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
-    end
-
     Mx = applyM(x);
     lambdaPrev = lambda;
     lambda = norm( Mx(:) );
     if lambda==0, break; end
 
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters), ...
+        '   current norm estimate: ', num2str( sqrt( lambda ) ) ]);
+    end
+
     x = Mx / lambda;
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
-      if verbose == true, disp([ 'powerIteration finished early' ]); end
+      if verbose == true, disp( 'powerIteration finished early' ); end
       flag = 0;
       break;
     end
@@ -140,24 +140,24 @@ end
 
 
 function [nrm,flag] = pI_mat( M, x, maxIters, tolerance, verbose )
-
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
-    if verbose == true
-      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
-    end
-
     MtMx = M'*M*x;
     lambdaPrev = lambda;
     lambda = norm(MtMx,2);
     if lambda==0, break; end
 
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters), ...
+        '   current norm estimate: ', num2str( sqrt( lambda ) ) ]);
+    end
+
     x = MtMx / lambda;
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
-      if verbose == true, disp([ 'powerIteration finished early' ]); end
+      if verbose == true, disp( 'powerIteration finished early' ); end
       flag = 0;
       break;
     end
@@ -168,24 +168,24 @@ end
 
 
 function [nrm,flag] = pI_matSymm( M, x, maxIters, tolerance, verbose )
-
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
-    if verbose == true
-      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters) ]);
-    end
-
     Mx = M*x;
     lambdaPrev = lambda;
     lambda = norm(Mx,2);
     if lambda==0, break; end
 
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str( iter, maxIters ), ' of ', num2str(maxIters), ...
+        '   current norm estimate: ', num2str( sqrt( lambda ) ) ]);
+    end
+
     x = Mx / lambda;
 
     diff = abs(lambda - lambdaPrev) / lambda;
     if diff < tolerance
-      if verbose == true, disp([ 'powerIteration finished early' ]); end
+      if verbose == true, disp( 'powerIteration finished early' ); end
       flag = 0;
       break;
     end
