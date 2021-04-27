@@ -3,7 +3,7 @@ function [nrm,flag] = powerIteration( M, varargin )
   % Determines an approximation for the norm of the matrix M
   %
   % [nrm,flag] = powerIteration( M [, x0, 'maxIters', maxIters, 'symmetric', true/false, ...
-  %   'tolerance', tolerance ])
+  %   'tolerance', tolerance, 'verbose', true/false ])
   %
   % Inputs:
   % M is either a matrix or a function handle.
@@ -21,6 +21,7 @@ function [nrm,flag] = powerIteration( M, varargin )
   % Optional Inputs:
   % maxIters - The maximum number of iterations permitted (default is 1000)
   % tolerance - if the residual is less than this tolerance, then return
+  % verbose - print out statements
   %
   % Outputs:
   % nrm - approximation of norm of M
@@ -46,11 +47,13 @@ function [nrm,flag] = powerIteration( M, varargin )
   p.addParameter( 'maxIters', defaultMaxIters, @isnumeric );
   p.addParameter( 'symmetric', false, @islogical );
   p.addParameter( 'tolerance', defaultTolerance, @isnumeric );
+  p.addParameter( 'verbose', false, @islogical );
   p.parse( varargin{:} );
   x0 = p.Results.x0;
   maxIters = p.Results.maxIters;
   symmetric = p.Results.symmetric;
   tolerance = p.Results.tolerance;
+  verbose = p.Results.verbose;
 
   if numel( x0 ) > 0 && max( abs( x0(:) ) ) == 0
     error( 'x0 must be nonzero' );
@@ -62,9 +65,9 @@ function [nrm,flag] = powerIteration( M, varargin )
     end
 
     if symmetric == true
-      [nrm,flag] = pI_fhSymm( M, x0, maxIters, tolerance );
+      [nrm,flag] = pI_fhSymm( M, x0, maxIters, tolerance, verbose );
     else
-      [nrm,flag] = pI_fh( M, x0, maxIters, tolerance );
+      [nrm,flag] = pI_fh( M, x0, maxIters, tolerance, verbose );
     end
 
   else
@@ -72,19 +75,23 @@ function [nrm,flag] = powerIteration( M, varargin )
       x0 = rand( size(M,2), 1 );
     end
     if symmetric == true
-      [nrm,flag] = pI_matSymm( M, x0, maxIters, tolerance );
+      [nrm,flag] = pI_matSymm( M, x0, maxIters, tolerance, verbose );
     else
-      [nrm,flag] = pI_mat( M, x0, maxIters, tolerance );
+      [nrm,flag] = pI_mat( M, x0, maxIters, tolerance, verbose );
     end
   end
 end
 
 
-function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance )
+function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance, verbose )
 
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+    end
+
     MtMx = applyM( applyM(x), 'transp' );
     lambdaPrev = lambda;
     lambda = norm( MtMx(:), 2 );
@@ -103,11 +110,15 @@ function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance )
 end
 
 
-function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance )
+function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance, verbose )
 
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+    end
+
     Mx = applyM(x);
     lambdaPrev = lambda;
     lambda = norm( Mx(:) );
@@ -126,11 +137,15 @@ function [nrm,flag] = pI_fhSymm( applyM, x, maxIters, tolerance )
 end
 
 
-function [nrm,flag] = pI_mat( M, x, maxIters, tolerance )
+function [nrm,flag] = pI_mat( M, x, maxIters, tolerance, verbose )
 
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+    end
+
     MtMx = M'*M*x;
     lambdaPrev = lambda;
     lambda = norm(MtMx,2);
@@ -149,11 +164,15 @@ function [nrm,flag] = pI_mat( M, x, maxIters, tolerance )
 end
 
 
-function [nrm,flag] = pI_matSymm( M, x, maxIters, tolerance )
+function [nrm,flag] = pI_matSymm( M, x, maxIters, tolerance, verbose )
 
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
+    if verbose == true
+      disp([ 'powerIteration working on ', indx2str(iter), ' of ', num2str(maxIters) ]);
+    end
+
     Mx = M*x;
     lambdaPrev = lambda;
     lambda = norm(Mx,2);
