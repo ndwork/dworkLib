@@ -34,7 +34,7 @@ function mask = mri_makeIntensityMask( kData, varargin )
   thresh = p.Results.thresh;
   m = p.Results.m;
 
-  ssqRecon = mri_ssqRecon( kData );
+  ssqRecon = mri_reconSSQ( kData );
   ssqRecon = ssqRecon / max( ssqRecon(:) );
   mask = ssqRecon > thresh;
 
