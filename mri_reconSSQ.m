@@ -1,5 +1,5 @@
 
-function recon = mri_ssqRecon( kData, varargin )
+function recon = mri_reconSSQ( kData, varargin )
   % recon = mri_ssqRecon( kData [, 'multiSlice', true/false ] )
   %
   % Perform a sum of squared reconstruction
