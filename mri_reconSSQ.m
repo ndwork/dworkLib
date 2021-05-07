@@ -1,6 +1,6 @@
 
 function recon = mri_reconSSQ( kData, varargin )
-  % recon = mri_ssqRecon( kData [, 'multiSlice', true/false ] )
+  % recon = mri_reconSSQ( kData [, 'multiSlice', true/false ] )
   %
   % Perform a sum of squared reconstruction
   %
@@ -25,7 +25,7 @@ function recon = mri_reconSSQ( kData, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  recon = mri_ssqRecon( kData [, ''multiSlice'', true/false ] )' );
+    disp( 'Usage:  recon = mri_reconSSQ( kData [, ''multiSlice'', true/false ] )' );
     return;
   end
 
