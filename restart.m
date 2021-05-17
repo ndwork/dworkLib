@@ -25,6 +25,8 @@ function restart( varargin )
     evalin( 'caller', 'clear all' );  % delete all variables in global scope
     clear all;  %#ok<CLALL>
 
+    if parpoolExists(), delete( gcp ); end
+
     parforFiles = dir( 'parforProgress*.txt' );
     for fileIndx = 1 : numel( parforFiles )
       delete( parforFiles(fileIndx).name );
