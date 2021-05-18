@@ -32,13 +32,15 @@ function restart( varargin )
       delete( parforFiles(fileIndx).name );
     end
 
-  else
+  elseif numel( type ) == 0
     pid = feature('getpid');
     parforProgressFile = ['parforProgress_', num2str(pid), '.txt'];
     if exist( parforProgressFile, 'file' )
       delete( parforProgressFile );
     end
 
+  else
+    error( 'Unknown argument passed to restart' );
   end
 
   close all;  clc;  clear;  clear global;
