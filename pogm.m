@@ -95,7 +95,7 @@ function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
 
     if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
-      verboseString = [ 'POGM Iteration: ', num2str(k,formatString) ];
+      verboseString = [ 'POGM Iteration: ', num2str(k,formatString), ' of ', num2str(N) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', ...
           num2str( objectiveValues(k+1), 15 ) ];   %#ok<AGROW>
