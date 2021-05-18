@@ -106,8 +106,8 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
 
   while iter < N
     if verbose>0 && iter>0 && mod( iter, printEvery ) == 0
-      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
-      verboseString = [ 'FISTA (with Line Search) Iteration: ', num2str(iter,formatString) ];
+      verboseString = [ 'FISTA (with Line Search) Iteration: ', indx2str(iter,N), ...
+        ' of ', num2str(N) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', ...
           num2str( objectiveValues(iter), 15 ), '   parts: ', num2str(gx), ...
@@ -165,7 +165,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       end
     end
 
-    if restart == true && k > 0 && innerProd( Dgy, x-lastX ) > 0
+    if restart == true && k > 0 && innerProd( Dgy, x - lastX ) > 0
       % Restart (kill momentum) when trajectory and -gradient form oblique angles
       k = 0;
       v = x;
