@@ -1,6 +1,6 @@
 
-function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
-  % [weights,flag,res] = makePrecompWeights_2D( kTraj, N, ...
+function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
+  % [weights,flag,res] = makePrecompWeights_2D( kTraj [, N, ...
   %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg, 'psfMask', psfMask ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
@@ -43,21 +43,25 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
 
   defaultAlg = 'VORONOI';
   defaultNIter = 5;
-  radImg = makeRadialImg( 2 * N );
-	defaultPsfMask = radImg < abs(min(N));
   checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
+  p.addOptional( 'N', [], @ispositive );
   p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'gamma', 21, checknum );
   p.addParameter( 'W', [], checknum );
+  p.addParameter( 'mu', 0, checknum );
   p.addParameter( 'nC', [], checknum );
   p.addParameter( 'alg', defaultAlg, @(x) true );
   p.addParameter( 'nIter', defaultNIter, checknum );
-  p.addParameter( 'psfMask', defaultPsfMask );
+  p.addParameter( 'psfMask', [] );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
+  N = p.Results.N;
   alg = p.Results.alg;
   alpha = p.Results.alpha;
+  gamma = p.Results.gamma;
   W = p.Results.W;
+  mu = p.Results.mu;
   nC = p.Results.nC;
   nIter = p.Results.nIter;
   psfMask = p.Results.psfMask;
@@ -75,6 +79,10 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
       % Pipe's method
       [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, psfMask, ...
         'alpha', alpha, 'W', W, 'nC', nC, 'nIter', nIter, 'verbose', verbose );
+
+    case 'GP'
+      % Gradient Projection method
+      [weights,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu );
 
     case 'JACKSON'
       % Pipe's method
@@ -230,6 +238,126 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
 end
 
 
+function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
+
+  nTraj = size( traj, 1 );
+  D = size( traj, 2 );
+  segLength = 30000;
+
+  function out = applyA( in, op )
+    if nargin < 2, op = 'notransp'; end
+
+    nIn = numel( in );
+    out = cell( nIn, 1 );
+
+    parfor tIndx = 1 : nIn
+      row = 2 * ones( nTraj, 1 );
+
+      for dIndx = 1 : D
+        Nd = N( dIndx );
+
+        eIndx = 0;
+        nSegs = ceil( nTraj / segLength );
+        for segIndx = 1 : nSegs
+          sIndx = eIndx + 1;  % start index
+          eIndx = min( segIndx * segLength, nTraj );  % end index
+
+          if strcmp( op, 'notransp' )  % notransp
+            diffKs = traj( tIndx, dIndx ) - traj( sIndx:eIndx, dIndx );
+          else
+            diffKs = traj( sIndx:eIndx, dIndx ) - traj( tIndx, dIndx );
+          end
+          nu = 2 * pi * diffKs;
+
+          if numel( gamma ) > 0
+            tmp1 = ( -gamma * exp( -Nd / gamma ) ) * cos( nu * Nd ) ;
+            tmp2 = ( gamma * gamma * exp( -Nd / gamma ) ) * nu .* sin( nu * Nd );
+            tmp3 = gamma;
+            tmp = tmp1 + tmp2 + tmp3;
+            factors = 2 ./ ( 1 + ( gamma * nu ).^2 ) .* tmp;
+            factors( nu == 0 ) = 2 * gamma * ( 1 - exp( -Nd / gamma ) );
+
+          else
+            factors = sin( nu * N( dIndx ) ) ./ ( pi * diffKs );
+            factors( nu == 0 ) = 2 * N( dIndx );
+          end
+
+          row(sIndx:eIndx) = row(sIndx:eIndx) .* factors;
+        end
+      end
+
+      out{ tIndx } = sum( row .* in );
+    end
+    out = cell2mat( out );
+  end
+  
+  doAdjointCheck = false;
+  if doAdjointCheck == true && ...
+    ~checkAdjoint( rand( nTraj, 1 ), @applyA, 'y', rand( nTraj, 1 ) )
+    error( 'A adjoint is incorrect' );
+  end
+
+
+  function out = g( w )
+    psf = grid_2D( w, traj, 2*N, ones( size( w ) ) );
+    [out,costPerPixel] = calculateCost( psf, w, gamma, mu );   %#ok<ASGLU>
+  end
+
+  h = @(w) 0;
+
+  function out = gGrad( w )
+    out = applyA( w );
+
+    if mu > 0
+      out = out + ( mu / nTraj ) * w;
+    end
+  end
+
+  proxth = @(x,t) projectOntoProbSimplex( x );
+
+w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
+%w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
+%w0 = rand( size( traj, 1 ), 1 );  w0 = w0 / sum( w0 );
+
+  normA = powerIteration( @applyA, w0, 'maxIters', 100, 'verbose', true );
+  grdNrm = normA + ( 0.5 * mu / nTraj );  % Lower bound on norm of gradient
+  stepSize = 0.99 / grdNrm;
+
+  alg = 'fista_wLS';
+  if strcmp( 'fista_wLS', alg )
+    stepSize = 1d-4;
+    [w,objValues] = fista_wLS( w0, @g, @gGrad, proxth, ...
+      'N', 60, 't0', stepSize, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
+
+  elseif strcmp( 'pogm', alg )
+    [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', 60, ...
+      'g', @g, 'h', h, 'verbose', true );
+
+  elseif strcmp( 'projSubgrad', alg )
+    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', 10000 );
+  end 
+  %figure;  plotnice( objValues );
+  flag = 0;
+
+  % Now find kappa scaling
+  centerRegion = round( N ./ 20 );
+  threshSmallK = repmat( min( 0.5 ./ N, 1d-6 ), [ size( traj, 1 ) 1 ] );
+  useCenterRegion = true;
+  if useCenterRegion == true
+    scaledSincTraj = sin( bsxfun( @times, traj, 2 * pi * centerRegion ) ) ./ ( pi * traj );
+    twoN = repmat( 2 * centerRegion, [ size( traj, 1 ) 1 ] );
+  else
+    scaledSincTraj = sin( bsxfun( @times, traj, 2 * pi * N ) ) ./ ( pi * traj );
+    twoN = repmat( 2 * N, [ size( traj, 1 ) 1 ] );
+  end
+  scaledSincTraj( abs( traj ) < threshSmallK ) = twoN( abs( traj ) < threshSmallK );
+  prodScaledSincTraj = prod( scaledSincTraj, 2 );
+  kappa = 1 ./ ( sum( w .* prodScaledSincTraj ) );
+  w = kappa * w;
+
+end
+
+
 
 function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
@@ -344,9 +472,9 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
 end
 
 
-function weights = makePrecompWeights_2D_VORONOI( kTraj )
+function fullWeights = makePrecompWeights_2D_VORONOI( fullKTraj )
   
-
+  [ kTraj, ia, ic ] = unique( fullKTraj, 'rows' );
 
   nTraj = size( kTraj, 1 );
 
@@ -379,56 +507,17 @@ function weights = makePrecompWeights_2D_VORONOI( kTraj )
     augWeights = calculateVoronoiAreas( augTraj );
     weights = augWeights( 1 : nTraj );
   end
-end
 
-
-function [scale,mse] = getScaleOfPSF( weights, traj, N, varargin )
-  % scale = getScaleOfPSF( weights, traj, N, mask [, ...
-  %   'savefile', savefile, 'imgTitle', imgTitle ] )
-  %
-  % Written by Nicholas Dwork - Copyright 2016
-
-  p = inputParser;
-  p.addOptional( 'mask', [] );
-  p.addParameter( 'savefile', [] );
-  p.addParameter( 'imgTitle', [] );
-  p.parse( varargin{:} );
-  mask = p.Results.mask;
-  savefile = p.Results.savefile;
-  imgTitle = p.Results.imgTitle;
-
-  nGrid = 2 * N;
-  W = 8;
-  nC = 500;
-
-  psf = iGridT_2D( weights, traj, nGrid, 'W', W, 'nC', nC );
-  psf = cropData( psf, N );
-  if isempty(mask), mask = ones( size(psf) ); end
-  mask = cropData( mask, N );
-  psf = mask .* psf;
-  scale = 1 ./ max(real(psf(:)));
-
-  %psf = psf * scale;
-  %absPsf=abs(psf);
-  %absPsf_dB = 20*log10(absPsf);
-  %absPsf_dB(~isfinite(absPsf_dB)) = 0;
-
-  %figure;
-  %imshow( imresize(absPsf_dB,2,'nearest'), [-100 0] );
-  %if ~isempty(imgTitle), title(imgTitle); end
-  %drawnow;
-
-  %if ~isempty(savefile)
-  %  scaled_dB = scaleImg( absPsf_dB, [-100 0], [0 1] );
-  %  imwrite( scaled_dB, savefile );
-  %end
-  
-  if nargout > 1
-    b=zeros(size(psf)); b(1,1)=1; b=fftshift(b);
-    mse = sum( abs( mask(:).*psf(:) - mask(:).*b(:) ).^2 ) ./ sum(mask(:));
+  fullWeights = weights( ic );
+  if numel( fullWeights ) ~= numel( weights )
+    for trajIndx = 1 : nTraj
+      if sum( ic == trajIndx ) > 1
+        disp( [ 'Indx ', num2str(trajIndx), ' is doubled' ] );
+      end
+      fullWeights( ic == trajIndx ) = fullWeights( ic == trajIndx ) / sum( ic == trajIndx );
+    end
   end
+
 end
-
-
 
 
