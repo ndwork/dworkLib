@@ -31,8 +31,8 @@ function out = scaleImg( img, varargin )
   if isreal( img )
     defaultInMinMax = [ min(img(:)) max(img(:)) ];
   else
-    defaultInMinMax = [ min([real(img(:)); imag(img(:));]) ...
-                        max([real(img(:)); imag(img(:));]) ];
+    defaultInMinMax = [ min( [real(img(:)); imag(img(:));] ) ...
+                        max( [real(img(:)); imag(img(:));] ) ];
   end
   defaultOutMinMax = [0 1];
 
