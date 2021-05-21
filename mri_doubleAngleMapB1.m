@@ -92,8 +92,10 @@ function b1ScaleMap = mri_doubleAngleMapB1( dataCube, sliceThickness, varargin )
         disp([ 'Working on ', num2str(b1Indx), ' of ', numel( b1s ) ]);
       end
       b1 = b1s( b1Indx );
-      [aSmall,bSmall] = abr( b1*rfSmall_total, gz_total, zSlice, B0 );
-      [aLarge,bLarge] = abr( b1*rfLarge_total, gz_total, zSlice, B0 );
+      %[aSmall,bSmall] = abr( b1*rfSmall_total, gz_total, zSlice, B0 );
+      %[aLarge,bLarge] = abr( b1*rfLarge_total, gz_total, zSlice, B0 );
+      [aSmall,bSmall] = abrm( b1*rfSmall_total, gz_total, zSlice, B0 );
+      [aLarge,bLarge] = abrm( b1*rfLarge_total, gz_total, zSlice, B0 );
       rfMsSmall = mri_ab2Matrix( aSmall, bSmall );
       rfMsLarge = mri_ab2Matrix( aLarge, bLarge );
       for layer=1:nVoxLayers
