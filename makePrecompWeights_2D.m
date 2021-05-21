@@ -47,9 +47,9 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   p = inputParser;
   p.addOptional( 'N', [], @ispositive );
   p.addParameter( 'alpha', [], checknum );
-  p.addParameter( 'gamma', 21, checknum );
+  p.addParameter( 'gamma', 21, @isnumeric );
   p.addParameter( 'W', [], checknum );
-  p.addParameter( 'mu', 0, checknum );
+  p.addParameter( 'mu', 0, @isnumeric );
   p.addParameter( 'nC', [], checknum );
   p.addParameter( 'alg', defaultAlg, @(x) true );
   p.addParameter( 'nIter', defaultNIter, checknum );
@@ -240,6 +240,8 @@ end
 
 function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
 
+  if numel( gamma ) == 1, gamma = ones( numel(N), 1 ); end
+
   nTraj = size( traj, 1 );
   D = size( traj, 2 );
   segLength = 30000;
@@ -255,6 +257,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
 
       for dIndx = 1 : D
         Nd = N( dIndx );
+        thisGamma = gamma( dIndx );   %#ok<PFBNS>
 
         eIndx = 0;
         nSegs = ceil( nTraj / segLength );
@@ -269,13 +272,13 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
           end
           nu = 2 * pi * diffKs;
 
-          if numel( gamma ) > 0
-            tmp1 = ( -gamma * exp( -Nd / gamma ) ) * cos( nu * Nd ) ;
-            tmp2 = ( gamma * gamma * exp( -Nd / gamma ) ) * nu .* sin( nu * Nd );
-            tmp3 = gamma;
+          if numel( thisGamma ) > 0
+            tmp1 = ( -thisGamma * exp( -Nd / thisGamma ) ) * cos( nu * Nd ) ;
+            tmp2 = ( thisGamma * thisGamma * exp( -Nd / thisGamma ) ) * nu .* sin( nu * Nd );
+            tmp3 = thisGamma;
             tmp = tmp1 + tmp2 + tmp3;
-            factors = 2 ./ ( 1 + ( gamma * nu ).^2 ) .* tmp;
-            factors( nu == 0 ) = 2 * gamma * ( 1 - exp( -Nd / gamma ) );
+            factors = 2 ./ ( 1 + ( thisGamma * nu ).^2 ) .* tmp;
+            factors( nu == 0 ) = 2 * thisGamma * ( 1 - exp( -Nd / thisGamma ) );
 
           else
             factors = sin( nu * N( dIndx ) ) ./ ( pi * diffKs );
@@ -473,40 +476,26 @@ end
 
 
 function fullWeights = makePrecompWeights_2D_VORONOI( fullKTraj )
-  
-  [ kTraj, ia, ic ] = unique( fullKTraj, 'rows' );
 
+  [ kTraj, ~, ic ] = unique( fullKTraj, 'rows' );
   nTraj = size( kTraj, 1 );
 
-  simpleHullWeights = false;
-  if simpleHullWeights == true   
-    % Voronoi density compensation according to "A Gridding Algorithm for Efficient Density
-    % Compensation of Arbitrarily Sampled Fourier-Domain Data" by Malik et al.
+  % Voronoi density compensation according to "Resampling of Data Between
+  % Arbitrary Grids Using Convolution Interpolation" by Rasche et al.
 
-    %weights = voronoidens( kTraj );
-    weights = calculateVoronoiAreas( kTraj, [ -0.5 0.5 -0.5 0.5 ] );
+  [ outerConvHullIndxs, areaOuter ] = convhull( kTraj, 'Simplify', true );
+  outerConvHullIndxs = outerConvHullIndxs( 1 : end - 1 );
+  outerConvHullIndxs = sort( outerConvHullIndxs );
+  outerTraj = kTraj(outerConvHullIndxs,:);
+  innerTraj = setdiff( kTraj, outerTraj, 'rows' );
 
-    maxWeight = max( weights( isfinite( weights ) ) );
-    weights( ~isfinite( weights ) ) = maxWeight;
+  [ ~, areaInner ] = convhull( innerTraj, 'Simplify', true );
+  alpha = sqrt( areaOuter / areaInner );
+  newOuterTraj = alpha * outerTraj;
 
-  else
-    % Voronoi density compensation according to "Resampling of Data Between
-    % Arbitrary Grids Using Convolution Interpolation" by Rasche et al.
-
-    [ outerConvHullIndxs, areaOuter ] = convhull( kTraj, 'Simplify', true );
-    outerConvHullIndxs = outerConvHullIndxs( 1 : end - 1 );
-    outerConvHullIndxs = sort( outerConvHullIndxs );
-    outerTraj = kTraj(outerConvHullIndxs,:);
-    innerTraj = setdiff( kTraj, outerTraj, 'rows' );
-
-    [ ~, areaInner ] = convhull( innerTraj, 'Simplify', true );
-    alpha = sqrt( areaOuter / areaInner );
-    newOuterTraj = alpha * outerTraj;
-
-    augTraj = [ kTraj; newOuterTraj; ];
-    augWeights = calculateVoronoiAreas( augTraj );
-    weights = augWeights( 1 : nTraj );
-  end
+  augTraj = [ kTraj; newOuterTraj; ];
+  augWeights = calculateVoronoiAreas( augTraj );
+  weights = augWeights( 1 : nTraj );
 
   fullWeights = weights( ic );
   if numel( fullWeights ) ~= numel( weights )
