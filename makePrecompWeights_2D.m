@@ -281,11 +281,11 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
             factors( nu == 0 ) = 2 * thisGamma * ( 1 - exp( -Nd / thisGamma ) );
 
           else
-            factors = sin( nu * N( dIndx ) ) ./ ( pi * diffKs );
-            factors( nu == 0 ) = 2 * N( dIndx );
+            factors = sin( nu * Nd ) ./ ( pi * diffKs );
+            factors( nu == 0 ) = 2 * Nd;
           end
 
-          row(sIndx:eIndx) = row(sIndx:eIndx) .* factors;
+          row( sIndx : eIndx ) = row( sIndx : eIndx ) .* factors;
         end
       end
 
@@ -500,9 +500,6 @@ function fullWeights = makePrecompWeights_2D_VORONOI( fullKTraj )
   fullWeights = weights( ic );
   if numel( fullWeights ) ~= numel( weights )
     for trajIndx = 1 : nTraj
-      if sum( ic == trajIndx ) > 1
-        disp( [ 'Indx ', num2str(trajIndx), ' is doubled' ] );
-      end
       fullWeights( ic == trajIndx ) = fullWeights( ic == trajIndx ) / sum( ic == trajIndx );
     end
   end
