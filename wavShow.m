@@ -1,6 +1,6 @@
 
 function imH = wavShow( wt, varargin )
-  % imH = wavshow( wt [, scale, 'wavSplit', wavSplit] );
+  % imH = wavShow( wt [, scale, 'wavSplit', wavSplit] );
   %
   % shows the wavelet transform with individual scaling of each portion for
   % improved viewing
