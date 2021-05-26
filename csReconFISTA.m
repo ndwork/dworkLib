@@ -200,6 +200,11 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   end
 
   nPixels = numel( samples );
+  wavMask = makeLowFreqWavMask( size( samples ), wavSplit );
+  if numel( lambda ) == 0
+    lambda = nPixels * findFractionAboveValue( abs( x0( wavMask == 0 ) ), 0.05 );
+  end
+
   proxth = @(x,t) proxL1Complex( x, t * lambda / nPixels );
 
   function out = h( x )
@@ -209,13 +214,13 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   t0 = 1;
   PsiX0 = sparsifier( x0 );
   if debug
-    [xStar,oValues] = pogm( PsiX0, @g, @gGrad, proxth, nIter, 'h', @h, 't', t0, ...
+    [xStar,oValues] = pogm( PsiX0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t0, ...
       'verbose', verbose, 'printEvery', printEvery );
     %[recon,oValues] = fista( PsiX0, @g, @gGrad, proxth, 'N', nIter, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
     %[xStar,oValues] = fista_wLS( PsiX0, @g, @gGrad, proxth, 'h', @h, ...
     %  't0', t0, 'N', nIter, 'verbose', true, 'printEvery', printEvery );
   else
-    xStar = pogm( PsiX0, @g, @gGrad, proxth, nIter, 't', t0 );
+    xStar = pogm( PsiX0, @gGrad, proxth, nIter, 't', t0 );
     %recon = fista( PsiX0, @g, @gGrad, proxth, 'N', nIter );   %#ok<UNRCH>
     %xStar = fista_wLS( PsiX0, @g, @gGrad, proxth, 't0', t0, 'N', nIter, ...
     %  'verbose', verbose, 'printEvery', printEvery );
