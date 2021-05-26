@@ -272,7 +272,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
           end
           nu = 2 * pi * diffKs;
 
-          if numel( thisGamma ) > 0
+          if numel( thisGamma ) > 0  &&  thisGamma < Inf
             tmp1 = ( -thisGamma * exp( -Nd / thisGamma ) ) * cos( nu * Nd ) ;
             tmp2 = ( thisGamma * thisGamma * exp( -Nd / thisGamma ) ) * nu .* sin( nu * Nd );
             tmp3 = thisGamma;
