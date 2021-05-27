@@ -76,7 +76,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
         kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
 
     case 'FP'
-      % Pipe's method
+      % Fixed point iteration
       [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, psfMask, ...
         'alpha', alpha, 'W', W, 'nC', nC, 'nIter', nIter, 'verbose', verbose );
 
@@ -85,12 +85,10 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
       [weights,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu );
 
     case 'JACKSON'
-      % Pipe's method
       [weights,flag] = makePrecompWeights_2D_JACKSON( kTraj, N, ...
         'alpha', alpha, 'W', W, 'nC', nC );
 
     case 'SAMSANOV'
-      % Method from Samsanov's abstract
       [weights,flag,res] = makePrecompWeights_2D_SAMSANOV(...
         kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
 
@@ -266,7 +264,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
           eIndx = min( segIndx * segLength, nTraj );  % end index
 
           if strcmp( op, 'notransp' )  % notransp
-            diffKs = traj( tIndx, dIndx ) - traj( sIndx:eIndx, dIndx );
+            diffKs = traj( tIndx, dIndx ) - traj( sIndx:eIndx, dIndx );   %#ok<PFBNS>
           else
             diffKs = traj( sIndx:eIndx, dIndx ) - traj( tIndx, dIndx );
           end
@@ -318,9 +316,8 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
 
   proxth = @(x,t) projectOntoProbSimplex( x );
 
-w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
-%w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
-%w0 = rand( size( traj, 1 ), 1 );  w0 = w0 / sum( w0 );
+  %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
+  w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
 
   normA = powerIteration( @applyA, w0, 'maxIters', 100, 'verbose', true );
   grdNrm = normA + ( 0.5 * mu / nTraj );  % Lower bound on norm of gradient
