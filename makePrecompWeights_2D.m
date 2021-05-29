@@ -208,6 +208,9 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   Gx = Nx;
   [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
+  Cy = Cy / ( 2 * sum( Cy ) );
+  Cx = Cx / ( 2 * sum( Cx ) );
+  
   nTraj = size( traj, 1 );
   weights = ones( nTraj, 1 );
 
