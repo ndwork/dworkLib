@@ -225,8 +225,8 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
     weights = oldWeights ./ denom;
   end
 
-  %scale = getScaleOfPSF( weights, traj, N );
-  %weights = weights .* scale;
+  scale = getScaleOfPSF( weights, traj, round( 0.025 * N ) );
+  weights = weights .* scale;
 
   %weights = weights ./ sum( weights(:) );
   
@@ -236,6 +236,12 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   if nargout > 2
     res = norm( weights - oldWeights, 2 ) / norm( weights, 2 );
   end
+end
+
+
+function scale = getScaleOfPSF( weights, traj, N )
+  psf = grid_2D( weights, traj, 2*N, ones( size( weights ) ) );
+  scale = 1 ./ sum( psf(:) );
 end
 
 
