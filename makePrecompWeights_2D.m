@@ -77,7 +77,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
 
     case 'FP'
       % Fixed point iteration
-      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, psfMask, ...
+      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, ...
         'alpha', alpha, 'W', W, 'nC', nC, 'nIter', nIter, 'verbose', verbose );
 
     case 'GP'
@@ -183,7 +183,7 @@ end
 
 
 function [weights,flag,res] = makePrecompWeights_2D_FP( ...
-  traj, N, psfMask, varargin )
+  traj, N, varargin )
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
   % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
 
@@ -208,9 +208,9 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   Gx = Nx;
   [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
-  Cy = Cy / ( 2 * sum( Cy ) );
-  Cx = Cx / ( 2 * sum( Cx ) );
-  
+  dky = kCy(2) - kCy(1);  Cy = Cy / ( sum( Cy(:) ) / dky );
+  dkx = kCx(2) - kCx(1);  Cx = Cx / ( sum( Cx(:) ) / dkx );
+
   nTraj = size( traj, 1 );
   weights = ones( nTraj, 1 );
 
