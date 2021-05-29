@@ -228,7 +228,7 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   %scale = getScaleOfPSF( weights, traj, N );
   %weights = weights .* scale;
 
-  weights = weights ./ sum( weights(:) );
+  %weights = weights ./ sum( weights(:) );
   
   if nargout > 1
     flag = 0;
