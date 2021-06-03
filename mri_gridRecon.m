@@ -74,7 +74,7 @@ function recons = mri_gridRecon( kData, trajs, sImg, varargin )
   if ismatrix( trajs )
     trajs = repmat( trajs, [ 1 1 nImgs ] );
   end
-  if ismatrix( weights )
+  if size( weights, 2 ) ~= nImgs
     weights = repmat( weights, [ 1 nImgs ] );
   end
 
