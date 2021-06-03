@@ -1,11 +1,14 @@
 
-function scatterIntensity( x, y, z )
-  % scatterIntensity( x, y, z )
+function scatterIntensity( x, y, z, varargin )
+  % scatterIntensity( x, y, z, options )
   %
   % Inputs:
   % x - 1D array of horizontal values of the scatter points
   % y - 1D array of vertical values of the scatter points
   % z - 1D array of the intensities of each scatter point
+  %
+  % Optional Inputs:
+  % options - all optional arguments of scatter
   %
   % Written by Nicholas Dwork - Copyright 2021
   %
@@ -18,7 +21,7 @@ function scatterIntensity( x, y, z )
 
   if numel( x ) ~= numel( y ), error( 'x, y, and z must have the same number of elements' ); end
   if numel( x ) ~= numel( z ), error( 'x, y, and z must have the same number of elements' ); end
-  
-  pointsize = 6;
-  scatternice( x, y, pointsize, z, 'fill' );
+
+  pointsize = 4;
+  scatternice( x, y, pointsize, z );
 end
