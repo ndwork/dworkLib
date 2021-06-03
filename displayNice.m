@@ -15,7 +15,7 @@ function displayNice( dispFunctionH, in1, varargin )
   ax = [];
   if numel( varargin ) > 0
     axIndx = find( strcmp( varargin, 'ax' ) );
-    if numel( axIndx > 0 )
+    if numel( axIndx ) > 0
       ax=varargin{axIndx+1};
       varargin = { varargin{1:axIndx-1} varargin{axIndx+2:end} };
     end
