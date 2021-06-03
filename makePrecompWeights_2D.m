@@ -263,7 +263,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
       row = 2 * ones( nTraj, 1 );
 
       for dIndx = 1 : D
-        Nd = N( dIndx );
+        Nd = N( dIndx );   %#ok<PFBNS>
         thisGamma = gamma( dIndx );   %#ok<PFBNS>
 
         eIndx = 0;
