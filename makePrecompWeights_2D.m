@@ -16,10 +16,10 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %   W - the window width in pixels
   %   nC - the number of points to sample the convolution kernel
   %   alg - a string specifying the algorithm to use
-  %     CLSDC (default) - Constrainted Least Squares on trajectory points
   %     FP - specifies fixed point iteration
+  %     GP - gradient projection algorithm
   %     SAMSANOV - Constrainted Least Squares on grid points
-  %     VORONOI - uses the area of each voronoi cell as the metric of density
+  %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
   %   nIter - specifies the number of iterations of fp method
   %   psfMask - only used by space domain optimizations
   %   verbose - true/false
