@@ -91,8 +91,10 @@ function showLibFiles( varargin )
           end
         end
       end
-      if foundWithin == 0
+      if found == 0 && foundWithin == 0
         disp('The pattern is not within any filenames.');
+      elseif foundWithin == 0
+        disp('The pattern is not within any other filenames.');
       end
     end
 
