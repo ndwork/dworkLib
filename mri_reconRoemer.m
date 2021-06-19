@@ -1,12 +1,12 @@
 
-function recon = mri_reconRoemer( coilRecons )
+function recon = mri_reconRoemer( coilRecons, varargin )
   % recon = mri_reconRoemer( coilRecons )
   %
   % Perform an optimal coil combination according to equation [32] of
   % "NMR Phased Array" by Roemer et al.
   %
   % Inputs:
-  % coilRecons is an array of size ( Ny, Nx, nSlices, ..., nCoils ) of kSpace values
+  % coilRecons is an array of size ( Ny, Nx, ..., nCoils ) of kSpace values
   %
   % Output:
   % recon is the reconstructed image
@@ -21,18 +21,20 @@ function recon = mri_reconRoemer( coilRecons )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  recon = mri_reconRoemer( kData [, ''multiSlice'', true/false ] )' );
+    disp( 'Usage:  recon = mri_reconRoemer( coilRecons [, ''sMaps'', sMaps ] )' );
     return;
   end
 
-  ssqRecon = sqrt( sum( coilRecons .* conj( coilRecons ), ndims(coilRecons) ) );
+  p = inputParser;
+  p.addParameter( 'sMaps', [], @isnumeric );
+  p.parse( varargin{:} );
+  sMaps = p.Results.sMaps;
 
-  sMaps = bsxfun( @times, coilRecons, 1 ./ ssqRecon );
+  if numel( sMaps ) == 0
+    ssqRecon = sqrt( sum( coilRecons .* conj( coilRecons ), ndims(coilRecons) ) );
+    sMaps = bsxfun( @times, coilRecons, 1 ./ ssqRecon );
+  end
 
   recon = sum( bsxfun( @times, coilRecons, conj( sMaps ) ), ndims(coilRecons) );
-
 end
-
-
-
 
