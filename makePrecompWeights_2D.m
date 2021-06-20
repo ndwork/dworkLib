@@ -310,7 +310,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
 
   function out = g( w )
     psf = grid_2D( w, traj, 2*N, ones( size( w ) ) );
-    [out,costPerPixel] = calculateCost( psf, w, gamma, mu );   %#ok<ASGLU>
+    [out,costPerPixel] = calculateCost_GP( psf, w, gamma, mu );   %#ok<ASGLU>
   end
 
   h = @(w) 0;
@@ -364,6 +364,19 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
   kappa = 1 ./ ( sum( w .* prodScaledSincTraj ) );
   w = kappa * w;
 
+end
+
+
+function [out,costPerPixel] = calculateCost_GP( psf, weights, distWeight, mu )
+  nTraj = numel( weights );
+  imgCoords = size2imgCoordinates( size( psf ) );
+  [xs,ys] = meshgrid( imgCoords{2}, imgCoords{1} );
+  costPerPixel = abs( psf ).^2 + 0.5 * ( mu / nTraj ) * norm( weights )^2;
+  if numel( distWeight ) > 0
+     costPerPixel = costPerPixel .* exp( ...
+       -( ( abs(xs) / distWeight(1) ) + ( abs(ys) / distWeight(2) ) ) );
+  end
+  out = sum( costPerPixel(:) );
 end
 
 
