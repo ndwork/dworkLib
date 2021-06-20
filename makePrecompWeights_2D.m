@@ -20,6 +20,8 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %     GP - gradient projection algorithm
   %     SAMSANOV - Constrainted Least Squares on grid points
   %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
+  %   gamma - distance weighting parameter for Gradient Projection algorithm
+  %     ( default is 0.25 * N )
   %   nIter - specifies the number of iterations of fp method
   %   psfMask - only used by space domain optimizations
   %   verbose - true/false
@@ -47,7 +49,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   p = inputParser;
   p.addOptional( 'N', [], @ispositive );
   p.addParameter( 'alpha', [], checknum );
-  p.addParameter( 'gamma', 21, @isnumeric );
+  p.addParameter( 'gamma', [], @isnumeric );
   p.addParameter( 'W', [], checknum );
   p.addParameter( 'mu', 0, @isnumeric );
   p.addParameter( 'nC', [], checknum );
@@ -66,7 +68,7 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   nIter = p.Results.nIter;
   psfMask = p.Results.psfMask;
   verbose = p.Results.verbose;
-
+  
   flag = 0;
   res = 0;
   switch alg
@@ -247,6 +249,7 @@ end
 
 function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
 
+  if numel( gamma ) == 0, gamma = 0.25 * N; end
   if numel( gamma ) == 1, gamma = ones( numel(N), 1 ); end
 
   nTraj = size( traj, 1 );
