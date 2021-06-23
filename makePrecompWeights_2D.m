@@ -248,13 +248,13 @@ end
 
 
 function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
-
-  if numel( gamma ) == 0, gamma = 0.25 * N; end
-  if numel( gamma ) == 1, gamma = ones( numel(N), 1 ); end
+  segLength = 30000;
 
   nTraj = size( traj, 1 );
   D = size( traj, 2 );
-  segLength = 30000;
+  if numel( N ) == 1, N = ones( D ); end
+  if numel( gamma ) == 0, gamma = 0.25 * N; end
+  if numel( gamma ) == 1, gamma = ones( numel(N), 1 ); end
 
   function out = applyA( in, op )
     if nargin < 2, op = 'notransp'; end
