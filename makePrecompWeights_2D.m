@@ -252,7 +252,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
 
   nTraj = size( traj, 1 );
   D = size( traj, 2 );
-  if numel( N ) == 1, N = ones( D ); end
+  if numel( N ) == 1, N = N * ones( D ); end
   if numel( gamma ) == 0, gamma = 0.25 * N; end
   if numel( gamma ) == 1, gamma = ones( numel(N), 1 ); end
 
