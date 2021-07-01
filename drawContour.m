@@ -41,10 +41,10 @@ function contour = drawContour( img, varargin )
     title( 'type h for help' );
     try
       [y,x,button] = ginput(1);
+      zoom out;
     catch
       button = [];
     end
-    zoom out;
 
     if numel( button ) == 0
       % Figure was closed before key was pressed
@@ -57,6 +57,7 @@ function contour = drawContour( img, varargin )
       disp( 'z to zoom in and out of the image' );
 
     elseif button == 'q'
+      close( gcf );
       break;
 
     elseif button == 'z'
@@ -71,7 +72,6 @@ function contour = drawContour( img, varargin )
     end
 
   end
-  close( gcf );
 
   if scale ~= 1, contour = contour / scale; end
 end
