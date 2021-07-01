@@ -1,8 +1,9 @@
-function contour = drawContour( img )
+
+function contour = drawContour( img, varargin )
   % contour = drawContour( img )
+  %
   % displays figure to the screen and lets user create a contour
-  %   Left click with the mouse to select a new point on the contour
-  %   Hit 'q' to complete contour selection
+  %   Type 'h' for help
   %
   % Inputs:
   % img - 2D array representing the grayscale image or 3D array
@@ -27,20 +28,50 @@ function contour = drawContour( img )
     return;
   end
 
-  figure;  imshow( img );  hold on;  grid on;
-  disp('Press q to quit or mouse click to select contour points: ');
+  p = inputParser;
+  p.addOptional( 'scale', 1, @isnumeric );
+  p.parse( varargin{:} );
+  scale = p.Results.scale;
+
+  figure;  imshowscale( img, scale );
+  hold on;  grid on;
 
   contour = [];
   while true
-    [y,x,button] = ginput(1);
+    title( 'type h for help' );
+    try
+      [y,x,button] = ginput(1);
+    catch
+      button = [];
+    end
+    zoom out;
 
-    if (button == double('q')), break; end
-    
-    contour = [ contour; [ y x ]; ];   %#ok<AGROW>
+    if numel( button ) == 0
+      % Figure was closed before key was pressed
+      return;
 
-    plot( contour(:,1), contour(:,2), 'yx' );
-    plot( contour(:,1), contour(:,2), 'y' );
+    elseif button == 'h'
+      disp( 'Left click with mouse to select a contour point.');
+      disp( 'h for this help' );
+      disp( 'q to quit the application' );
+      disp( 'z to zoom in and out of the image' );
+
+    elseif button == 'q'
+      break;
+
+    elseif button == 'z'
+      zoom on;
+      title( 'Hit any key to end zoom' );
+      pause();  zoom off;
+
+    else
+      contour = [ contour; [ y x ]; ];   %#ok<AGROW>
+      plot( contour(:,1), contour(:,2), 'yx' );
+      plot( contour(:,1), contour(:,2), 'y' );
+    end
+
   end
-
   close( gcf );
+
+  if scale ~= 1, contour = contour / scale; end
 end
