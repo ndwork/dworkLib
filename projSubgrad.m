@@ -35,6 +35,13 @@ function [xStar,objValues] = projSubgrad( x, gGrad, proj, varargin )
   t = p.Results.t;
   verbose = p.Results.verbose;
 
+  if nargin < 1
+    xStar = [];  objValues = [];
+    disp( 'Usage:  [xStar,objValues] = projSubgrad( x, gGrad, proj [, ''g'', g,' );
+    disp( '          ''N'', N, ''t'', t ] )' );
+    return
+  end
+
   if nargout > 1
     objValues = zeros( N+1, 1 );
     objValues( 1 ) = g( x );
