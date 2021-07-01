@@ -48,7 +48,7 @@ function contour = drawContour( img, varargin )
 
     if numel( button ) == 0
       % Figure was closed before key was pressed
-      return;
+      break;
 
     elseif button == 'h'
       disp( 'Left click with mouse to select a contour point.');
