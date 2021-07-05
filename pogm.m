@@ -18,9 +18,9 @@ function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
   %     input: the point to evaluation, output: the gradient vector
   % proxth - the proximal operator of the h function (with parameter t);
   %     two inputs: the vector and the scalar value of the parameter t
-  % N - the number of iterations that FISTA will perform (default is 100)
   %
   % Optional Inputs:
+  % N - the number of iterations that POGM will perform (default is 100)
   % g - a function handle representing the g function; accepts a vector x
   %     as input and returns a scalar.  This is needed to calculate the
   %     objective values.
