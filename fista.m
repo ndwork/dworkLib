@@ -1,6 +1,6 @@
 
-function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = fista( x, g, gGrad, proxth [, ...
+function [xStar,objectiveValues] = fista( x, gGrad, proxth, varargin )
+  % [xStar,objectiveValues] = fista( x, gGrad, proxth [, ...
   %   'h', h, 'N', N, 't', t, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
@@ -36,12 +36,14 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
   defaultN = 100;
 
   p = inputParser;
+  p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x)==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
+  g = p.Results.g;
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
   printEvery = p.Results.printEvery;  % display result printEvery iterations
@@ -54,8 +56,8 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
 
   calculateObjectiveValues = 0;
   if nargout > 1
-    if numel(h) == 0
-      error( 'fista.m - Cannot calculate objective values without h function handle' );
+    if numel(h) == 0 || numel(g) == 0
+      error( 'fista.m - Cannot calculate objective values without g and h function handles' );
     else
       objectiveValues = zeros(N,1);
       calculateObjectiveValues = 1;
@@ -81,7 +83,7 @@ function [xStar,objectiveValues] = fista( x, g, gGrad, proxth, varargin )
       disp( verboseString );
     end
 
-    z = y + (k/(k+3)) * (y-lastY);
+    z = y + ( k / (k+3) ) * ( y - lastY );
   end
 
   xStar = y;

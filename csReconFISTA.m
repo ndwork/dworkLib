@@ -165,7 +165,6 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     if strcmp( transformType, 'wavCurv' )
       sparsifier = @(x) wavCurv( x );
       sparsifierH = @(x) wavCurv( x, 'transp' );
-
     else
       sparsifier = @(x) curvelet( x );
       sparsifierH = @(x) curvelet( x, 'transp' );
@@ -213,20 +212,19 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     out = Aadj( A( x ) ) - Aadjb;
   end
 
-  nPixels = numel( samples );
-  wavMask = makeLowFreqWavMask( size( samples ), wavSplit );
+  PsiX0 = sparsifier( x0 );  % Psi is the sparsifying transformation
+  nPsiX = numel( PsiX0 );
   if numel( lambda ) == 0
-    lambda = nPixels * findFractionAboveValue( abs( x0( wavMask == 0 ) ), 0.05 );
+    lambda = nPsiX * findFractionAboveValue( abs( PsiX0(:) ), 0.05 );
   end
 
-  proxth = @(x,t) proxL1Complex( x, t * lambda / nPixels );
+  proxth = @(x,t) proxL1Complex( x, t * lambda / nPsiX );
 
   function out = h( x )
-    out = sum( abs( x(:) ) ) * lambda / nPixels;
+    out = sum( abs( x(:) ) ) * lambda / nPsiX;
   end
 
   t = stepSize;
-  PsiX0 = sparsifier( x0 );
   if nargout > 1
     if strcmp( alg, 'pogm' )
       [xStar,oValues] = pogm( PsiX0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t, ...
