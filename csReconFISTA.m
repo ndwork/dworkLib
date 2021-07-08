@@ -13,14 +13,18 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % lambda - regularization parameter
   %
   % Optional Inputs:
-  % debug - if true, reduces the default number of iterations to 30 and forces verbose
-  %         statements during optimization
+  % alg - choose the algorithm to perform the minimization.  Default is 'FISTA_wLS'.
+  %   Options are FISTA_wLS.
   % nIter - the number of iterations that FISTA will perform (default is 100)
   % printEvery - FISTA prints a verbose statement every printEvery iterations
-  % transformType - either 'curvelet', 'wavelet', or 'wavCurv'.
+  % transformType - Choose the sparifying transformation.  Default is WavCurv (which uses
+  %   the wavelet transform and the curvelet transform as a redundant dictionary).
+  %   Options are:  'curvlet', 'wavelet', or 'wavCurv'.
+  %     curvelet - Discrete curvelet transform
+  %     wavelet - Wavelet transform (type specified by waveletType parameter)
+  %     wavCurv - Redundant dictionary of wavelet and curvelet
   % verbose - if true, prints informative statements
-  % waveletType - (deprecated) either 'Daubechies-4' (default) or 'Haar'
-  %   If transformType is set, it overrides this option.
+  % waveletType - either 'Daubechies-4' for Daubechies-4 (default) or 'Haar'
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -31,8 +35,6 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   % implied warranties of merchantability or fitness for a particular purpose.
 
   wavSplit = zeros(4);  wavSplit(1,1) = 1;
-  %wavSplit = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0;];
-  %wavSplit = [ 1 0; 0 0; ];
 
   p = inputParser;
   p.addParameter( 'alg', 'fista_wLS', @(x) true );
@@ -41,9 +43,9 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'stepSize', 1, @ispositive );
   p.addParameter( 'transformType', 'wavCurv', @(x) true );
-  p.addParameter( 'wavSplit', wavSplit, @isnumeric );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'waveletType', [], @(x) true );
+  p.addParameter( 'wavSplit', wavSplit, @isnumeric );
   p.parse( varargin{:} );
   alg = p.Results.alg;
   checkAdjoints = p.Results.checkAdjoints;
@@ -51,16 +53,15 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   printEvery = p.Results.printEvery;
   stepSize = p.Results.stepSize;
   transformType = p.Results.transformType;
-  waveletType = p.Results.waveletType;
   verbose = p.Results.verbose;
+  waveletType = p.Results.waveletType;
+  wavSplit = p.Results.wavSplit;
 
   if numel( transformType ) == 0, transformType = 'wavCurv'; end
   if numel( waveletType ) == 0, waveletType = 'Daubechies-4'; end
 
-  M = ( samples ~= 0 );
-  b = samples( M == 1 );
-  %x0 = zeros( size( samples ) );
-  x0 = FH( samples );
+  sImg = size( samples );
+  nImg = prod( sImg );
 
   function out = F( x )
     out = fftshift( fftshift( ufft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
@@ -69,9 +70,6 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   function out = FH( y )
     out = fftshift( fftshift( uifft2( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
   end
-
-  sImg = size( samples );
-  nImg = prod( sImg );
 
   function out = findCellSizes( in )
     if iscell( in )
@@ -108,7 +106,7 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
       out = cx(:);
     end
   end
-  
+
   function out = vec2CurvCell( v, curvCellSizes )
     if iscell( curvCellSizes )
       out = cell( size( curvCellSizes ) );
@@ -126,11 +124,11 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
 
   function out = curvelet( x, type )
     if nargin < 2 || strcmp( type, 'notransp' )
-      cx = fdct_wrapping( x, false );
-      out = curvCell2Vec( cx );
+      curvCells = fdct_wrapping( x, false );
+      out = curvCell2Vec( curvCells );
     else
-      cx = vec2CurvCell( x, curvCellSizes );
-      out = ifdct_wrapping( cx, false );
+      curvCells = vec2CurvCell( x, curvCellSizes );
+      out = ifdct_wrapping( curvCells, false );
     end
   end
 
@@ -177,7 +175,9 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
   else
     error( 'Unrecognized transform type' );
   end
-  
+
+  M = ( samples ~= 0 );
+
   function out = A( x )
     PsiHx = sparsifierH( x );
     PsiHx = reshape( PsiHx, sImg );
@@ -194,14 +194,17 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
 
   if checkAdjoints == true
     x1 = rand( size(samples) ) + 1i * rand( size( samples ) );
-    if checkAdjoint( x1, sparsifier, sparsifierH ) ~= true, error( 'sparsifier adjoint is incorrect' ); end
     if checkAdjoint( x1, @F, @FH ) ~= true, error( 'FH is not the transpose of F' ); end
+
+    if checkAdjoint( x1, sparsifier, sparsifierH ) ~= true
+      error( 'sparsifierH is not the transpose of sparsifier' );
+    end
 
     xA = sparsifier( double( imread( 'cameraman.png' ) ) / 255. );
     if checkAdjoint( xA, @A, @Aadj ) ~= true, error( 'Aadj is not the transpose of A' ); end
   end
 
-
+  b = samples( M == 1 );
   function out = g( x )
     diff = A( x ) - b;
     out = 0.5 * norm( diff(:), 2 ).^2;
@@ -212,6 +215,8 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
     out = Aadj( A( x ) ) - Aadjb;
   end
 
+  %x0 = zeros( size( samples ) );
+  x0 = FH( samples );
   PsiX0 = sparsifier( x0 );  % Psi is the sparsifying transformation
   nPsiX = numel( PsiX0 );
   if numel( lambda ) == 0
@@ -230,19 +235,19 @@ function [recon,oValues] = csReconFISTA( samples, lambda, varargin )
       [xStar,oValues] = pogm( PsiX0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t, ...
         'verbose', verbose, 'printEvery', printEvery );
     elseif strcmp( alg, 'fista' )
-      [xStar,oValues] = fista( PsiX0, @gGrad, proxth, 'N', nIter, 'g', @g, 'h', @h, 'verbose', verbose );
+      [xStar,oValues] = fista( PsiX0, @gGrad, proxth, 'N', nIter, 'g', @g, 'h', @h, 't', t, ...
+        'verbose', verbose, 'printEvery', printEvery );
     elseif strcmp( alg, 'fista_wLS' )
       [xStar,oValues] = fista_wLS( PsiX0, @g, @gGrad, proxth, 'h', @h, ...
         't0', t, 'N', nIter, 'verbose', true, 'printEvery', printEvery );
     else
       error( 'Unrecognized algorithm' );
     end
-
   else
     if strcmp( alg, 'pogm' )
       xStar = pogm( PsiX0, @gGrad, proxth, nIter, 't', t );
     elseif strcmp( alg, 'fista' )
-      xStar = fista( PsiX0, @gGrad, proxth, 'N', nIter );
+      xStar = fista( PsiX0, @gGrad, proxth, 'N', nIter, 't', t );
     elseif strcmp( alg, 'fista_wLS' )
       xStar = fista_wLS( PsiX0, @g, @gGrad, proxth, 't0', t, 'N', nIter, ...
         'verbose', verbose, 'printEvery', printEvery );
