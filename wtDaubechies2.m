@@ -25,6 +25,12 @@ function wt = wtDaubechies2( img, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    wt = [];
+    disp('Usage:  wt = wtDaubechies2( sig [, split] );' );
+    return;
+  end
+  
   defaultSplit = 1;
   p = inputParser;
   p.addOptional( 'split', defaultSplit );
