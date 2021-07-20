@@ -4,9 +4,11 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   %   'printEvery', printEvery, 'transformType', transformType, 'verbose', verbose, ...
   %   'wavSplit', wavSpit ] )
   %
-  % This routine minimizes 0.5 * || A y - b ||_2^2 + lambda || y ||_1
-  %   where A is sampleMask * Fourier Transform * inverse Wavelet.
-  % The reconstruction returned is W^{-1} y.
+  % This routine uses proximal gradient methods to minimize
+  %   0.5 * || A y - b ||_2^2 + lambda || y ||_1
+  %   where A is sampleMask * Fourier Transform * adjoint( Psi ).
+  %   Here, Psi is either a wavelet or curvelet transform.
+  %   The reconstruction returned is adjoin( Psi ) * y.
   %
   % Inputs:
   % samples - a 2D array that is zero wherever a sample wasn't acquired
@@ -20,7 +22,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   % transformType - Choose the sparifying transformation.  Default is WavCurv (which uses
   %   the wavelet transform and the curvelet transform as a redundant dictionary).
   %   Options are:  'curvlet', 'wavelet', or 'wavCurv'.
-  %     curvelet - Discrete curvelet transform
+  %     curvelet - Discrete curvelet transform (requires CurveLab; see curvelet.org)
   %     wavelet - Wavelet transform (type specified by waveletType parameter)
   %     wavCurv - Redundant dictionary of wavelet and curvelet
   % verbose - if true, prints informative statements
