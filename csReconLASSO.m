@@ -1,12 +1,12 @@
 
-function [recon,oValues,lambda] = csReconFISTA( samples, varargin )
+function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   % recon = csReconFISTA( samples, lambda [, 'nIter', nIter, ...
   %   'printEvery', printEvery, 'transformType', transformType, 'verbose', verbose, ...
   %   'wavSplit', wavSpit ] )
   %
-  % This routine minimizes 0.5 * || Ax - b ||_2^2 + lambda || W x ||_1
-  %   where A is sampleMask * Fourier Transform * real part, and
-  %   W is the wavelet transform.
+  % This routine minimizes 0.5 * || A y - b ||_2^2 + lambda || y ||_1
+  %   where A is sampleMask * Fourier Transform * inverse Wavelet.
+  % The reconstruction returned is W^{-1} y.
   %
   % Inputs:
   % samples - a 2D array that is zero wherever a sample wasn't acquired
