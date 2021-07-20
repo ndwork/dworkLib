@@ -224,7 +224,6 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   PsiX0 = sparsifier( x0 );  % Psi is the sparsifying transformation
   nPsiX = numel( PsiX0 );
   if numel( lambda ) == 0  ||  lambda == 0
-    nPix = numel( samples );
     lambda = nPsiX * findValueBelowFraction( abs( PsiX0(:) ), 0.05 );
   end
 
@@ -261,27 +260,5 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
     end
   end
 
-  blurryImg = FH( acrSamplesL );
-  detailsImg = reshape( sparsifierH( xStar ), sImg );
-  recon = blurryImg + detailsImg;
-
-  showResults = false;
-  if showResults == true
-    cRecon = fdct_wrapping_dispcoef( fdct_wrapping( recon ) );
-    cRecon( cRecon == cRecon(1,1) ) = max( cRecon(:) );
-    cBlurry = fdct_wrapping_dispcoef( fdct_wrapping( blurryImg ) );
-    cBlurry( cBlurry == cBlurry(1,1) ) = max( cBlurry(:) );
-    cDetails = fdct_wrapping_dispcoef( fdct_wrapping( detailsImg ) );
-    cDetails( cDetails == cDetails(1,1) ) = max( cDetails(:) );
-    figure;  imshowscale( abs( cRecon ), 3 );  titlenice( 'cRecon' );
-    figure;  imshowscale( abs( cBlurry ), 3, 'range', abs( cRecon ) );  titlenice( 'cBlurry' );
-    figure;  imshowscale( abs( cDetails ), 3, 'range', abs( cRecon ) );  titlenice( 'cDetails' );
-
-    wRecon = wavTrans( recon );
-    wBlurry = wavTrans( blurryImg );
-    wDetails = wavTrans( detailsImg );
-    figure;  wavShow( abs( wRecon ), 3, 'wavSplit', wavSplit );  titlenice( 'wRecon' );
-    figure;  wavShow( abs( wBlurry ), 3, 'wavSplit', wavSplit );  titlenice( 'wBlurry' );
-    figure;  wavShow( abs( wDetails ), 3, 'wavSplit', wavSplit );  titlenice( 'wDetails' );
-  end
+  recon = reshape( sparsifierH( xStar ), sImg );
 end
