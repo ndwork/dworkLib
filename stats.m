@@ -21,14 +21,26 @@ function stats( data )
     [minData,minIndx] = min( data(:) );
     [subs{:}] = ind2sub(size(data),minIndx);
     for i=1:numel(subs), subs{i} = num2str(subs{i}); end
-    minLoc = [ '(', strjoin(subs, ', '), ')' ];
-    disp([ preText, 'Min: ', num2str(minData), ' at ', minLoc ]);
+    nMinLocs = sum( data(:) == minData );
+    if nMinLocs > 1
+      disp([ preText, 'Min: ', num2str(minData), '.  There are ', num2str(nMinLocs), ...
+        ' locations with this value.' ]);
+    else
+      minLoc = [ '(', strjoin(subs, ', '), ')' ];
+      disp([ preText, 'Min: ', num2str(minData), ' at ', minLoc ]);
+    end
 
     [maxData,maxIndx] = max( data(:) );
     [subs{:}] = ind2sub(size(data),maxIndx);
     for i=1:numel(subs), subs{i} = num2str(subs{i}); end
-    maxLoc = [ '(', strjoin(subs, ', '), ')' ];
-    disp([ preText, 'Max: ', num2str(maxData), ' at ', maxLoc ]);
+    nMaxLocs = sum( data(:) == maxData );
+    if nMaxLocs > 1
+      disp([ preText, 'Max: ', num2str(maxData), '.  There are ', num2str(nMaxLocs), ...
+        ' locations with this value.' ]);
+    else
+      maxLoc = [ '(', strjoin(subs, ', '), ')' ];
+      disp([ preText, 'Max: ', num2str(maxData), ' at ', maxLoc ]);
+    end
 
     meanData = mean( data(:) );
     disp([ preText, 'Mean: ', num2str(meanData) ]);
