@@ -243,7 +243,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
         'verbose', verbose, 'printEvery', printEvery );
     elseif strcmp( alg, 'fista_wLS' )
       [xStar,oValues] = fista_wLS( PsiX0, @g, @gGrad, proxth, 'h', @h, ...
-        't0', t, 'N', nIter, 'verbose', true, 'printEvery', printEvery );
+        't0', t, 'N', nIter, 'verbose', verbose, 'printEvery', printEvery );
     else
       error( 'Unrecognized algorithm' );
     end
