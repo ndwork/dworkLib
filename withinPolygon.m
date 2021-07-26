@@ -23,24 +23,42 @@ function status = withinPolygon( polygon, p )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
   
-  numPoints = length(polygon);
-  slice = [numPoints numPoints - 1];
+  q = max(polygon, [], 2); % point outside of polygon
+  q = q + 1;
+  nP = size( p, 2 );
+  nCrosses = zeros( 1, nP );
   
-  for i = 3:numPoints
-    if mod(i, 2) == 1
-      slice(i) = numPoints - slice(i - 1);
+  for i = 1:length(polygon)
+    if i == length(polygon)
+      side = [polygon(:,end) polygon(:,1)];
+      sideParams = lineIntersectionParams( side, q, p );
+      nCrosses = nCrosses + ( ( max( sideParams, [], 1 ) <= 1 ) & ( min( sideParams, [], 1 ) >= 0 ) );
     else
-      slice(i) = (numPoints - 1) - slice(i - 1);
+      side = [polygon(:,i) polygon(:,i+1)];
+      sideParams = lineIntersectionParams( side, q, p );
+      nCrosses = nCrosses + ( ( max( sideParams, [], 1 ) <= 1 ) & ( min( sideParams, [], 1 ) >= 0 ) );
     end
   end
-  
-  fullStatus = [];
-  for i = 1:numPoints - 2
-    triangle = [polygon(:,slice(i)) polygon(:,slice(i+1)) polygon(:,slice(i+2))];
-    oneStatus = withinTriangle( triangle, p );
-    fullStatus = [fullStatus; oneStatus]; %#ok<AGROW>
-  end
-  
-  status = sum(fullStatus);
 
+  status = mod( nCrosses, 2 );
+
+end
+
+function params = lineIntersectionParams( L1, q, p )
+  % L1 is a Dx2 array that specifies the line in D dimensions
+  % q is a point outside of the polygon
+  % p is a list of points that we would like to query
+
+  D = size( L1, 1 );
+  nP = size( p, 2 );
+
+  pq = bsxfun( @plus, -p, q );
+  dL1 = L1(:,2) - L1(:,1);  
+
+  params = zeros( D, nP );
+  b = q - L1(:,1);
+  for i = 1 : nP
+    A = [ dL1 pq(:,i)  ];
+    params(:,i) = A \ b;
+  end
 end
