@@ -56,13 +56,13 @@ function status = withinPolyhedron( triangles, p )
       tempQ = q - a;
       tempP = p(j,:) - a;
       a = a - a;
-      
+
       % rotate so triangle lies in xy plane
-      b = b * rotz(rad2deg(phi)) * roty(rad2deg(theta));
-      c = c * rotz(rad2deg(phi)) * roty(rad2deg(theta));
-      tempQ = tempQ * rotz(rad2deg(phi)) * roty(rad2deg(theta));
-      tempP = tempP * rotz(rad2deg(phi)) * roty(rad2deg(theta));
-      
+      b = b * rotz( rad2deg(phi) ) * roty( rad2deg(theta) );
+      c = c * rotz( rad2deg(phi) ) * roty( rad2deg(theta) );
+      tempQ = tempQ * rotz( rad2deg(phi) ) * roty( rad2deg(theta) );
+      tempP = tempP * rotz( rad2deg(phi) ) * roty( rad2deg(theta) );
+
       % line segment intersect triangle
       if (tempP(3) > 0 && tempQ(3) < 0) || (tempP(3) < 0 && tempQ(3) > 0)
         if tempP(3) ~= tempQ(3)
