@@ -32,6 +32,9 @@ function out = iGridT_2D( F, traj, N, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
   
+  if nargin < 1
+    disp( 'Usage:  out = iGridT_2D( F, traj, N, [ ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
+  end
 
   if numel(N) == 1
     Ny = N;     Nx = N; 
