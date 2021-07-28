@@ -33,8 +33,9 @@ function out = uifft( in, varargin )
     end
   end
 
-  n = size( in, dim );
+  if numel( n ) == 0
+    n = size( in, dim );
+  end
 
-  out = sqrt( n ) .* fft( in, varargin{:} );
-
+  out = sqrt( n ) .* ifft( in, n, dim );
 end
