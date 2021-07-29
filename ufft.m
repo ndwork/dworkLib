@@ -1,6 +1,8 @@
 
 function out = ufft( in, varargin )
-  % out = ufft( in, varargin )
+  % out = ufft( in [, dim ] )
+  %   or
+  % out = ufft( in [, n, dim ] )
   %
   % Compute the unitary fft
   %
@@ -21,7 +23,7 @@ function out = ufft( in, varargin )
   n = p.Results.n;
 
   if numel( dim ) == 0 && numel( n ) ~= 0
-    dim = n;
+    dim = n;  n = [];
   end
 
   if numel( dim ) == 0
@@ -33,8 +35,9 @@ function out = ufft( in, varargin )
     end
   end
 
-  n = size( in, dim );
+  if numel( n ) == 0
+    n = size( in, dim );
+  end
 
-  out = 1/sqrt( n ) .* fft( in, varargin{:} );
-
+  out = fft( in, n, dim ) / sqrt( n );
 end
