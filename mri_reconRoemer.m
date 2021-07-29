@@ -1,6 +1,6 @@
 
-function recon = mri_reconRoemer( coilRecons, varargin )
-  % recon = mri_reconRoemer( coilRecons )
+function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
+  % [recon,sMaps] = mri_reconRoemer( coilRecons )
   %
   % Perform an optimal coil combination according to equation [32] of
   % "NMR Phased Array" by Roemer et al.
