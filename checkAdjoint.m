@@ -1,6 +1,6 @@
 
 function [out,err] = checkAdjoint( x, f_in, varargin )
-  % out = checkAdjoint( x, f [, fAdj, 'tol', tol, 'y', y, 'nRand', nRand, ...
+  % [out,err] = checkAdjoint( x, f [, fAdj, 'tol', tol, 'y', y, 'nRand', nRand, ...
   %   'innerProd', innerProd ] )
   %
   % Check whether the adjoint of f is implemented correctly
@@ -30,7 +30,7 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   % purpose.
 
   if nargin < 1
-    disp( ['Usage: out = checkAdjoint( x, f [, ', ...
+    disp( ['Usage: [out,err] = checkAdjoint( x, f [, ', ...
       'fAdj, ''tol'', tol, ''y'', y, ''nRand'', nRand ] )' ]);
     return
   end
