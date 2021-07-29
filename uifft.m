@@ -1,6 +1,8 @@
 
 function out = uifft( in, varargin )
-  % out = uifft( in, varargin )
+  % out = uifft( in [, dim ] )
+  %   or
+  % out = uifft( in [, n, dim ] )
   %
   % Compute the unitary inverse fft
   %
@@ -21,7 +23,7 @@ function out = uifft( in, varargin )
   n = p.Results.n;
 
   if numel( dim ) == 0 && numel( n ) ~= 0
-    dim = n;
+    dim = n;  n = [];
   end
 
   if numel( dim ) == 0
@@ -37,5 +39,5 @@ function out = uifft( in, varargin )
     n = size( in, dim );
   end
 
-  out = sqrt( n ) .* ifft( in, n, dim );
+  out =  ifft( in, n, dim ) * sqrt( n );
 end
