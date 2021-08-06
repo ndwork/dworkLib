@@ -1,11 +1,14 @@
 
-function legendnice( varargin )
-  % legendnice( names [, 'ax', ax ] )
+function legHandle = legendnice( varargin )
+  % legHandle = legendnice( names [, 'ax', ax ] )
   %
   % Makes a legend with large font and puts it in the best place
   %
   % Inputs:
   % names - a cell array that will be the legend
+  %
+  % Outputs:
+  % legHandle - the handle to the legend
   %
   % Optional Inputs:
   % ax - the axis on which to plot the legend
@@ -17,7 +20,7 @@ function legendnice( varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel( varargin ) == 0, error('Must supply names'); end;
+  if numel( varargin ) == 0, error('Must supply names'); end
   
   ax = [];
   axIndx = find( strcmp( varargin, 'ax' ) );
