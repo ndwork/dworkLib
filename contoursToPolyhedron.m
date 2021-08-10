@@ -1,9 +1,12 @@
 function triangles = contoursToPolyhedron( contours, varargin )
-  % triangles = contourToPolyhedron( contours )
+  % triangles = contourToPolyhedron( contours, [ 'nPointsPerContour', nPointsPerContour ] )
   %
   % Inputs:
   % contours - cell array, where each element of the cell is a 2D matrix
   %   that specifies the points of the contour of the corresponding slice.
+  %
+  % Optional Inputs:
+  % nPointsPerContour - the number of points allocated along each contour
   % 
   % Outputs:
   % triangles - a mesh of triangles that encompass the contours
