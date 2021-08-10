@@ -76,6 +76,15 @@ function testDworkLib
     error( 'bisection failed' );
   end
 
+  %% contoursToPolyhedron
+  contours = cell(3, 1);
+  contours{1} = [[0 0]; [0 1]; [1 1];  [0.7 0.7]; [1 0];];
+  contours{2} = [[0 0.5]; [0.1 1.5]; [1 1.4]; [1.1 0.5];];
+  contours{3} = [[0 0]; [0.25 0.25]; [0 1]; [1 1]; [1 0];];
+  contours{4} = [[0 0.5]; [0.1 1.5]; [1 1.4]; [1.1 0.5];];
+  triangles = contoursToPolyhedron( contours );
+  plotTriangles( triangles );
+
   %% cropData
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
