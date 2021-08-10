@@ -62,7 +62,7 @@ function triangles = contoursToPolyhedron( contours, varargin )
     end
   end
   
-  bottomTriangles = topBottomFaces( contours{ 1 }, 1 );
+  bottomTriangles = contourToTriangles( contours{ 1 }, 1 );
   maxPoint = max(bottomTriangles);
   maxX = maxPoint(1);
   maxY = maxPoint(2);
@@ -76,7 +76,7 @@ function triangles = contoursToPolyhedron( contours, varargin )
   amountToShift = size(bottomTriangles, 1) - closestPointIndex;
   bottomTriangles = circshift(bottomTriangles, amountToShift, 1);
   
-  topTriangles = topBottomFaces( contours{ nContours }, nContours );
+  topTriangles = contourToTriangles( contours{ nContours }, nContours );
   maxPoint = max(topTriangles);
   maxX = maxPoint(1);
   maxY = maxPoint(2);
@@ -142,7 +142,7 @@ function newContourPts = makeNewContourPoints( contourPts, nNewContourPoints, sl
 end
 
 
-function faceTriangles = topBottomFaces( contourPoints, sliceNum )
+function faceTriangles = contourToTriangles( contourPoints, sliceNum )
 
   x = contourPoints(:, 1);
   y = contourPoints(:, 2);
