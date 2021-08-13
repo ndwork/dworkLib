@@ -93,8 +93,7 @@ function [xStar,oValues] = lsqrTV_2D( applyA, b, x0, lambda, varargin )
 
   % requirement for convergence guarantee: sigma * tau * norm(K)^2 <= 1
   if isempty( sigma ) || isempty( tau )
-    %nK = powerIteration( @applyK, 0, x0(:) );
-load( 'nK.mat', 'nK' );
+    nK = powerIteration( @applyK, 0, x0(:) );
 
     if isempty(sigma) && isempty(tau)
       tau = 1/nK;
