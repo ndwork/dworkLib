@@ -24,6 +24,12 @@ function out = computeGradient( in, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  if nargin < 1
+    disp( 'Usage:  out = computeGradient( in [, op ] ] )' );
+    if nargout > 0, out = []; end
+    return;
+  end
+  
   p = inputParser;
   p.addOptional( 'op', 'notransp', @(x) true );
   p.parse( varargin{:} );

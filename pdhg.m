@@ -37,6 +37,16 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage;  ' );
+    disp( '  [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ... ');
+    disp( '  ''A'', A, ''f'', f, ''g'', g, ''N'', N, ''normA'', normA, ''sigma'', sigma, ...' );
+    disp( '  ''lambda'', lambda, ''theta'', theta, ''verbose'', verbose, ''z'', z ] )' );
+    if nargout > 0, xStar = []; end
+    if nargout > 1, objValues = []; end
+    return;
+  end
+  
   p = inputParser;
   p.addParameter( 'A', [] );
   p.addParameter( 'f', [] );

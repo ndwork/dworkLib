@@ -18,6 +18,8 @@ function out = proxConjL2L1( x, sigma, t )
 
   if nargin < 1
     disp( 'Usage:   out = proxConjL2L1( x [, sigma, t ] )' );
+    if nargout > 0, out = []; end
+    return;
   end
 
   if nargin < 2, sigma = 1; end
