@@ -16,6 +16,7 @@ function out = proxConjL2Sq( x, sigma, c, b )
 
   if nargin < 1
     disp( 'Usage:   out = proxConjL2Sq( x, sigma, c, b );' );
+    if nargout > 0, out=[]; end
     return;
   end
 
