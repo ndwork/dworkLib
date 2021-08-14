@@ -15,6 +15,8 @@ function out = applyC_2D( F, traj, newTraj, kCy, kCx, Cy, Cx )
   %          of the source trajectory points
   %   newTraj - An nNew x 2 array specifying the ky / kx (first / second column) coordinates
   %             of the new points
+  %             OR
+  %             a two element array specifying the size of the grid in the Fourier domain
   %   kCy - array of convolution kernel domain values in y dimension
   %   kCx - array of convolution kernel domain values in x dimension
   %   Cy - array of convolution kernel values in y dimension
