@@ -1,8 +1,8 @@
 
 function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,objValues] = fista_wLS( x, g, gGrad, proxth [, ...
-  %   'h', h, 'innerProd', 'N', N, 'r', r, 's', s, 't0', t0, 'restart', true/false, ...
-  %   'verbose', verbose ] )
+  %   'h', h, 'innerProd', innerProd, 'N', N, 'r', r, 's', s, 't0', t0, ...
+  %   'restart', true/false, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
   % search as described in "Fraction-variant beam orientation optimization
@@ -47,6 +47,16 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 1
+    disp( 'Usage:  ' );
+    disp( '  [xStar,objValues] = fista_wLS( x, g, gGrad, proxth [, ... ');
+    disp( '    ''h'', h, ''innerProd'', innerProd, ''N'', N, ''r'', r, ''s'', s, ''t0'', t0, ... ');
+    disp( '    ''restart'', true/false''verbose'', verbose ] ' );
+    if nargout > 0, xStar = []; end
+    if nargout > 1, objectiveValues = []; end
+    return
+  end
 
   defaultN = 100;
   defaultSubIterThresh = 100;
