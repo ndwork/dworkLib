@@ -30,8 +30,8 @@ function [out,err] = checkAdjoint( x, f_in, varargin )
   % purpose.
 
   if nargin < 1
-    disp( ['Usage: [out,err] = checkAdjoint( x, f [, ', ...
-      'fAdj, ''tol'', tol, ''y'', y, ''nRand'', nRand ] )' ]);
+    disp( 'Usage: [out,err] = checkAdjoint( x, f [, ''fAdj'', fAdj, ' );
+    disp( '  ''tol'', tol, ''y'', y, ''nRand'', nRand ] )' );
     if nargout > 0, out=[]; end
     if nargout > 1, err=[]; end
     return
