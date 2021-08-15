@@ -3,7 +3,7 @@ function testDworkLib
   clear; close all; rng(2);
 
   %% admm
-  fprintf('\nTesting admm: \n');
+  fprintf( '\nTesting admm: \n' );
   %minimize ||Ax - b||_2^2 + lambda ||x||+1fa
   A = rand( 7, 3 ) * 100;
   x = rand( 3, 1 ) * 100;
@@ -17,6 +17,55 @@ function testDworkLib
   t = 1d-3;  % admm step size
   [xStar,objValues] = admm( x0, proxf, proxg, t, 'A', A, 'f', f, 'g', g, 'N', 1000 );   %#ok<ASGLU>
   fprintf('\nadmm ran to completion. \n');
+
+  %% applyC_2D
+  fprintf( '\nTesting applyC_2D: \n' );
+  nSpokes = 60;
+  nPtsPerSpoke = 30;
+  traj = mri_makeTrajPts( 2, 'radial', nSpokes, nPtsPerSpoke );
+
+  nD = 2;
+  N = [ 128 128 ];
+
+  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
+  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
+
+  C_traj_N = @(x) applyC_2D( x, traj, N, kCy, kCx, Cy, Cx );
+  CT_traj_N = @(x) applyCT_2D( x, traj, N, kCy, kCx, Cy, Cx );
+
+  F = rand( size(traj,1), nD ) + 1i * rand( size( traj, 1 ), nD );
+  [ checkC_traj_N, errCheckC ] = checkAdjoint( F, C_traj_N, 'fAdj', CT_traj_N );
+  if checkC_traj_N == false
+    error([ 'applyC failed with error: ', num2str( errCheckC ) ]);
+  end
+
+  C_N_traj = @(x) applyC_2D( x, N, traj, kCy, kCx, Cy, Cx );
+  CT_N_traj = @(x) applyCT_2D( x, N, traj, kCy, kCx, Cy, Cx );
+  
+  F = rand( [ N(1) N(2) nD ] ) + 1i * rand( [ N(1) N(2) nD ] );
+  [ checkC_N_traj, errCheckC ] = checkAdjoint( F, C_N_traj, 'fAdj', CT_N_traj );
+  if checkC_N_traj == false
+    error([ 'applyC failed with error: ', num2str( errCheckC ) ]);
+  end
+
+  nReadout = 50;
+  nLines = 9;
+  dkLine = 0.02;
+  nAngles = 45;
+  newTraj = mri_makeTrajPts( 2, 'propeller', nReadout, nLines, dkLine, nAngles );
+
+  C_traj_newTraj = @(x) applyC_2D( x, traj, newTraj, kCy, kCx, Cy, Cx );
+  CT_traj_newTraj = @(x) applyCT_2D( x, traj, newTraj, kCy, kCx, Cy, Cx );
+
+  F = rand( size( traj, 1 ), nD ) + 1i * rand( size( traj, 1 ), nD );  
+  [ checkC_N_traj, errCheckC ] = checkAdjoint( F, C_traj_newTraj, 'fAdj', CT_traj_newTraj );
+  if checkC_N_traj == false
+    error([ 'applyC failed with error: ', num2str( errCheckC ) ]);
+  end
+  
+  disp( 'applyC passed' );
+
+
 
   %% bilateralFilter
   fprintf('\nTesting bilateralFilter: \n');
