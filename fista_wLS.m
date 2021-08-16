@@ -1,8 +1,8 @@
 
-function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
+function [xStar,objectiveValues,relErrs] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,objValues] = fista_wLS( x, g, gGrad, proxth [, ...
   %   'h', h, 'innerProd', innerProd, 'N', N, 'r', r, 's', s, 't0', t0, ...
-  %   'restart', true/false, 'verbose', verbose ] )
+  %   'restart', true/false, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
   % search as described in "Fraction-variant beam orientation optimization
@@ -34,6 +34,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   % s - the scaling parameter each FISTA iteration; must be greater than 1
   %     (default is 1.25)
   % t0 - initial step size (default is 1)
+  % tol - if the relative error is below this tolerance then fista_wLS returns
   % verbose - if set then prints fista iteration
   %
   % Outputs:
@@ -55,6 +56,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
     disp( '    ''restart'', true/false''verbose'', verbose ] ' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objectiveValues = []; end
+    if nargout > 2, relErrs = []; end
     return
   end
 
@@ -65,27 +67,29 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
   p.addParameter( 'gradNorm', Inf, @ispositive );
   p.addParameter( 'h', [] );
   p.addParameter( 'innerProd', [] );
+  p.addParameter( 'minStep', 0, @(x) x >= 0 );
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x) == 0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'r', 0.5, @ispositive );
-  p.addParameter( 's', 1.25, @ispositive );
-  p.addParameter( 't0', 1, @ispositive );
-  p.addParameter( 'minStep', 0, @(x) x >= 0 );
   p.addParameter( 'restart', false, @islogical );
+  p.addParameter( 's', 1.25, @ispositive );
   p.addParameter( 'subIterThresh', defaultSubIterThresh, @ispositive );
+  p.addParameter( 't0', 1, @ispositive );
+  p.addParameter( 'tol', [], @ispositive );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   gradNorm = p.Results.gradNorm;
   h = p.Results.h;
   innerProd = p.Results.innerProd;
+  minStep = p.Results.minStep;
   N = p.Results.N;  % total number of iterations
   printEvery = p.Results.printEvery;  % display result printEvery iterations
   r = p.Results.r;  % r must be between 0 and 1
-  s = p.Results.s;  % s must be greater than 1
-  t0 = p.Results.t0;  % t0 must be greater than 0
-  minStep = p.Results.minStep;
   restart = p.Results.restart;
+  s = p.Results.s;  % s must be greater than 1
   subIterThresh = p.Results.subIterThresh;
+  t0 = p.Results.t0;  % t0 must be greater than 0
+  tol = p.Results.tol;
   verbose = p.Results.verbose;
 
   if numel( N ) == 0, N = defaultN; end
@@ -107,6 +111,8 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
     end
   end
 
+  if nargout > 2, relErrs = zeros( N, 1 );  end
+  
   if calculateObjectiveValues > 0, gx = g( x ); end
   t = t0 / s;
   v = x;
@@ -153,7 +159,7 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       gx = g( x );
       if calculateObjectiveValues > 0
         hx = h( x );
-        objectiveValues( iter+1 ) = gx + hx;
+        objectiveValues( iter + 1 ) = gx + hx;
       end
 
       gy = g( y );
@@ -173,6 +179,18 @@ function [xStar,objectiveValues] = fista_wLS( x, g, gGrad, proxth, varargin )
       if verbose>1 && mod( k, printEvery ) == 0
         disp([ '  Step size change to: ', num2str(t) ]);
       end
+    end
+
+    if numel( tol ) > 0
+      xNorm = sqrt( innerProd( x, x ) );
+      diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
+      relErr = diffNorm / xNorm;
+      if nargout > 2, relErrs( iter + 1 ) = relErr; end
+      if verbose == true
+        disp([ '  Relative error: ', num2str( relErr ) ]);
+      end
+
+      if relErr < tol, break; end
     end
 
     if restart == true && k > 0 && innerProd( Dgy, x - lastX ) > 0
