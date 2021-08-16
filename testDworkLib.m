@@ -277,19 +277,21 @@ function testDworkLib
   end
 
   %% fista test 1
-  M = 300;
-  N = 20;
+  M = 30;
+  N = 3;
   A = rand(M,N);
   b = rand(M,1);
 
   bestX = A \ b;
 
-  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
-  gGrad = @(x) A'*A*x - A'*b;
+  %g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  gGrad = @(x) A' * A * x - A' * b;
   proxth = @(x,t) x;  % Least squares
   x0 = zeros(N,1);
-  xHat_leastSquares = fista( x0, g, gGrad, proxth );
+  xHat_leastSquares = fista( x0, gGrad, proxth, 't', 1d-2, 'N', 1000 );
 
+  disp( [ bestX xHat_leastSquares ] )
+  
   err = norm( xHat_leastSquares - bestX ) / M;
   if err < 1d-7
     disp( 'fista test 1 passed' );
@@ -313,7 +315,7 @@ function testDworkLib
   x0 = rand(N,1);
 
   proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
-  [xHat_lasso,objValues] = fista( x0, g, gGrad, proxth, 'h', h );                          %#ok<ASGLU>
+  [xHat_lasso,objValues] = fista( x0, gGrad, proxth, 'g', g, 'h', h );                          %#ok<ASGLU>
   err = norm( xHat_lasso - x, 1 ) / N;
   if err < 0.1
     disp( 'fista passed' );
