@@ -1,6 +1,6 @@
 
-function [xStar,objectiveValues,relErrs] = fista_wLS( x, g, gGrad, proxth, varargin )
-  % [xStar,objValues] = fista_wLS( x, g, gGrad, proxth [, ...
+function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, varargin )
+  % [xStar,objValues,relDiffs] = fista_wLS( x, g, gGrad, proxth [, ...
   %   'h', h, 'innerProd', innerProd, 'N', N, 'r', r, 's', s, 't0', t0, ...
   %   'restart', true/false, 'tol', tol, 'verbose', verbose ] )
   %
@@ -56,7 +56,7 @@ function [xStar,objectiveValues,relErrs] = fista_wLS( x, g, gGrad, proxth, varar
     disp( '    ''restart'', true/false''verbose'', verbose ] ' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objectiveValues = []; end
-    if nargout > 2, relErrs = []; end
+    if nargout > 2, relDiffs = []; end
     return
   end
 
@@ -111,7 +111,7 @@ function [xStar,objectiveValues,relErrs] = fista_wLS( x, g, gGrad, proxth, varar
     end
   end
 
-  if nargout > 2, relErrs = zeros( N, 1 );  end
+  if nargout > 2, relDiffs = zeros( N, 1 );  end
   
   if calculateObjectiveValues > 0, gx = g( x ); end
   t = t0 / s;
@@ -184,13 +184,13 @@ function [xStar,objectiveValues,relErrs] = fista_wLS( x, g, gGrad, proxth, varar
     if numel( tol ) > 0
       xNorm = sqrt( innerProd( x, x ) );
       diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
-      relErr = diffNorm / xNorm;
-      if nargout > 2, relErrs( iter + 1 ) = relErr; end
+      relDiff = diffNorm / xNorm;
+      if nargout > 2, relDiffs( iter + 1 ) = relDiff; end
       if verbose == true
-        disp([ '  Relative error: ', num2str( relErr ) ]);
+        disp([ '  Relative error: ', num2str( relDiff ) ]);
       end
 
-      if relErr < tol, break; end
+      if relDiff < tol, break; end
     end
 
     if restart == true && k > 0 && innerProd( Dgy, x - lastX ) > 0
