@@ -277,8 +277,8 @@ function testDworkLib
   end
 
   %% fista test 1
-  M = 30;
-  N = 3;
+  M = 300;
+  N = 20;
   A = rand(M,N);
   b = rand(M,1);
 
@@ -288,9 +288,10 @@ function testDworkLib
   gGrad = @(x) A' * A * x - A' * b;
   proxth = @(x,t) x;  % Least squares
   x0 = zeros(N,1);
-  xHat_leastSquares = fista( x0, gGrad, proxth, 't', 1d-2, 'N', 1000 );
-
-  disp( [ bestX xHat_leastSquares ] )
+  
+  normATA = norm( A' * A );
+  t = 0.999 / normATA;
+  xHat_leastSquares = fista( x0, gGrad, proxth, 't', t, 'N', 1000 );
   
   err = norm( xHat_leastSquares - bestX ) / M;
   if err < 1d-7
@@ -307,20 +308,25 @@ function testDworkLib
   x = zeros(N,1);
   x(3)=5; x(2)=8;  x(22)=2;
   %b = A*x + rand(M,1);
-  b = A*x + rand(M,1)/10;
+  b = A*x + rand(M,1) / 10;
 
   g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
   h = @(y) norm( y, 1 );
   gGrad = @(x) A'*A*x - A'*b;
   x0 = rand(N,1);
 
-  proxth = @(x,t) softThresh( x, lambda*t );  % Lasso
-  [xHat_lasso,objValues] = fista( x0, gGrad, proxth, 'g', g, 'h', h );                          %#ok<ASGLU>
+  proxth = @(x,t) softThresh( x, lambda * t );  % Lasso
+
+  normATA = norm( A' * A );
+  t = 0.999 / normATA;
+
+  [ xHat_lasso, objValues ] = fista( x0, gGrad, proxth, 't', t, 'g', g, 'h', h, 'N', 10000 );  %#ok<ASGLU>
+
   err = norm( xHat_lasso - x, 1 ) / N;
   if err < 0.1
-    disp( 'fista passed' );
+    disp( 'fista test 2 passed' );
   else
-    error( 'fista failed' );
+    error( 'fista test 2 failed' );
   end
 
   %% fitPolyToData2

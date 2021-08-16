@@ -67,7 +67,7 @@ function [xStar,objectiveValues] = fista( x, gGrad, proxth, varargin )
   z = x;
   y = 0;
 
-  for k=0:N-1
+  for k = 0 : N-1
     x = z - t * gGrad( z );
 
     lastY = y;
