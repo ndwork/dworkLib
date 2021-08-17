@@ -205,6 +205,9 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
     iter = iter + 1;
   end
 
+  if nargout > 1, objectiveValues = objectiveValues( 1 : iter ); end
+  if nargout > 2, relDiffs = relDiffs( 1 : iter ); end
+
   xStar = x;
 end
 
