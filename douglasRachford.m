@@ -1,6 +1,7 @@
 
 function out = douglasRachford( x0, proxf, proxg, t, varargin )
-  % out = douglasRachford( x0, proxf, proxg, t, varargin )
+  % out = douglasRachford( x0, proxf, proxg, t [, 
+  %   'N', N, 'rho', rho, 'verbose', verbose ] )
   %
   % minimizes f( x ) + g( x )
   %
@@ -19,6 +20,14 @@ function out = douglasRachford( x0, proxf, proxg, t, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 1
+    disp( 'Usage:  ' );
+    disp( '  out = douglasRachford( x0, proxf, proxg, t [, ' );
+    disp( '    ''N'', N, ''rho'', rho, ''verbose'', verbose ] ) ' );
+    if nargout > 0, out = []; end
+    return
+  end
 
   p = inputParser;
   p.addRequired( 'x0', @isnumeric );
