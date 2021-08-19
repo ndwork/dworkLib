@@ -38,12 +38,14 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   	disp( '           ''N'', N, ''A'', A, ''beta'', beta, ''f'', f, ''g'', g, ... ' );
     disp( '           ''mu'', mu, ''tau'', tau, ''theta'', theta, ''y'', y, ... ' );
     disp( '           ''verbose'', verbose ] ) ' );
+    xStar = [];
+    if nargout > 1, objValues = []; end
     return;
   end
   
   p = inputParser;
   p.addParameter( 'A', [] );
-  p.addParameter( 'beta', 1, @ispositive );
+  p.addParameter( 'beta', 0.8, @ispositive );
   p.addParameter( 'delta', 0.99, @(x) x>0 && x<1 );
   p.addParameter( 'doCheckAdjoint', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.addParameter( 'f', [] );
@@ -133,7 +135,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
       end
 
       theta = tau / lastTau;
-      xBar = x + theta * ( diffx );
+      xBar = x + theta * diffx;
 
       betaTau = beta * tau;
       tmp = lastY + betaTau * applyA( xBar );
