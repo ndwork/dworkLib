@@ -329,6 +329,32 @@ function testDworkLib
     error( 'fista test 2 failed' );
   end
 
+  
+  %% fista_wLS  ( with line search )
+  M = 300;
+  N = 20;
+  A = rand(M,N);
+  b = rand(M,1);
+
+  bestX = A \ b;
+
+  g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  gGrad = @(x) A' * A * x - A' * b;
+  proxth = @(x,t) x;  % Least squares
+  x0 = zeros(N,1);
+
+  %normATA = norm( A' * A );
+  %t = 0.999 / normATA;
+  t = 1;
+  xHat_leastSquares = fista_wLS( x0, g, gGrad, proxth, 't0', t, 'tol', 1d-6, 'N', 1000, 'verbose', true );
+
+  err = norm( xHat_leastSquares - bestX ) / M;
+  if err < 1d-7
+    disp( 'fista test 1 passed' );
+  else
+    error( 'fista test 1 failed' );
+  end
+
   %% fitPolyToData2
   xOrder = 3;
   yOrder = 2;
