@@ -1,5 +1,4 @@
 
-
 function out = proxL2( x, t )
   % out = proxL2( x, t )
   %
