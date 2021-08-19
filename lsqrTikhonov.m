@@ -50,6 +50,7 @@ function out = lsqrTikhonov( A, b, gamma, varargin )
   end
   nX = numel( ATb );
   B = [ b; zeros(nX,1); ];
+
   out = lsqr( @applyM, B, varargin{:} );
 end
 
