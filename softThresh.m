@@ -39,9 +39,7 @@ function out = softThresh( in, thresh )
     magIn = abs( in );  % We know magIn is positive
     magOut = max( ( magIn - thresh ), 0 );
     out = in ./ magIn .* magOut;
-    %out = magOut .* exp( 1i * angle( in ) );
 
   end
 
 end
-
