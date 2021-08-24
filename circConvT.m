@@ -1,15 +1,17 @@
 
-function out = circConvT( img, kernel )
-  % out = circConvT( img, kernel )
+function out = circConvT( inArray, kernel )
+  % out = circConv( inArray, kernel )
   %
-  % Calculates the adjoint (transpose) of circular convolution with kernel
+  % Calculates the circular convolution of inArray with kernel.
+  %   The origin of inArray is the first element.
+  %   The origin of kernel is the center element.
   %
   % Inputs:
-  % img - a 2D array
+  % inArray - a 2D array
   % kernel - a small 2D array
   %
   % Outputs:
-  % out - a 2D array that is the result of the adjoint of convolution with the kernel
+  % out - a 2D array that is the circular convolution of inArray with the kernel
   %
   % Written by Nicholas Dwork - Copyright 2021
   %
@@ -19,7 +21,28 @@ function out = circConvT( img, kernel )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  kFlipped = flipAboutIndx( kernel, floor( size( kernel ) / 2 ) + 1 );
+  s1 = size( inArray );
+  s2 = size( kernel );
+  newSize = max( s1, s2 );
 
-  out = circConv( img, kFlipped );
+  pad1 = zeros( newSize );
+  pad2 = zeros( newSize );
+  str2eval1 = 'pad1( 1:s1(1)';
+  str2eval2 = 'pad2( 1:s2(1)';
+  for dim = 2 : numel( s1 )
+    str2eval1 = [ str2eval1, ', 1:s1(', num2str(dim), ')' ];   %#ok<AGROW>
+    str2eval2 = [ str2eval2, ', 1:s2(', num2str(dim), ')' ];   %#ok<AGROW>
+  end
+  str2eval1 = [ str2eval1, ' ) = inArray;' ];
+  str2eval2 = [ str2eval2, ' ) = kernel;' ];
+
+  eval( str2eval1 );
+  eval( str2eval2 );
+
+  pad2 = circshift( pad2, -floor( s2 / 2 ) );
+
+  pad2 = flipAboutIndx( pad2, ones( 1, ndims( pad2 ) ) );
+
+  out = ifftn( fftn( pad1 ) .* fftn( pad2 ) );
 end
+
