@@ -136,7 +136,7 @@ function testDworkLib
 
   %% circConvT
   img = rand( 64, 128 );
-  filt = rand( 3, 5 );
+  filt = rand( 6, 7 );
 
   blur = @(x) circConv( x, filt );
   blurT = @(x) circConvT( x, filt );
