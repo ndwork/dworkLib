@@ -134,6 +134,19 @@ function testDworkLib
   triangles = contoursToPolyhedron( contours );
   plotTriangles( triangles );
 
+  %% circConvT
+  img = rand( 64, 128 );
+  filt = rand( 5, 7 );
+
+  blur = @(x) circConv( x, filt );
+  blurT = @(x) circConvT( x, filt );
+
+  [blurCheck,checkErr] = checkAdjoint( img, blur, 'fAdj', blurT );
+  if blurCheck == false
+    error([ 'circConvT_2D test failed with error: ', num2str( checkErr ) ]);
+  end
+  disp( 'circConvT_2D test passed' );
+
   %% cropData
   fprintf('\nTesting cropData: \n');
   cropped = cropData( 1:10, 5 );
