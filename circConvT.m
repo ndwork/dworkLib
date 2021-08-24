@@ -1,6 +1,6 @@
 
-function out = circConvT_2D( img, kernel )
-  % out = circConvT_2D( img, kernel )
+function out = circConvT( img, kernel )
+  % out = circConvT( img, kernel )
   %
   % Calculates the adjoint (transpose) of circular convolution with kernel
   %
@@ -19,12 +19,7 @@ function out = circConvT_2D( img, kernel )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  kFlipped = circshift( kernel, -floor( size( kernel ) / 2 ) );
-  for dim = 1 : ndims( kernel )
-    kFlipped = flip( kFlipped, dim );
-  end
-
-  kFlipped = circshift( kFlipped, floor( size( kernel ) / 2 ) + 1 );
+  kFlipped = flipAboutIndx( kernel, floor( size( kernel ) / 2 ) + 1 );
 
   out = circConv( img, kFlipped );
 end
