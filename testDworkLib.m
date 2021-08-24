@@ -136,7 +136,7 @@ function testDworkLib
 
   %% circConvT
   img = rand( 64, 128 );
-  filt = rand( 5, 7 );
+  filt = rand( 3, 5 );
 
   blur = @(x) circConv( x, filt );
   blurT = @(x) circConvT( x, filt );
@@ -391,6 +391,16 @@ function testDworkLib
     disp( 'fitPolyToData2 passed' );
   end
 
+  %% flipAboutIndx
+  in = 1:5;
+  flipped = flipAboutIndx( in, [1 2] );
+  err = norm( flipped - [ 3 2 1 5 4 ] );
+  if err > 0
+    error([ 'flipAboutIndx failed with error ', num2str(err) ]);
+  else
+    disp( 'flipAboutIndx passed' );
+  end
+  
   %% goldenSectionSearch
   fprintf( '\nTesting goldenSectionSearch: \n' );
   trueMin = 0.7809;
