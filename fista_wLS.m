@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, varargin )
   % [xStar,objValues,relDiffs] = fista_wLS( x, g, gGrad, proxth [, ...
-  %   'h', h, 'innerProd', innerProd, 'N', N, 'r', r, 's', s, 't0', t0, ...
+  %   'h', h, 'innerProd', innerProd, 'minStep', minStep, 'N', N, 'r', r, 's', s, 't0', t0, ...
   %   'restart', true/false, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm with line
@@ -28,6 +28,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   % innerProd - function handle to the inner product.
   %     ( default is real( dotP( x, y ) ) )
   %     Note: for complex vectors, innerProd should be real( dotP( x, y ) )
+  % minStep - the smallest the step size can be
   % N - the number of iterations that FISTA will perform (default is 100)
   % r - the backtracking line search parameter; must be between 0 and 1
   %     (default is 0.5)
