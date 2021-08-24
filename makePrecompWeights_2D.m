@@ -1,7 +1,7 @@
 
-function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
-  % [weights,flag,res] = makePrecompWeights_2D( kTraj [, N, ...
-  %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg, 'psfMask', psfMask ] )
+function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
+  % [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj [, N, ...
+  %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
   %
@@ -16,13 +16,14 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %   W - the window width in pixels
   %   nC - the number of points to sample the convolution kernel
   %   alg - a string specifying the algorithm to use
+  %     CLS - constrained least squares on trajectory points
   %     FP - specifies fixed point iteration
   %     GP - gradient projection algorithm
+  %     LSQR - least squares on trajectory points
   %     SAMSANOV - Constrainted Least Squares on grid points
   %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
   %   gamma - distance weighting parameter for Gradient Projection algorithm
   %     ( default is 0.25 * N )
-  %   nIter - specifies the number of iterations of fp method
   %   psfMask - only used by space domain optimizations
   %   verbose - true/false
   %
@@ -44,55 +45,43 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   % purpose.
 
   defaultAlg = 'VORONOI';
-  defaultNIter = 5;
-  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
   p.addOptional( 'N', [], @ispositive );
-  p.addParameter( 'alpha', [], checknum );
   p.addParameter( 'gamma', [], @isnumeric );
-  p.addParameter( 'W', [], checknum );
   p.addParameter( 'mu', 0, @isnumeric );
-  p.addParameter( 'nC', [], checknum );
   p.addParameter( 'alg', defaultAlg, @(x) true );
-  p.addParameter( 'nIter', defaultNIter, checknum );
-  p.addParameter( 'psfMask', [] );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   N = p.Results.N;
   alg = p.Results.alg;
-  alpha = p.Results.alpha;
   gamma = p.Results.gamma;
-  W = p.Results.W;
   mu = p.Results.mu;
-  nC = p.Results.nC;
-  nIter = p.Results.nIter;
-  psfMask = p.Results.psfMask;
   verbose = p.Results.verbose;
-  
+
+  nIter = 1;
   flag = 0;
   res = 0;
   switch alg
-    case 'CLSDC'
-      % tbLSDC with non-negativity constraint
-      [weights,flag,res] = makePrecompWeights_2D_CLSDC( ...
-        kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
+    case 'CLS'
+      % Constrained least squares density compensation
+      [weights,nIter,flag,res] = makePrecompWeights_2D_CLS( kTraj, N );
 
     case 'FP'
       % Fixed point iteration
-      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, ...
-        'alpha', alpha, 'W', W, 'nC', nC, 'nIter', nIter, 'verbose', verbose );
+      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, 'verbose', verbose );
 
     case 'GP'
       % Gradient Projection method
-      [weights,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu );
+      [weights,nIter,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu );
 
     case 'JACKSON'
-      [weights,flag] = makePrecompWeights_2D_JACKSON( kTraj, N, ...
-        'alpha', alpha, 'W', W, 'nC', nC );
+      [weights,nIter,flag] = makePrecompWeights_2D_JACKSON( kTraj, N );
+
+    case 'LSQR'
+      [weights,nIter,flag,res] = makePrecompWeights_2D_LSQR( kTraj, N );
 
     case 'SAMSANOV'
-      [weights,flag,res] = makePrecompWeights_2D_SAMSANOV(...
-        kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
+      [weights,nIter,flag,res] = makePrecompWeights_2D_SAMSANOV( kTraj, N );
 
     case 'VORONOI'
       % Voronoi Density compensation implementation
@@ -105,82 +94,72 @@ function [weights,flag,res] = makePrecompWeights_2D( kTraj, varargin )
 end
 
 
-function [weights,flag,residual] = makePrecompWeights_2D_CLSDC( ...
-  traj, N, varargin )
+function [weights,nIter,flag,residual] = makePrecompWeights_2D_CLS( traj, N, varargin )
   % Optimization analog of FP with a non-negativity constraint
 
-  defaultAlpha = 1.5;
-  defaultW = 8;
-  defaultNc = 500;
-  checknum = @(x) numel(x)==0 || ( isnumeric(x) && isscalar(x) && (x > 1) );
-  p = inputParser;
-  p.addParameter( 'alpha', defaultAlpha, checknum );
-  p.addParameter( 'W', defaultW, checknum );
-  p.addParameter( 'nC', defaultNc, checknum );
-  p.parse( varargin{:} );
-  alpha = p.Results.alpha;
-  W = p.Results.W;
-  nC = p.Results.nC;
+  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
+  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
 
-  % Make the Kaiser Bessel convolution kernel
-  kbN = 2*N;
-  Ny=kbN(1);  Nx=kbN(2);
-  Gy = Ny;
-  [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
-  Gx = Nx;
-  [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
-
-  iteration = 0;
-  function out = applyA( in, type )
-    if nargin > 1 && strcmp( type, 'transp' )
-      out = applyCT_2D( in, traj, kCy, kCx, Cy, Cx, traj );
+  function out = applyA( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = applyC_2D( in, traj, [ Ny Nx ], kCy, kCx, Cy, Cx );
+    elseif strcmp( op, 'transp' )
+      out = applyCT_2D( in, traj, [ Ny Nx ], kCy, kCx, Cy, Cx );
     else
-      out = applyC_2D( in, traj, 0, kCy, kCx, Cy, Cx, traj );
-
-      iteration = iteration + 1;
-      if verbose ~= 0 && mod( iteration, 5 ) == 0
-        disp(['makePrecompWeights_2D_CLSDC working on iteration ', ...
-          num2str(iteration) ]);
-      end
-      %residuals(iteration) = norm( out(:) - b(:), 2 ) / norm(b(:),2);
-      %if iteration>10, plot( residuals(1:iteration) ); drawnow; end
+      error( 'Unrecognized operator for A' );
     end
   end
 
-  nTraj = size(traj,1);
-  b = ones(nTraj,1);
-  function y = linop_4_tfocs( in, mode )
-    switch mode
-      case 0
-        y = [numel(b), nTraj];
-      case 1
-        y = applyA( in );
-      case 2
-        y = applyA( in, 'transp' );
+  w0 = ( 1 / size(traj,1) ) * ones( size(traj,1), 1 );
+
+  doCheckAdjoint = false;
+  if doCheckAdjoint == true
+    [checkAdjA,errCheckAdjA] = checkAdjoint( w0, @applyA );
+    if checkAdjA == false
+      error([ 'Check of A Adjoint failed with error: ', num2str( errCheckAdjA ) ]);
+    else
+      disp( 'Check of A Adjoint passed' );
     end
   end
-  %varargout = linop_test( @linop_4_tfocs );
 
-  opts = tfocs;
-  opts.alg = 'N83';
-  opts = tfocs;
-  opts.maxIts = 2000;
-  opts.printEvery = 1;
-  opts.tol = 1d-5;
-  x0 = ones( nTraj, 1 );
-  [weights,tfocsOptOut] = tfocs( smooth_quad, { @linop_4_tfocs, -b }, ...
-    proj_Rplus, x0, opts );
-  %weights = tfocs( smooth_huber(0.02), { @linop_4_tfocs, -b }, [], x0, opts );
+  h = @(x) indicatorFunction( x, [ 0, Inf ] );
+  proxth = @(x,t) max( x, 0 );
 
-  if nargout > 1
-    flag = 0;  % tfocs doesn't provide flag
-  end
-  if nargout > 2
-    psf = applyA( weights );
-    residual = norm( psf(:) - b(:), 2 ) / norm(b(:),2);
+  function out = g( in )
+    Ain = applyA( in );
+    out = 0.5 * norm( Ain(:) - 1 )^2;
   end
 
-  close;
+  function out = applyATA( in )
+    out = applyA( applyA( in ), 'transp' );
+  end
+
+  b = ones( [ Ny Nx ] );
+  ATb = applyA( b, 'transp' );
+  function out = gGrad( in )
+    out = applyA( applyA( in ), 'transp' ) - ATb;
+  end
+
+  tol = 1d-4;
+
+  normATA = powerIteration( @applyATA, w0, 'maxIters', 100, ...
+    'symmetric', true, 'verbose', true );
+  t = 10 / normATA;  % can be too large because line search should take care of it
+  minStep = 0.999 / normATA;
+
+verbose = true;
+  if verbose == true
+    [weights,objValues,relErrs] = fista_wLS( w0, @g, @gGrad, proxth, 'h', h, ...
+      'minStep', minStep, 't0', t, 'tol', tol, 'verbose', verbose );   %#ok<ASGLU>
+%figure; plotnice( relErrs );
+%figure;  semilogynice( relErrs );
+  else
+    weights = fista_wLS( w0, g, gGrad, proxth );
+  end
+
+  if nargout > 1, nIter = numel( relErrs ); end
+  flag = 0;
+  if nargout > 3, residual = g( weights ); end
 end
 
 
@@ -194,15 +173,15 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   p.addParameter( 'alpha', [], checknum );
   p.addParameter( 'W', [], checknum );
   p.addParameter( 'nC', [], checknum );
-  p.addParameter( 'nIter', 8, checknum );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
-  nIter = p.Results.nIter;
   verbose = p.Results.verbose;
 
+  nIter = 8;
+  
   % Make the Kaiser Bessel convolution kernel
   Ny = N(1);  Nx = N(2);
   Gy = Ny;
@@ -231,13 +210,9 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   weights = weights .* scale;
 
   %weights = weights ./ sum( weights(:) );
-  
-  if nargout > 1
-    flag = 0;
-  end
-  if nargout > 2
-    res = norm( weights - oldWeights, 2 ) / norm( weights, 2 );
-  end
+
+  flag = 0;
+  res = norm( weights - oldWeights, 2 ) / norm( weights, 2 );
 end
 
 
@@ -247,7 +222,7 @@ function scale = getScaleOfPSF( weights, traj, N )
 end
 
 
-function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
+function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
   segLength = 30000;
 
   nTraj = size( traj, 1 );
@@ -332,21 +307,23 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
   w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
 
   normA = powerIteration( @applyA, w0, 'maxIters', 100, 'verbose', true );
-  grdNrm = normA + ( 0.5 * mu / nTraj );  % Lower bound on norm of gradient
+  grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
   alg = 'fista_wLS';
   if strcmp( 'fista_wLS', alg )
     stepSize = 1d-4;
-    [w,objValues] = fista_wLS( w0, @g, @gGrad, proxth, ...
-      'N', 60, 't0', stepSize, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
+    minStep = 0.999 / grdNrm;
+    tol = 0.01;
+    [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', minStep, ...
+      'N', 60, 't0', stepSize, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
   elseif strcmp( 'pogm', alg )
     [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', 60, ...
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
-    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', 10000 );
+    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', 1000 );
   end 
   %figure;  plotnice( objValues );
   flag = 0;
@@ -367,6 +344,7 @@ function [ w, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
   kappa = 1 ./ ( sum( w .* prodScaledSincTraj ) );
   w = kappa * w;
 
+  if nargout > 1, nIter = numel( objValues ); end
 end
 
 
@@ -413,6 +391,41 @@ function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   if nargout > 1
     flag = 0;
   end
+end
+
+function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, varargin )
+  % Optimization analog of FP with a non-negativity constraint
+
+  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
+  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
+
+  function out = applyA( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = applyC_2D( in, traj, [ Ny Nx ], kCy, kCx, Cy, Cx );
+    elseif strcmp( op, 'transp' )
+      in = reshape( in, [ Ny Nx ] );
+      out = applyCT_2D( in, traj, [ Ny Nx ], kCy, kCx, Cy, Cx );
+    else
+      error( 'Unrecognized operator for A' );
+    end
+    out = out(:);
+  end
+
+  w0 = ( 1 / size(traj,1) ) * ones( size(traj,1), 1 );
+
+  doCheckAdjoint = false;
+  if doCheckAdjoint == true
+    [checkAdjA,errCheckAdjA] = checkAdjoint( w0, @applyA );
+    if checkAdjA == false
+      error([ 'Check of A Adjoint failed with error: ', num2str( errCheckAdjA ) ]);
+    else
+      disp( 'Check of A Adjoint passed' );
+    end
+  end
+
+  tol = 1d-4;
+  b = ones( Ny, Nx );
+  [ weights, flag, residual, nIter ] = lsqr( @applyA, b(:), tol, [], [], [], w0 );
 end
 
 
@@ -487,10 +500,10 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
   w0 = ones( nTraj, 1 );
   [weights,tfocsOptOut] = tfocs( smooth_quad, { @linop_4_tfocs, -b }, ...
     proj_Rplus, w0, opts );
-  if nargout > 1
+  if nargout > 2
     lsFlag = tfocsOptOut.niter == opts.maxIts;
   end
-  if nargout > 2
+  if nargout > 3
     tmp = applyA( weights );
     lsRes = norm( tmp - 1, 2 );
   end
