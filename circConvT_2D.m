@@ -19,24 +19,12 @@ function out = circConvT_2D( img, kernel )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  [M,N] = size( kernel );
-  hM = floor( M / 2 );
-  hN = floor( N / 2 );
-
-  out = zeros( size( img ) );
-  for col = 1 : size(img,2)
-    colShift = -(col-1) + hN;
-
-    for row = 1 : size( img, 1 )
-      rowShift = -(row-1) + hM;
-
-      shiftedOut = circshift( out, [ rowShift, colShift ] );
-
-      shiftedOut( 1 : M, 1 : N ) = shiftedOut( 1 : M, 1 : N ) + ...
-        img( row, col ) * kernel;
-
-      out = circshift( shiftedOut, [ -rowShift, -colShift ] );
-    end
+  kFlipped = circshift( kernel, -floor( size( kernel ) / 2 ) );
+  for dim = 1 : ndims( kernel )
+    kFlipped = flip( kFlipped, dim );
   end
 
+  kFlipped = circshift( kFlipped, floor( size( kernel ) / 2 ) + 1 );
+
+  out = circConv( img, kFlipped );
 end
