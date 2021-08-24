@@ -7,6 +7,7 @@ function out = flipAboutIndx( in, indx )
   % Inputs:
   % in - array (may be multi-dimensional)
   % indx - a 1D array specifying the index for each dimension of in
+  %   Note:  if an element of indx is 0, the array is not flipped in that dimension
   %
   % Outputs:
   % out - an array of the size of in with its elements flipped
@@ -19,11 +20,13 @@ function out = flipAboutIndx( in, indx )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  shifted = circshift( in, -( indx - 1 ) );
+  shifted = circshift( in, -( max( indx - 1, 0 ) ) );
   
   flipped = shifted;
   for dim = 1 : ndims( in )
-    flipped = flip( flipped, dim );
+    if indx( dim ) > 0
+      flipped = flip( flipped, dim );
+    end
   end
 
   out = circshift( flipped, indx ); 
