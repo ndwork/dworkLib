@@ -14,7 +14,7 @@ function out = huber( in, mu )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  if nargin < 2
+  if nargin < 1
     disp( 'Usage:  out = huber( in, mu )' );
     out = [];
     return;
@@ -22,5 +22,6 @@ function out = huber( in, mu )
 
   out = in .* in * 0.5 / mu;
   out( abs( in ) > mu ) = abs( in( abs( in ) > mu ) ) - 0.5 * mu;
+  out = sum( out(:) );
 
 end
