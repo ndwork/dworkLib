@@ -394,17 +394,16 @@ function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
 end
 
 function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, varargin )
-  % Optimization analog of FP with a non-negativity constraint
+  % Optimization analog of FP
 
   Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
   Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
 
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
-      out = applyC_2D( in, traj, [ Ny Nx ], kCy, kCx, Cy, Cx );
+      out = applyC_2D( in, traj, traj, kCy, kCx, Cy, Cx );
     elseif strcmp( op, 'transp' )
-      in = reshape( in, [ Ny Nx ] );
-      out = applyCT_2D( in, traj, [ Ny Nx ], kCy, kCx, Cy, Cx );
+      out = applyCT_2D( in, traj, traj, kCy, kCx, Cy, Cx );
     else
       error( 'Unrecognized operator for A' );
     end
@@ -424,7 +423,7 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, va
   end
 
   tol = 1d-4;
-  b = ones( Ny, Nx );
+  b = ones( size( w0 ) );
   [ weights, flag, residual, nIter ] = lsqr( @applyA, b(:), tol, [], [], [], w0 );
 end
 
