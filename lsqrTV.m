@@ -1,6 +1,6 @@
 
-function [xStar,oValues] = lsqrTV_2D( applyA, b, x0, lambda, varargin )
-  % xStar = lsqrTV_2D( A, b, x0, lambda [, sigma, tau, 'theta', theta, ...
+function [xStar,oValues] = lsqrTV( applyA, b, x0, lambda, varargin )
+  % xStar = lsqrTV( A, b, x0, lambda [, sigma, tau, 'theta', theta, ...
   %   'nIter', nIter ] );
   %
   % Solves the following regularized least squares optimization problem
@@ -10,7 +10,7 @@ function [xStar,oValues] = lsqrTV_2D( applyA, b, x0, lambda, varargin )
   %
   % Inputs:
   % applyA - a function handle for a function that accepts two arguments
-  %   the first argument is the 2D array to be operated on
+  %   the first argument is the array to be operated on
   %   the second argument is a string.  If 'transp' then the function
   %     returns the transpose of the operation.
   % b - a 2D array
@@ -61,7 +61,7 @@ function [xStar,oValues] = lsqrTV_2D( applyA, b, x0, lambda, varargin )
       in2 = reshape( in( nb + 1 : end ), [ size(x0) 2 ] );
       DTin2 = computeGradient( in2, 'transp' );
 
-      out = ATin1(:) + DTin2(:);
+      out = ATin1 + DTin2;
 
     else
       error( 'Unrecognized operator for K' );
@@ -91,24 +91,31 @@ function [xStar,oValues] = lsqrTV_2D( applyA, b, x0, lambda, varargin )
     out = [ out1(:); out2(:); ];
   end
 
-  % requirement for convergence guarantee: sigma * tau * norm(K)^2 <= 1
-  if isempty( sigma ) || isempty( tau )
-    nK = powerIteration( @applyK, 0, x0(:) );
+  useLineSearch = true;
+  if useLineSearch == true
+    [ xStar, oValues ] = pdhgWLS( b, proxf, @proxgConj, 'A', @applyK, ...
+      'N', nIter, 'f', f, 'g', g, 'tau', tau, 'verbose', verbose );
 
-    if isempty(sigma) && isempty(tau)
-      tau = 1/nK;
-    elseif isempty(sigma)
-      tau = 1 / ( sigma * nK*nK );
-    elseif isempty(tau)
-      sigma = 1 / ( tau * nK*nK );
+  else  
+    % requirement for convergence guarantee: sigma * tau * norm(K)^2 <= 1
+    if isempty( sigma ) || isempty( tau )
+      nK = powerIteration( @applyK, 0, x0(:) );
+
+      if isempty(sigma) && isempty(tau)
+        tau = 1 / nK;
+      elseif isempty(sigma)
+        sigma = 1 / ( tau * nK * nK );
+      elseif isempty(tau)
+        tau = 1 / ( sigma * nK*nK );
+      end
     end
+
+    [ xStar, oValues ] = pdhg( b, proxf, @proxgConj, tau, 'sigma', sigma, ...
+      'A', @applyK, 'f', f, 'g', g, 'N', nIter, 'normA', nK, 'verbose', verbose );
+    xStar = reshape( xStar, size( b ) );
+    
   end
 
-  [ xStar, oValues ] = pdhg( b, proxf, @proxgConj, tau, 'sigma', sigma, ...
-    'A', @applyK, 'f', f, 'g', g, 'N', nIter, 'normA', nK, 'verbose', verbose );
-  xStar = reshape( xStar, size( b ) );
-
 end
-
 
 
