@@ -54,7 +54,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'mu', 0.8, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'printEvery', 1, @ispositive );
-  p.addParameter( 'tau', 1, @ispositive );
+  p.addParameter( 'tau', [], @ispositive );
   p.addParameter( 'theta', 1, @ispositive );
   p.addParameter( 'y', [], @isnumeric );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x == 1 || x == 0 );
@@ -73,6 +73,8 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   theta = p.Results.theta;
   y = p.Results.y;
   verbose = p.Results.verbose;
+
+  if numel( tau ) == 0, tau = 1; end
 
   if numel( innerProd ) == 0
     innerProd = @(x,y) real( dotP( x, y ) );
