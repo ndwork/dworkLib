@@ -22,7 +22,7 @@ function out = cropData( data, N )
 
   if nargin < 2
     disp('Usage: out = cropData( data, N )');
-    out = [];
+    if nargout > 0, out = []; end
     return
   end
 
