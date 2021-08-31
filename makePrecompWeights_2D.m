@@ -1,6 +1,6 @@
 
-function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
-  % [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj [, N, ...
+function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
+  % [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj [, N, ...
   %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
@@ -24,6 +24,7 @@ function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
   %   gamma - distance weighting parameter for Gradient Projection algorithm
   %     ( default is 0.25 * N )
+  %   nIter - number of iterations for iterative algorithms
   %   psfMask - only used by space domain optimizations
   %   verbose - true/false
   %
@@ -31,6 +32,7 @@ function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %   weights - 1D array with density compensation weights
   %
   % Optional Outputs:
+  %   nOptIter - number of iterations performed by optimization
   %   flag - flag describing results of optimization (see lsqr
   %     documentation)
   %   res - residual
@@ -49,6 +51,7 @@ function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   p.addOptional( 'N', [], @ispositive );
   p.addParameter( 'gamma', [], @isnumeric );
   p.addParameter( 'mu', 0, @isnumeric );
+  p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
@@ -56,15 +59,16 @@ function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   alg = p.Results.alg;
   gamma = p.Results.gamma;
   mu = p.Results.mu;
+  nIter = p.Results.nIter;
   verbose = p.Results.verbose;
 
-  nIter = 1;
+  nOptIter = 1;
   flag = 0;
   res = 0;
   switch alg
     case 'CLS'
       % Constrained least squares density compensation
-      [weights,nIter,flag,res] = makePrecompWeights_2D_CLS( kTraj, N );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_CLS( kTraj, N );
 
     case 'FP'
       % Fixed point iteration
@@ -72,19 +76,18 @@ function [weights,nIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
 
     case 'GP'
       % Gradient Projection method
-      [weights,nIter,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu, nIter );
 
     case 'JACKSON'
-      [weights,nIter,flag] = makePrecompWeights_2D_JACKSON( kTraj, N );
+      weights = makePrecompWeights_2D_JACKSON( kTraj, N );
 
     case 'LSQR'
-      [weights,nIter,flag,res] = makePrecompWeights_2D_LSQR( kTraj, N );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_LSQR( kTraj, N );
 
     case 'SAMSANOV'
-      [weights,nIter,flag,res] = makePrecompWeights_2D_SAMSANOV( kTraj, N );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_SAMSANOV( kTraj, N );
 
     case 'VORONOI'
-      % Voronoi Density compensation implementation
       weights = makePrecompWeights_2D_VORONOI( kTraj );
 
     otherwise
@@ -99,6 +102,14 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_CLS( traj, N, var
 
   Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
   Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
+
+  CyCx = Cy(:) * Cx(:)';
+  dkCy = zeros( size( kCy ) );  dkCy(1) = kCy(2);  dkCy(2:end) = kCy(2:end) - kCy(1:end-1);
+  dkCx = zeros( size( kCx ) );  dkCx(1) = kCx(2);  dkCx(2:end) = kCx(2:end) - kCx(1:end-1);
+  dkCykCx = dkCy(:) * dkCx(:)';
+  scaling = 1 / sum( CyCx(:) .* dkCykCx(:) );
+  Cy = Cy / scaling;
+  Cx = Cx / scaling;
 
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
@@ -140,7 +151,7 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_CLS( traj, N, var
     out = applyA( applyA( in ), 'transp' ) - ATb;
   end
 
-  tol = 1d-4;
+  tol = 1d-6;
 
   normATA = powerIteration( @applyATA, w0, 'maxIters', 100, ...
     'symmetric', true, 'verbose', true );
@@ -189,14 +200,7 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   Gx = Nx;
   [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
-  dky = kCy(2) - kCy(1);  Cy = Cy / ( sum( Cy(:) ) / dky );
-  dkx = kCx(2) - kCx(1);  Cx = Cx / ( sum( Cx(:) ) / dkx );
-
-  nTraj = size( traj, 1 );
-  weights = ones( nTraj, 1 );
-
-  flag = 1;
-  for iteration=1:nIter
+  for iteration = 1 : nIter  %Jackson initialization is the first iteration
     if verbose ~= 0
       disp(['makePrecompWeights_2D_FP working on iteration ', num2str(iteration) ]);
     end
@@ -206,23 +210,30 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
     weights = oldWeights ./ denom;
   end
 
-  scale = getScaleOfPSF( weights, traj, round( 0.025 * N ) );
-  weights = weights .* scale;
-
-  %weights = weights ./ sum( weights(:) );
-
   flag = 0;
   res = norm( weights - oldWeights, 2 ) / norm( weights, 2 );
+
+  weights = weights ./ sum( weights(:) );
 end
 
 
 function scale = getScaleOfPSF( weights, traj, N )
   psf = grid_2D( weights, traj, 2*N, ones( size( weights ) ) );
+  psf = cropData( psf, 0.1 * N );
   scale = 1 ./ sum( psf(:) );
 end
 
 
-function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu )
+function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
+  
+  defaultNIter = 60;
+  p = inputParameter;
+  p.addOptional( 'nIter', defaultNIter, @ispositive );
+  p.parse( varargin{:} );
+  nIter = p.Results.nIter;
+
+  if numel( nIter ) == 0, nIter = defaultNIter; end
+
   segLength = 30000;
 
   nTraj = size( traj, 1 );
@@ -306,7 +317,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
   w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
 
-  normA = powerIteration( @applyA, w0, 'maxIters', 100, 'verbose', true );
+  normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
@@ -316,14 +327,14 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
     minStep = 0.999 / grdNrm;
     tol = 0.01;
     [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', minStep, ...
-      'N', 60, 't0', stepSize, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
+      'N', nIter, 't0', stepSize, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
   elseif strcmp( 'pogm', alg )
     [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', 60, ...
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
-    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', 1000 );
+    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', 60 );
   end 
   %figure;  plotnice( objValues );
   flag = 0;
@@ -362,7 +373,7 @@ end
 
 
 
-function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
+function weights = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
   % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
 
@@ -371,10 +382,12 @@ function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   p.addParameter( 'alpha', [], checknum );
   p.addParameter( 'W', [], checknum );
   p.addParameter( 'nC', [], checknum );
+  p.addParameter( 'scaleIt', true, @islogical );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
+  scaleIt = p.Results.scaleIt;
 
   % Make the Kaiser Bessel convolution kernel
   Ny = N(1);  Nx = N(2);
@@ -386,10 +399,8 @@ function [ weights, flag ] = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   nTraj = size( traj, 1 );
   weights = 1 ./ applyC_2D( ones( nTraj, 1 ), traj, traj, kCy, kCx, Cy, Cx );
 
-  weights = weights / sum( weights(:) );
-  
-  if nargout > 1
-    flag = 0;
+  if scaleIt == true
+    weights = weights / sum( weights );
   end
 end
 
@@ -398,6 +409,14 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, va
 
   Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
   Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
+
+  CyCx = Cy(:) * Cx(:)';
+  dkCy = zeros( size( kCy ) );  dkCy(1) = kCy(2);  dkCy(2:end) = kCy(2:end) - kCy(1:end-1);
+  dkCx = zeros( size( kCx ) );  dkCx(1) = kCx(2);  dkCx(2:end) = kCx(2:end) - kCx(1:end-1);
+  dkCykCx = dkCy(:) * dkCx(:)';
+  scaling = 1 / sum( CyCx(:) .* dkCykCx(:) );
+  Cy = Cy / scaling;
+  Cx = Cx / scaling;
 
   function out = applyA( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
@@ -410,7 +429,8 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, va
     out = out(:);
   end
 
-  w0 = ( 1 / size(traj,1) ) * ones( size(traj,1), 1 );
+  %w0 = ( 1 / size(traj,1) ) * ones( size(traj,1), 1 );
+  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
 
   doCheckAdjoint = false;
   if doCheckAdjoint == true
@@ -422,9 +442,10 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, va
     end
   end
 
-  tol = 1d-4;
   b = ones( size( w0 ) );
-  [ weights, flag, residual, nIter ] = lsqr( @applyA, b(:), tol, [], [], [], w0 );
+  [ weights, flag, residual, nIter ] = lsqr( @applyA, b, [], 60, [], [], w0 );
+
+  weights = weights / sum( weights );
 end
 
 
@@ -499,6 +520,7 @@ function [weights,lsFlag,lsRes] = makePrecompWeights_2D_SAMSANOV( ...
   w0 = ones( nTraj, 1 );
   [weights,tfocsOptOut] = tfocs( smooth_quad, { @linop_4_tfocs, -b }, ...
     proj_Rplus, w0, opts );
+
   if nargout > 2
     lsFlag = tfocsOptOut.niter == opts.maxIts;
   end
