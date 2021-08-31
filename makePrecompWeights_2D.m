@@ -200,7 +200,8 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   Gx = Nx;
   [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
-  for iteration = 1 : nIter  %Jackson initialization is the first iteration
+  weights = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
+  for iteration = 2 : nIter
     if verbose ~= 0
       disp(['makePrecompWeights_2D_FP working on iteration ', num2str(iteration) ]);
     end
@@ -227,7 +228,7 @@ end
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
   
   defaultNIter = 60;
-  p = inputParameter;
+  p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
   p.parse( varargin{:} );
   nIter = p.Results.nIter;
