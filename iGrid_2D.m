@@ -58,12 +58,12 @@ function F = iGrid_2D( data, traj, varargin )
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
-  [kCy,Cy,cImgY] = makeKbKernel( Gy, Ny, 'alpha', alphaY, 'W', W, 'nC', nC );
+  [kCy,Cy,cY] = makeKbKernel( Gy, Ny, 'alpha', alphaY, 'W', W, 'nC', nC );
   Gx = Nx;
-  [kCx,Cx,cImgX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
+  [kCx,Cx,cX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
-  preEmphasis = 1 ./ ( cImgY * cImgX' );
+  preEmphasis = 1 ./ ( cY * cX' );
   preEmphasized = bsxfun( @times, data, preEmphasis );
   preEmphasized( data == 0 ) = 0;
 
