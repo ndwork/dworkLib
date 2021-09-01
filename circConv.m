@@ -1,6 +1,6 @@
 
-function out = circConv( inArray, kernel )
-  % out = circConv( inArray, kernel )
+function out = circConv( inArray, kernel, op )
+  % out = circConv( inArray, kernel [, op ] )
   %
   % Calculates the circular convolution of inArray with kernel.
   %   The origin of inArray is the first element.
@@ -9,6 +9,9 @@ function out = circConv( inArray, kernel )
   % Inputs:
   % inArray - a 2D array
   % kernel - a small 2D array
+  %
+  % Optional Inputs:
+  % op - either 'notransp' (default) or 'transp'
   %
   % Outputs:
   % out - a 2D array
@@ -20,6 +23,8 @@ function out = circConv( inArray, kernel )
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
+
+  if nargin < 3, op = 'notransp'; end
 
   sA = size( inArray );
   sK = size( kernel );
@@ -40,6 +45,10 @@ function out = circConv( inArray, kernel )
   eval( str2eval2 );
 
   pad2 = circshift( pad2, -floor( sK / 2 ) );
+  
+  if strcmp( op, 'transp' )
+    pad2 = flipAboutIndx( pad2, ones( 1, ndims( pad2 ) ) );
+  end
 
   out = ifftn( fftn( pad1 ) .* fftn( pad2 ) );
 end
