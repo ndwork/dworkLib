@@ -1,6 +1,6 @@
 
-function out = crossCorrelate( inArray, kernel )
-  % out = out = crossCorrelate( inArray, kernel )
+function out = crossCorrelate( inArray, kernel, op )
+  % out = out = crossCorrelate( inArray, kernel [, op ] )
   %
   % Calculates the cross correlation of inArray with kernel.
   %   The origin of inArray is the first element.
@@ -9,6 +9,9 @@ function out = crossCorrelate( inArray, kernel )
   % Inputs:
   % inArray - an N dimensional array
   % kernel - a small N dimensional array
+  %
+  % Optional Inputs:
+  % op - either 'notransp' (default) or 'transp'
   %
   % Outputs:
   % out - a N dimensional array of size max( size( inArray ), size( kernel ) )
@@ -21,6 +24,8 @@ function out = crossCorrelate( inArray, kernel )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  if nargin < 3, op = 'notransp'; end
+  
   sA = size( inArray );
   sK = size( kernel );
   newSize = max( sA + sK -1 );
@@ -43,7 +48,10 @@ function out = crossCorrelate( inArray, kernel )
   eval( str2eval2 );
 
   pad2 = circshift( pad2, -floor( sK / 2 ) );
-  pad2 = flipAboutIndx( pad2, ones( ndims( inArray ), 1 ) );
+  
+  if strcmp( op, 'notransp' )
+    pad2 = flipAboutIndx( pad2, ones( ndims( inArray ), 1 ) );
+  end
 
   out = ifftn( fftn( pad1 ) .* fftn( pad2 ) );
   eval( str2evalOut );

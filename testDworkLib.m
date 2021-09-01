@@ -143,9 +143,9 @@ function testDworkLib
 
   [blurCheck,checkErr] = checkAdjoint( img, blur, 'fAdj', blurT );
   if blurCheck == false
-    error([ 'circConvT_2D test failed with error: ', num2str( checkErr ) ]);
+    error([ 'circConvT test failed with error: ', num2str( checkErr ) ]);
   end
-  disp( 'circConvT_2D test passed' );
+  disp( 'circConvT test passed' );
 
   %% cropData
   fprintf('\nTesting cropData: \n');
@@ -163,6 +163,19 @@ function testDworkLib
   if err > 0, error( 'cropData test failed' ); end
   disp('cropData test passed');
 
+  %% crossCorrelate
+  img = rand( 64, 128 );
+  filt = rand( 6, 7 );
+
+  blur = @(x) crossCorrelate( x, filt );
+  blurT = @(x) crossCorrelate( x, filt, 'transp' );
+
+  [blurCheck,checkErr] = checkAdjoint( img, blur, 'fAdj', blurT );
+  if blurCheck == false
+    error([ 'crossCorrelate test failed with error: ', num2str( checkErr ) ]);
+  end
+  disp( 'crossCorrelate test passed' );
+  
   %% deaubechies
   sig = rand(8,1);
   split = [1 0];
