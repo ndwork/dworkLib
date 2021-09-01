@@ -21,17 +21,17 @@ function out = circConvT( inArray, kernel )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  s1 = size( inArray );
-  s2 = size( kernel );
-  newSize = max( s1, s2 );
+  sA = size( inArray );
+  sK = size( kernel );
+  newSize = max( sA, sK );
 
   pad1 = zeros( newSize );
   pad2 = zeros( newSize );
-  str2eval1 = 'pad1( 1:s1(1)';
-  str2eval2 = 'pad2( 1:s2(1)';
-  for dim = 2 : numel( s1 )
-    str2eval1 = [ str2eval1, ', 1:s1(', num2str(dim), ')' ];   %#ok<AGROW>
-    str2eval2 = [ str2eval2, ', 1:s2(', num2str(dim), ')' ];   %#ok<AGROW>
+  str2eval1 = 'pad1( 1:sA(1)';
+  str2eval2 = 'pad2( 1:sK(1)';
+  for dim = 2 : numel( sA )
+    str2eval1 = [ str2eval1, ', 1:sA(', num2str(dim), ')' ];   %#ok<AGROW>
+    str2eval2 = [ str2eval2, ', 1:sK(', num2str(dim), ')' ];   %#ok<AGROW>
   end
   str2eval1 = [ str2eval1, ' ) = inArray;' ];
   str2eval2 = [ str2eval2, ' ) = kernel;' ];
@@ -39,7 +39,7 @@ function out = circConvT( inArray, kernel )
   eval( str2eval1 );
   eval( str2eval2 );
 
-  pad2 = circshift( pad2, -floor( s2 / 2 ) );
+  pad2 = circshift( pad2, -floor( sK / 2 ) );
 
   pad2 = flipAboutIndx( pad2, ones( 1, ndims( pad2 ) ) );
 
