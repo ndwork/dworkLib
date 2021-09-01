@@ -76,7 +76,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   p.addParameter( 's', 1.25, @ispositive );
   p.addParameter( 'subIterThresh', defaultSubIterThresh, @ispositive );
   p.addParameter( 't0', 1, @ispositive );
-  p.addParameter( 'tol', [], @ispositive );
+  p.addParameter( 'tol', [], @(x) x >= 0 );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   gradNorm = p.Results.gradNorm;
@@ -182,7 +182,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       end
     end
 
-    if numel( tol ) > 0
+    if numel( tol ) > 0  &&  tol > 0
       xNorm = sqrt( innerProd( x, x ) );
       diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
       relDiff = diffNorm / xNorm;
