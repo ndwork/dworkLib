@@ -227,7 +227,7 @@ end
 
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
   
-  defaultNIter = 60;
+  defaultNIter = 100;
   p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
   p.parse( varargin{:} );
@@ -263,22 +263,20 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
           eIndx = min( segIndx * segLength, nTraj );  % end index
 
           if strcmp( op, 'notransp' )  % notransp
-            diffKs = traj( tIndx, dIndx ) - traj( sIndx:eIndx, dIndx );   %#ok<PFBNS>
+            nu = 2 * pi * ( traj( tIndx, dIndx ) - traj( sIndx:eIndx, dIndx ) );   %#ok<PFBNS>
           else
-            diffKs = traj( sIndx:eIndx, dIndx ) - traj( tIndx, dIndx );
+            nu = 2 * pi * ( traj( sIndx:eIndx, dIndx ) - traj( tIndx, dIndx ) );
           end
-          nu = 2 * pi * diffKs;
 
           if numel( thisGamma ) > 0  &&  thisGamma < Inf
             tmp1 = ( -thisGamma * exp( -Nd / thisGamma ) ) * cos( nu * Nd ) ;
             tmp2 = ( thisGamma * thisGamma * exp( -Nd / thisGamma ) ) * nu .* sin( nu * Nd );
-            tmp3 = thisGamma;
-            tmp = tmp1 + tmp2 + tmp3;
+            tmp = tmp1 + tmp2 + thisGamma;
             factors = 2 ./ ( 1 + ( thisGamma * nu ).^2 ) .* tmp;
             factors( nu == 0 ) = 2 * thisGamma * ( 1 - exp( -Nd / thisGamma ) );
 
           else
-            factors = sin( nu * Nd ) ./ ( pi * diffKs );
+            factors = 2 * sin( nu * Nd ) ./ nu;
             factors( nu == 0 ) = 2 * Nd;
           end
 
@@ -316,26 +314,34 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   proxth = @(x,t) projectOntoProbSimplex( x );
 
   %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
-  w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
+  %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
+  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
 
   normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
+
+load( 'datacase.mat', 'datacase' );
+save( [ 'normA_', indx2str( datacase, 99 ) ], 'normA' );
 
   alg = 'fista_wLS';
   if strcmp( 'fista_wLS', alg )
     stepSize = 1d-4;
     minStep = 0.999 / grdNrm;
     tol = 0.01;
+tol = 0.0;
     [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', minStep, ...
       'N', nIter, 't0', stepSize, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
+load( 'datacase.mat', 'datacase' );
+save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
+    
   elseif strcmp( 'pogm', alg )
-    [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', 60, ...
+    [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
-    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', 60 );
+    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
   end 
   %figure;  plotnice( objValues );
   flag = 0;
