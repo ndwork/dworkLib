@@ -112,8 +112,14 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
     end
   end
 
-  if nargout > 2, relDiffs = zeros( N, 1 );  end
-  
+  if nargout > 2
+    calculateRelDiffs = true;
+    relDiffs = zeros( N, 1 );
+  end
+  if numel( tol ) ~= 0 || tol > 0
+    calculateRelDiffs = true;
+  end
+
   if calculateObjectiveValues > 0, gx = g( x ); end
   t = t0 / s;
   v = x;
@@ -146,7 +152,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       end
 
       if t < minStep, t = minStep; end
-      
+
       if k==0
         theta = 1;
       else
@@ -182,15 +188,17 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       end
     end
 
-    if numel( tol ) > 0  &&  tol > 0
+    if calculateRelDiffs == true
       xNorm = sqrt( innerProd( x, x ) );
       diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
       relDiff = diffNorm / xNorm;
-      if nargout > 2, relDiffs( iter + 1 ) = relDiff; end
-      if verbose == true
-        disp([ '  Relative error: ', num2str( relDiff ) ]);
-      end
+    end
+    if verbose == true
+      disp([ '  Relative error: ', num2str( relDiff ) ]);
+    end
 
+    if nargout > 2, relDiffs( iter + 1 ) = relDiff; end
+    if numel( tol ) > 0  &&  tol > 0
       if relDiff < tol, break; end
     end
 
