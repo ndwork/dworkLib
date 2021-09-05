@@ -18,8 +18,8 @@ function testDworkLib
   [xStar,objValues] = admm( x0, proxf, proxg, t, 'A', A, 'f', f, 'g', g, 'N', 1000 );   %#ok<ASGLU>
   fprintf('\nadmm ran to completion. \n');
 
-  %% applyC_2D
-  fprintf( '\nTesting applyC_2D: \n' );
+  %% applyC_2D and applyCT_2D
+  fprintf( '\nTesting applyC_2D and applyCT_2D are adjoints: \n' );
   nSpokes = 60;
   nPtsPerSpoke = 30;
   traj = mri_makeTrajPts( 2, 'radial', nSpokes, nPtsPerSpoke );
@@ -63,8 +63,7 @@ function testDworkLib
     error([ 'applyC failed with error: ', num2str( errCheckC ) ]);
   end
   
-  disp( 'applyC passed' );
-
+  disp( 'applyC and applyCT passed' );
 
 
   %% bilateralFilter
@@ -426,6 +425,25 @@ function testDworkLib
   else
     error( 'goldenSectionSearch failed' );
   end
+
+  %% gradDescent
+  fprintf( '\nTesting gradDescent: \n' );
+  A = rand( 10, 3 );
+  x = rand( 3, 1 );
+  b = A * x;
+
+  g = @(in) 0.5 * norm( A * in - b ).^2;
+  gGrad = @(in) A' * A * in - A' * b;
+
+  x0 = zeros( size( x ) );
+  [xStar,oValues,relDiffs] = gradDescent( x0, gGrad, 'g', g, 't', 1d-2, 'N', 10000 );
+  err = norm( xStar - x );
+  if err < 1d-10
+    disp( 'gradDescent passed' );
+  else
+    disp( 'gradDescent failed' );
+  end
+
 
   %% haar
   sig = rand(8,1);
