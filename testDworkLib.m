@@ -437,6 +437,7 @@ function testDworkLib
 
   x0 = zeros( size( x ) );
   [xStar,oValues,relDiffs] = gradDescent( x0, gGrad, 'g', g, 't', 1d-2, 'N', 10000 );
+
   err = norm( xStar - x );
   if err < 1d-10
     disp( 'gradDescent passed' );

@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, ...
-  %   't', t, 'tol', tol, 'g', g, 'N', N, 'verbose', verbose ] )
+  %   't', t, 'tol', tol, 'useMomentum', useMomentum, 'g', g, 'N', N, 'verbose', verbose ] )
   %
   % This function implements the gradient descent method.
   % This method finds the x that minimizes a (sub)differentiable function g
@@ -11,12 +11,15 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % gGrad - a function handle representing the (sub)gradient function of g;
   %   input: the point to evaluation, output: the gradient vector
   %
-  % Optional Inputs:
-  % t - step size (default is 1)
+  % Optional Inputs:  
   % g - a function handle representing the g function; accepts a vector x
   %   as input and returns a scalar.  This is needed to calculate the
   %   objective values.
   % N - the maximum number of iterations that gradDescent will perform (default is 100)
+  % t - step size (default is 1)
+  %   Note, if g is Lipschitz with constant L, gradDescent converges with t = 1 / L.
+  % useMomentum - logical parameter that specifies whether or not to
+  %   use momentum (default is false)
   % verbose - if set then prints iteration information
   %
   % Outputs:
@@ -31,7 +34,8 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
 
   if nargin < 1
     disp( 'Usage:  [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, ... ' );
-    disp( '  ''t'', t, ''tol'', tol, ''g'', g, ''N'', N, ''verbose'', verbose ] ) ' );
+    disp( '  ''t'', t, ''useMomentum'', useMomentum, ''tol'', tol, ''g'', g, ' );
+    disp( '  ''N'', N, ''verbose'', verbose ] ) ' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objectiveValues = []; end
     return
@@ -42,12 +46,14 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'tol', [], @isnumeric );
-  p.addParameter( 'verbose', 0, @isnumeric );
+  p.addParameter( 'useMomentum', false, @islogical );
+  p.addParameter( 'verbose', 0, @islogical );
   p.parse( varargin{:} );
   g = p.Results.g;
   N = p.Results.N;
   t = p.Results.t;
   tol = p.Results.tol;
+  useMomentum = p.Results.useMomentum;
   verbose = p.Results.verbose;
 
   if t <= 0, error('gradDescent: t0 must be greater than 0'); end
@@ -67,9 +73,22 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     calculateRelDiffs = true;
   end
 
+  if useMomentum == true
+    mu = 1;
+    z = x;
+  end
+  
   for k = 0 : N-1
-    if verbose, disp([ 'gradDescent Iteration: ', num2str(k) ]); end
     if calculateObjectiveValues == true, objectiveValues(k+1) = g(x); end
+    
+    if verbose == true
+      if calculateObjectiveValues == true
+        disp([ 'gradDescent Iteration: ', num2str(k), ' with objective value ', ...
+          num2str( objectiveValues(k+1) ) ]);
+      else
+        disp([ 'gradDescent Iteration: ', num2str(k) ]);
+      end
+    end
 
     if numel( tol ) > 0  ||  calculateObjectiveValues == true, gx = g( x ); end
 
@@ -78,8 +97,17 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     if numel( tol ) > 0 && tol ~= 0, lastX = x; end
 
     if calculateRelDiffs == true, lastX = x; end
-    
-    x = x - t * gGrad( x );
+
+    if useMomentum == true  % Nesterov's Momentum
+      lastZ = z;
+      z = x - t * gGrad( x );
+      lastMu = mu;
+      mu = 0.5 * ( 1 + sqrt( 1 + 4 * mu*mu ) );
+      x = z + ( lastMu / mu ) * ( z - lastZ );
+
+    else
+      x = x - t * gGrad( x );
+    end
 
     if calculateRelDiffs == true
       relDiff = norm( x(:) - lastX(:) ) / norm( x(:) );
