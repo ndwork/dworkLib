@@ -24,8 +24,8 @@ function [features,values] = getFeaturesFromImg( n, varargin )
   p.parse( n, varargin{:} );
   scale = p.Results.scale;
 
-  scaledFeatures = ginput(n);
-  features = round( scaledFeatures / scale );
+  scaledFeatures = ginput( n );
+  features = floor( scaledFeatures / scale ) + 1;
 
   if nargout > 1
     img = getimage;

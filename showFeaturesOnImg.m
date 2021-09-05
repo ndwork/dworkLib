@@ -41,7 +41,7 @@ function showFeaturesOnImg( features, varargin )
   color = p.Results.color;
 
   if numel( offset ) == 0
-    offset = zeros( size( features ) );
+    offset = -0.5 * ones( size( features ) );
   else
     offset = repmat( offset, [size(features,1) 1] );
   end
@@ -56,6 +56,7 @@ function showFeaturesOnImg( features, varargin )
   end
   if numel( figH ) > 0, figure( figH ); end
   hold on;
+  
   rFeatures = round( scale * ( features + offset ) );
   plot( rFeatures(:,1), rFeatures(:,2), [color,'x']);
   drawnow;
