@@ -10,7 +10,7 @@ function out = applyCT_2D( f, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
   % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
-  %   F - An nTraj array representing the values of the function evaluated at each point in domTraj
+  %   f - An nTraj array representing the values of the function evaluated at each point in domTraj
   %   domTraj - An nTraj x 2 array specifying the ky / kx (first / second column) coordinates
   %             of the domain trajectory points
   %             OR
@@ -33,141 +33,7 @@ function out = applyCT_2D( f, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel( domTraj ) == 2 && max( mod( domTraj, 1 ) ) == 0 && min( abs( domTraj ) ) > 0
-    % domTraj is a two element array specifying the size of the grid
-    N = domTraj;
-    domTraj = size2fftCoordinates( N );
-    domTrajKy = domTraj{1};  domTrajKx = domTraj{2};
-    domTrajIsGrid = true;
-  else
-    domTrajKy = domTraj(:,1);  domTrajKx = domTraj(:,2);
-    domTrajIsGrid = false;
-  end
-
-  if numel( rangeTraj ) == 2 && max( mod( rangeTraj, 1 ) ) == 0 && min( abs( rangeTraj ) ) > 0
-    % rangeTraj is a two element array specifying the size of the grid
-    N = rangeTraj;
-    rangeTraj = size2fftCoordinates( N );
-    rangeTrajKy = rangeTraj{1};  rangeTrajKx = rangeTraj{2};
-    rangeTrajIsGrid = true;
-  else
-    rangeTrajKy = rangeTraj(:,1);  rangeTrajKx = rangeTraj(:,2);
-    rangeTrajIsGrid = false;
-  end
-  
-  if domTrajIsGrid == true && rangeTrajIsGrid == true
-    error( 'This feature is not yet implemented.' );
-  end
-
-  kyDistThresh = max( kCy );
-  kxDistThresh = max( kCx );
-
-  
-  if rangeTrajIsGrid == true
-    % rangeTraj is a grid and domTraj is not
-
-    nDomTraj = size( domTraj, 1 );
-    nfs = size( f, 3 );
-
-    out = zeros( [ nDomTraj nfs ] );
-    for domTrajIndx = 1 : nDomTraj
-
-      kyDists = min( abs( domTraj(domTrajIndx,1)       - rangeTrajKy ), ...
-                     abs( domTraj(domTrajIndx,1) + 1.0 - rangeTrajKy ) );
-      kyDists = min( kyDists, ...
-                     abs( domTraj(domTrajIndx,1) - 1.0 - rangeTrajKy ) );
-
-      kxDists = min( abs( domTraj(domTrajIndx,2)       - rangeTrajKx ), ...
-                     abs( domTraj(domTrajIndx,2) + 1.0 - rangeTrajKx ) );
-      kxDists = min( kxDists, ...
-                     abs( domTraj(domTrajIndx,2) - 1.0 - rangeTrajKx ) );
-
-      shortIndxsY = find( kyDists < kyDistThresh );
-      if numel( shortIndxsY ) == 0, continue; end
-
-      shortIndxsX = find( kxDists < kxDistThresh );
-      if numel( shortIndxsX ) == 0, continue; end
-
-      CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
-      CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
-      CValsYX = CValsY * CValsX';
-
-      outValues = bsxfun( @times, f( shortIndxsY, shortIndxsX, : ), CValsYX );
-
-      out( domTrajIndx, : ) = sum( sum( outValues, 1 ), 2 );
-    end
-
-  elseif domTrajIsGrid == true
-    % domTraj is a grid and rangeTraj is not
-
-    nRangeTraj = size( rangeTraj, 1 );
-    nFs = size( f, 2 );
-    out = zeros( N(1), N(2), nFs );
-
-    f = reshape( f, [ size( f, 1 ) 1 size( f, 2 ) ] );
-    for rangeTrajIndx = 1 : nRangeTraj
-      kyDists = min( abs( rangeTraj(rangeTrajIndx,1)       - domTrajKy ), ...
-                     abs( rangeTraj(rangeTrajIndx,1) + 1.0 - domTrajKy ) );
-      kyDists = min( kyDists, ...
-                     abs( rangeTraj(rangeTrajIndx,1) - 1.0 - domTrajKy ) );
-
-      kxDists = min( abs( rangeTraj(rangeTrajIndx,2)       - domTrajKx ), ...
-                     abs( rangeTraj(rangeTrajIndx,2) + 1.0 - domTrajKx ) );
-      kxDists = min( kxDists, ...
-                     abs( rangeTraj(rangeTrajIndx,2) - 1.0 - domTrajKx ) );
-
-      shortIndxsY = find( kyDists < kyDistThresh );
-      if numel( shortIndxsY ) == 0, continue; end
-
-      shortIndxsX = find( kxDists < kxDistThresh );
-      if numel( shortIndxsX ) == 0, continue; end
-
-      CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
-      CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
-      CValsYX = CValsY * CValsX';
-      fCVals = bsxfun( @times, f( rangeTrajIndx, 1, : ), CValsYX );
-
-      out( shortIndxsY, shortIndxsX, : ) = out( shortIndxsY, shortIndxsX, : ) + fCVals;
-    end
-
-  else
-    % Neither domTraj nor rangeTraj are a grid
-
-    nDomTraj = size( domTraj, 1 );
-    nfs = size( f, 2 );
-
-    segLength = 2000;
-    nSegs = ceil( nDomTraj / segLength );
-
-    out = cell( nSegs, 1 );
-    parfor segIndx = 1 : nSegs
-      startIndx = ( segIndx - 1 ) * segLength + 1;
-      endIndx = min( segIndx * segLength, nDomTraj );
-      tmp = zeros( endIndx - startIndx + 1, nfs );
-
-      for domTrajIndx = startIndx : endIndx
-        kyDists = min( abs( domTraj(domTrajIndx,1)       - rangeTrajKy ), ...
-                       abs( domTraj(domTrajIndx,1) + 1.0 - rangeTrajKy ) );   %#ok<PFBNS>
-        kyDists = min( kyDists, ...
-                       abs( domTraj(domTrajIndx,1) - 1.0 - rangeTrajKy ) );
-
-        kxDists = min( abs( domTraj(domTrajIndx,2)       - rangeTrajKx ), ...
-                       abs( domTraj(domTrajIndx,2) + 1.0 - rangeTrajKx ) );
-        kxDists = min( kxDists, ...
-                       abs( domTraj(domTrajIndx,2) - 1.0 - rangeTrajKx ) );
-
-        shortIndxs = find( kyDists < kyDistThresh & kxDists < kxDistThresh );
-        if numel( shortIndxs ) == 0, continue; end
-
-        CValsY = interp1( kCy, Cy, kyDists( shortIndxs ), 'linear', 0 );
-        CValsX = interp1( kCx, Cx, kxDists( shortIndxs ), 'linear', 0 );
-        fCVals = bsxfun( @times, f( shortIndxs, : ), CValsY .* CValsX );   %#ok<PFBNS>
-
-        tmp( domTrajIndx - startIndx + 1, : ) = sum( fCVals, 1 );
-      end
-      out{ segIndx } = tmp;
-    end
-    out = cell2mat( out );
-  end
-
+  % Adjoint is just applyC with the trajectories reversed
+  out = applyC_2D( f, rangeTraj, domTraj, kCy, kCx, Cy, Cx );
 end
+
