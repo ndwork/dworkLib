@@ -65,6 +65,17 @@ function imH = showImageCube( cube, varargin )
   if numel( nImgsPerRow ) == 0, nImgsPerRow = ceil( sqrt( nImgs ) ); end
 
   if scale <= 0, error('scale must be positive'); end
+  
+  if scale ~= 1
+    newCube = zeros( scale * sCube(1), scale * sCube(2), sCube(3) );
+    for imgIndx = 1 : sCube(3)
+      newCube(:,:,imgIndx) = imresize( cube(:,:,imgIndx), scale );
+    end
+    varargin{1} = 1;
+    showImageCube( newCube, varargin{:} );
+    return;
+  end
+  
   if nImgsPerRow < 1
     error('nImgsPerRow must be positive integer');
   end
