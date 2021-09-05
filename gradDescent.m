@@ -1,6 +1,6 @@
 
 function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
-  % [xStar,objectiveValues,relDiffs] = proxGrad( x, gGrad [, ...
+  % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, ...
   %   't', t, 'tol', tol, 'g', g, 'N', N, 'verbose', verbose ] )
   %
   % This function implements the gradient descent method.
