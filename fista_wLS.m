@@ -113,7 +113,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   end
 
   calculateRelDiffs = false;
-  if nargout > 1
+  if nargout > 2
     calculateRelDiffs = true;
     relDiffs = zeros( N, 1 );
   end
