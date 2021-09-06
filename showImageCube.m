@@ -69,7 +69,7 @@ function imH = showImageCube( cube, varargin )
   if scale ~= 1
     newCube = zeros( scale * sCube(1), scale * sCube(2), sCube(3) );
     for imgIndx = 1 : sCube(3)
-      newCube(:,:,imgIndx) = imresize( cube(:,:,imgIndx), scale );
+      newCube(:,:,imgIndx) = imresize( cube(:,:,imgIndx), scale, 'nearest' );
     end
     varargin{1} = 1;
     showImageCube( newCube, varargin{:} );
