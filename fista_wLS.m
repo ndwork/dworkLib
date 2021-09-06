@@ -102,25 +102,26 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   if s <= 1, error('fista: s must be greater than 1'); end
   if t0 <= 0, error('fista: t0 must be greater than 0'); end
 
-  calculateObjectiveValues = 0;
+  calculateObjectiveValues = false;
   if nargout > 1
     if numel(h) == 0
       warning('fista_wLS.m - Cannot calculate objective values without h function handle');
     else
       objectiveValues = zeros(N,1);
-      calculateObjectiveValues = 1;
+      calculateObjectiveValues = true;
     end
   end
 
-  if nargout > 2
+  calculateRelDiffs = false;
+  if nargout > 1
     calculateRelDiffs = true;
     relDiffs = zeros( N, 1 );
   end
-  if numel( tol ) ~= 0 || tol > 0
+  if numel( tol ) ~= 0 && tol > 0
     calculateRelDiffs = true;
   end
 
-  if calculateObjectiveValues > 0, gx = g( x ); end
+  if calculateObjectiveValues == true, gx = g( x ); end
   t = t0 / s;
   v = x;
   theta = 1;
@@ -131,7 +132,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
     if verbose>0 && iter>0 && mod( iter, printEvery ) == 0
       verboseString = [ 'FISTA (with Line Search) Iteration: ', indx2str(iter,N), ...
         ' of ', num2str(N) ];
-      if calculateObjectiveValues > 0
+      if calculateObjectiveValues == true
         verboseString = [ verboseString, ',  objective: ', ...
           num2str( objectiveValues(iter), 15 ), '   parts: ', num2str(gx), ...
           ',  ', num2str( hx ) ];   %#ok<AGROW>
@@ -164,7 +165,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       Dgy = gGrad( y );
       x = proxth( y - t * Dgy, t );
       gx = g( x );
-      if calculateObjectiveValues > 0
+      if calculateObjectiveValues == true
         hx = h( x );
         objectiveValues( iter + 1 ) = gx + hx;
       end
