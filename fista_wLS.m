@@ -193,15 +193,18 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       xNorm = sqrt( innerProd( x, x ) );
       diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
       relDiff = diffNorm / xNorm;
-    end
-    if verbose == true
-      disp([ '  Relative error: ', num2str( relDiff ) ]);
+
+      if verbose == true
+        disp([ '  Relative error: ', num2str( relDiff ) ]);
+      end
+
+      if nargout > 2, relDiffs( iter + 1 ) = relDiff; end
+
+      if numel( tol ) > 0  &&  tol > 0
+        if relDiff < tol, break; end
+      end
     end
 
-    if nargout > 2, relDiffs( iter + 1 ) = relDiff; end
-    if numel( tol ) > 0  &&  tol > 0
-      if relDiff < tol, break; end
-    end
 
     if restart == true && k > 0 && innerProd( Dgy, x - lastX ) > 0
       % Restart (kill momentum) when trajectory and -gradient form oblique angles
