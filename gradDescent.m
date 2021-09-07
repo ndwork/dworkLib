@@ -37,6 +37,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     disp( '  ''N'', N, ''verbose'', verbose ] ) ' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objectiveValues = []; end
+    if nargout > 1, relDiffs = []; end
     return
   end
 
