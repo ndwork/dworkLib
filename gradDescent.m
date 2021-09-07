@@ -11,7 +11,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % gGrad - a function handle representing the (sub)gradient function of g;
   %   input: the point to evaluation, output: the gradient vector
   %
-  % Optional Inputs:  
+  % Optional Inputs:
   % g - a function handle representing the g function; accepts a vector x
   %   as input and returns a scalar.  This is needed to calculate the
   %   objective values.
@@ -23,7 +23,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % verbose - if set then prints iteration information
   %
   % Outputs:
-  % xStar - the optimal point
+  % xStar - the last point in the trajectory
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
@@ -115,7 +115,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
 
     if nargout > 2, relDiffs( k+1 ) = relDiff; end
 
-    if numel( tol ) > 0 && tol ~= 0      
+    if numel( tol ) > 0 && tol ~= 0
       if relDiff < tol, break; end
     end
   end
