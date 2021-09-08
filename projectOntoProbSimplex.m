@@ -14,8 +14,7 @@ function out = projectOntoProbSimplex( y )
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
-  % implied warranties of merchantability or fitness for a particular
-  % purpose.
+  % implied warranties of merchantability or fitness for a particular purpose.
 
   if nargin < 1
     disp( 'Usage:  out = projectOntoProbSimplex( y )' );
