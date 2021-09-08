@@ -18,6 +18,16 @@ function plotBlandAltman( x, y )
   xyMean = reshape( mean( [ x(:) y(:) ], 2 ), size( x ) );
 
   figure;  scatternice( xyMean, xyDiff );
+  
+  xl = xlim;
+  meanDiff = mean( xyDiff(:) );
+  stdDiff = std( xyDiff(:) );
+
+  hold on;
+  plotnice( xl, [ meanDiff, meanDiff ], 'b' );
+  plotnice( xl , [ meanDiff + stdDiff, meanDiff + stdDiff ], 'r--' );
+  plotnice( xl , [ meanDiff - stdDiff, meanDiff - stdDiff ], 'r--' );
+  
   xlabel( 'Mean', 'FontSize', 18 );
   ylabel( 'Diff', 'FontSize', 18 );
 
