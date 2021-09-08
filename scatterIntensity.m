@@ -16,8 +16,7 @@ function scatterIntensity( x, y, z, varargin )
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
-  % implied warranties of merchantability or fitness for a particular
-  % purpose.
+  % implied warranties of merchantability or fitness for a particular purpose.
 
   if numel( x ) ~= numel( y ), error( 'x, y, and z must have the same number of elements' ); end
   if numel( x ) ~= numel( z ), error( 'x, y, and z must have the same number of elements' ); end
