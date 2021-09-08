@@ -14,6 +14,12 @@ function out = ufft2( in )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'out = ufft2( in )' );
+    if nargout > 0, out = []; end
+    return
+  end
+
   if ismatrix( in )
     Fin = fft2( in );
   else
