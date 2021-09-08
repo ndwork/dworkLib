@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
-  % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, ...
-  %   't', t, 'tol', tol, 'useMomentum', useMomentum, 'g', g, 'N', N, 'verbose', verbose ] )
+  % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, 't', t, 'tol', tol, ...
+  %   'useMomentum', useMomentum, 'g', g, 'N', N, 'verbose', verbose ] )
   %
   % This function implements the gradient descent method.
   % This method finds the x that minimizes a (sub)differentiable function g
@@ -16,6 +16,9 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   %   as input and returns a scalar.  This is needed to calculate the
   %   objective values.
   % N - the maximum number of iterations that gradDescent will perform (default is 100)
+  % postOp - a function handle to a function that's called after the gradient step
+  %   As an example, this could be used to implement the gradient projection method, where
+  %   postOp is a handle to a function that does the projection.
   % t - step size (default is 1)
   %   Note, if g is Lipschitz with constant L, gradDescent converges with t = 1 / L.
   % useMomentum - logical parameter that specifies whether or not to
@@ -98,15 +101,21 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
 
     if calculateRelDiffs == true, lastX = x; end
 
+    gGradX = gGrad( x );
+    
     if useMomentum == true  % Nesterov's Momentum
       lastZ = z;
-      z = x - t * gGrad( x );
+      z = x - t * gGradX;
       lastMu = mu;
       mu = 0.5 * ( 1 + sqrt( 1 + 4 * mu*mu ) );
       x = z + ( lastMu / mu ) * ( z - lastZ );
 
     else
-      x = x - t * gGrad( x );
+      x = x - t * gGradX;
+    end
+
+    if numel( postOp ) > 0
+      x = postOp( x );
     end
 
     if calculateRelDiffs == true
