@@ -337,6 +337,7 @@ load( 'datacase.mat', 'datacase' );
 save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
     
   elseif strcmp( 'pogm', alg )
+    stepSize = 0.999 / grdNrm;
     [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
 
