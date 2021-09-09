@@ -46,6 +46,16 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage: [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj [, N, ...' );
+    disp( '  [ ''alpha'', alpha, ''W'', W, ''nC'', nC, ''alg'', alg ] )' );
+    if nargout > 0, weights = []; end
+    if nargout > 1, nOptIter = []; end
+    if nargout > 2, flag = []; end
+    if nargout > 3, res = []; end
+    return
+  end
+
   defaultAlg = 'VORONOI';
   p = inputParser;
   p.addOptional( 'N', [], @ispositive );
