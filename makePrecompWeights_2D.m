@@ -1,7 +1,7 @@
 
-function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
-  % [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj [, N, ...
-  %   [ 'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg ] )
+function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
+  % [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N [, ...
+  %   'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
   %
@@ -47,8 +47,8 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage: [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj [, N, ...' );
-    disp( '  [ ''alpha'', alpha, ''W'', W, ''nC'', nC, ''alg'', alg ] )' );
+    disp( 'Usage: [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N [, ...' );
+    disp( '  ''alpha'', alpha, ''W'', W, ''nC'', nC, ''alg'', alg ] )' );
     if nargout > 0, weights = []; end
     if nargout > 1, nOptIter = []; end
     if nargout > 2, flag = []; end
@@ -56,16 +56,17 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
     return
   end
 
+  if numel( N ) == 1, N = [ N N ]; end
+  if ~isreal( kTraj ), kTraj = [ real( kTraj(:) ) imag( kTraj(:) ) ]; end
+
   defaultAlg = 'VORONOI';
   p = inputParser;
-  p.addOptional( 'N', [], @ispositive );
   p.addParameter( 'gamma', [], @isnumeric );
   p.addParameter( 'mu', 0, @isnumeric );
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
-  N = p.Results.N;
   alg = p.Results.alg;
   gamma = p.Results.gamma;
   mu = p.Results.mu;
@@ -184,8 +185,7 @@ verbose = true;
 end
 
 
-function [weights,flag,res] = makePrecompWeights_2D_FP( ...
-  traj, N, varargin )
+function [weights,flag,res] = makePrecompWeights_2D_FP( traj, N, varargin )
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
   % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
 
@@ -202,7 +202,7 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( ...
   verbose = p.Results.verbose;
 
   nIter = 8;
-  
+
   % Make the Kaiser Bessel convolution kernel
   Ny = N(1);  Nx = N(2);
   Gy = Ny;
@@ -331,8 +331,8 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
-load( 'datacase.mat', 'datacase' );
-save( [ 'normA_', indx2str( datacase, 99 ) ], 'normA' );
+%load( 'datacase.mat', 'datacase' );
+%save( [ 'normA_', indx2str( datacase, 99 ) ], 'normA' );
 
   alg = 'fista_wLS';
   if strcmp( 'fista_wLS', alg )
@@ -343,8 +343,8 @@ tol = 0.0;
     [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', minStep, ...
       'N', nIter, 't0', stepSize, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
-load( 'datacase.mat', 'datacase' );
-save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
+%load( 'datacase.mat', 'datacase' );
+%save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
     
   elseif strcmp( 'pogm', alg )
     stepSize = 0.999 / grdNrm;
