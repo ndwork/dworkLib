@@ -64,9 +64,10 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
   if rangeTrajIsGrid == true
     % rangeTraj is a grid and domTraj is not
 
-    sOut = [ numel(rangeTrajKy) numel(rangeTrajKx) size(F,2) ];
+    sF = size( F );
+    sOut = [ numel(rangeTrajKy) numel(rangeTrajKx) prod( sF(2:end) ) ];
     out = zeros( sOut );
-    F = reshape( F, size(F,1), 1, size(F,2) );
+    F = reshape( F, [ sF(1), 1, prod( sF(2:end) ) ] );
     for domTrajIndx = 1 : nTraj
 
       kyDists = min( abs( domTraj(domTrajIndx,1)       - rangeTrajKy ), ...
@@ -92,6 +93,7 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
       outValues = bsxfun( @times, F(domTrajIndx,1,:), CValsYX );
       out( shortIndxsY, shortIndxsX, : ) = out( shortIndxsY, shortIndxsX, : ) + outValues;
     end
+    out = reshape( out, [ numel(rangeTrajKy) numel(rangeTrajKx) sF(2:end) ] );
 
   elseif domTrajIsGrid == true
     % domTraj is a grid and rangeTraj is not
