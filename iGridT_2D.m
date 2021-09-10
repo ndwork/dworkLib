@@ -56,6 +56,8 @@ function out = iGridT_2D( F, traj, N, varargin )
   elseif numel( alpha ) == 1, alphaY = alpha;  alphaX = alpha;
   elseif numel( alpha ) == 2, alphaY = alpha(1); alphaX = alpha(2);
   end
+  
+  if ~isreal( traj ), traj = [ real( traj(:) )  imag( traj(:) )  ]; end
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
