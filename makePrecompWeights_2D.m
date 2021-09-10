@@ -251,7 +251,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   D = size( traj, 2 );
   if numel( N ) == 1, N = N * ones( D ); end
   if numel( gamma ) == 0, gamma = 0.25 * N; end
-  if numel( gamma ) == 1, gamma = ones( numel(N), 1 ); end
+  if numel( gamma ) == 1, gamma = gamma * ones( numel(N), 1 ); end
 
   function out = applyA( in, op )
     if nargin < 2, op = 'notransp'; end
@@ -334,10 +334,10 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
 %load( 'datacase.mat', 'datacase' );
 %save( [ 'normA_', indx2str( datacase, 99 ) ], 'normA' );
 
-  alg = 'fista_wLS';
+  alg = 'pogm';
   if strcmp( 'fista_wLS', alg )
     stepSize = 1d-4;
-    minStep = 0.999 / grdNrm;
+    minStep = 10 / grdNrm;
     tol = 0.01;
 tol = 0.0;
     [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', minStep, ...
