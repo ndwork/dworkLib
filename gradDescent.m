@@ -47,6 +47,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p = inputParser;
   p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @isnumeric );
+  p.addParameter( 'postOp', [] );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'tol', [], @isnumeric );
   p.addParameter( 'useMomentum', false, @islogical );
@@ -54,6 +55,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.parse( varargin{:} );
   g = p.Results.g;
   N = p.Results.N;
+  postOp = p.Results.postOp;
   t = p.Results.t;
   tol = p.Results.tol;
   useMomentum = p.Results.useMomentum;
