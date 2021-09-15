@@ -48,6 +48,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 'postOp', [] );
+  p.addParameter( 'printEvery', 1, @isnumeric );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'tol', [], @isnumeric );
   p.addParameter( 'useMomentum', false, @islogical );
@@ -56,6 +57,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   g = p.Results.g;
   N = p.Results.N;
   postOp = p.Results.postOp;
+  printEvery = p.Results.printEvery;
   t = p.Results.t;
   tol = p.Results.tol;
   useMomentum = p.Results.useMomentum;
@@ -86,7 +88,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   for k = 0 : N-1
     if calculateObjectiveValues == true, objectiveValues(k+1) = g(x); end
     
-    if verbose == true
+    if verbose == true  &&  mod( k+1, printEvery ) == 1
       if calculateObjectiveValues == true
         disp([ 'gradDescent Iteration: ', num2str(k), ' with objective value ', ...
           num2str( objectiveValues(k+1) ) ]);
