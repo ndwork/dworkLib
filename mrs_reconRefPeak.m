@@ -23,7 +23,7 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData )
   freqIndx = ndims( coilSpectrums );
   coilIndx = freqIndx - 1;
 
-  maxImgs = squeeze( max( coilSpectrums, [], freqIndx ) );
+  maxImgs = max( coilSpectrums, [], freqIndx );
   sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( maxImgs.^2, coilIndx ) ) );
 
   if ndims( kData ) == 5
@@ -35,6 +35,8 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData )
   end
 
   recon = sum( sMapped, coilIndx );
+  sRecon = size( recon );
+  recon = reshape( recon, [ sRecon(1:coilIndx-1) sRecon(coilIndx+1:end) ] );
 end
 
 
