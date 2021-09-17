@@ -7,7 +7,7 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData )
   % combination of signals from multi-element coil arrays" by Hall et al. (2014)
   %
   % Inputs:
-  % kData - array representing the Fourier values of size M x N x F x nCoils
+  % kData - array representing the Fourier values of size M x N x nSlices x nCoils x F
   %
   % Written by Nicholas Dwork - Copyright 2021
   %
@@ -20,13 +20,21 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData )
 
   coilSpectrums = fftshift( fftshift( uifft2( kData ), 1 ), 2 );
 
-  maxImgs = squeeze( max( coilSpectrums, [], 3 ) );
-  sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( maxImgs.^2, 3 ) ) );
+  freqIndx = ndims( coilSpectrums );
+  coilIndx = freqIndx - 1;
 
-  [ M, N, nCoils ] = size( sMaps );
-  sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N 1 nCoils ] ), coilSpectrums );
+  maxImgs = squeeze( max( coilSpectrums, [], freqIndx ) );
+  sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( maxImgs.^2, coilIndx ) ) );
 
-  recon = sum( sMapped, 4 );
+  if ndims( kData ) == 5
+    [ M, N, nSlices, nCoils ] = size( sMaps );
+    sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N nSlices nCoils ] ), coilSpectrums );
+  else
+    [ M, N, nCoils ] = size( sMaps );
+    sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N nCoils ] ), coilSpectrums );
+  end
+
+  recon = sum( sMapped, coilIndx );
 end
 
 
