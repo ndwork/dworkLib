@@ -1,7 +1,7 @@
 
 function recons = mri_reconGridding( kData, trajs, sImg, varargin )
-  % recons = mri_reconGridding( kData, trajs, sImg [, 'alpha', alpha, 'W', W, 'nC', nC, ...
-  %   'weights', weights, 'verbose', verbose ] )
+  % recons = mri_reconGridding( kData, trajs, sImg [, 'alg', alg, 'alpha', alpha, ...
+  %   'W', W, 'nC', nC, 'weights', weights, 'verbose', verbose ] )
   %
   % Performs a gridding recon for each coil
   %
@@ -14,6 +14,7 @@ function recons = mri_reconGridding( kData, trajs, sImg, varargin )
   % sImg - the size of the output image
   %
   % Optional Inputs:
+  % alg - algorithm for makePrecompWeights_2D
   % weights - the density compensation weights to be used
   %
   % Output:
@@ -33,12 +34,14 @@ function recons = mri_reconGridding( kData, trajs, sImg, varargin )
   end
 
   p = inputParser;
+  p.addParameter( 'alg', [], @(x) true );
   p.addParameter( 'alpha', [], @ispositive );
   p.addParameter( 'W', [], @ispositive );
   p.addParameter( 'nC', [], @ispositive );
   p.addParameter( 'verbose', true, @(x) islogical(x) || isnumeric(x) );
   p.addParameter( 'weights', [], @isnumeric );
   p.parse( varargin{:} );
+  alg = p.Results.alg;
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
@@ -46,17 +49,17 @@ function recons = mri_reconGridding( kData, trajs, sImg, varargin )
   weights = p.Results.weights;
 
   sData = size( kData );
-  nCoils = size( kData, 2 );
-  nImgs = prod( sData(3:end) );
-  kData = reshape( kData, [ sData(1), nCoils, nImgs ] );
+  nImgs = prod( sData(2:end) );
+  kData = reshape( kData, [ sData(1) nImgs ] );
 
   if ~isreal( trajs )
     trajs = [ real( trajs(:) ) imag( trajs(:) ) ];
   end
-  
+
   if numel( weights ) == 0
     if ismatrix( trajs )
-      weights = makePrecompWeights_2D( trajs, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
+      weights = makePrecompWeights_2D( trajs, sImg, 'alg', alg, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
     else
       trajs = reshape( trajs, [ sData(1) 2 nImgs ] );
       weights = cell( 1, nImgs );
@@ -65,20 +68,17 @@ function recons = mri_reconGridding( kData, trajs, sImg, varargin )
       end
       parfor imgIndx = 1 : nImgs
         weights{imgIndx} = makePrecompWeights_2D( trajs(:,:,imgIndx), sImg, ...
-          'alpha', alpha, 'W', W, 'nC', nC );
+          'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC );
       end
       weights = cell2mat( weights );
     end
   end
 
   if ismatrix( trajs )
-    trajs = repmat( trajs, [ 1 1 nImgs ] );
-  end
-  if size( weights, 2 ) ~= nImgs
-    weights = repmat( weights, [ 1 nImgs ] );
-  end
+    recons = grid_2D( kData, trajs, sImg, weights, 'alpha', alpha, 'W', W, 'nC', nC );
 
-  if nImgs > 1
+  else
+    nImgs = size( trajs, 3 );
     recons = cell( 1, 1, 1, nImgs );
     p = parforProgress( nImgs );
     parfor imgIndx = 1 : nImgs
@@ -90,10 +90,7 @@ function recons = mri_reconGridding( kData, trajs, sImg, varargin )
     end
     recons = cell2mat( recons );
     p.clean;
-
-  else
-    recons = grid_2D( kData, trajs, sImg, weights, 'alpha', alpha, 'W', W, 'nC', nC );
-
   end
 
+  recons = reshape( recons, [ sImg sData(2:end) ] );
 end
