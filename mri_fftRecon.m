@@ -22,6 +22,7 @@ function recons = mri_fftRecon( kData, varargin )
 
   if nargin < 1
     disp('Usage:  recons = mri_fftRecon( kData [, ''multiSlice'', true/false );' );
+    if numel( recons ) == 0, recons = []; end
     return;
   end
 
