@@ -34,6 +34,8 @@ function out = iGridT_2D( F, traj, N, varargin )
   
   if nargin < 1
     disp( 'Usage:  out = iGridT_2D( F, traj, N, [ ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
+    if nargout > 0, out = []; end
+    return;
   end
 
   if numel(N) == 1
