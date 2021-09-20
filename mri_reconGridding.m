@@ -1,5 +1,5 @@
 
-function recons = mri_reconGridding( kData, trajs, sImg, varargin )
+function recons = mri_reconGridding( kData, traj, sImg, varargin )
   % recons = mri_reconGridding( kData, trajs, sImg [, 'alg', alg, 'alpha', alpha, ...
   %   'W', W, 'nC', nC, 'weights', weights, 'verbose', verbose ] )
   %
@@ -52,38 +52,38 @@ function recons = mri_reconGridding( kData, trajs, sImg, varargin )
   nImgs = prod( sData(2:end) );
   kData = reshape( kData, [ sData(1) nImgs ] );
 
-  if ~isreal( trajs )
-    trajs = [ real( trajs(:) ) imag( trajs(:) ) ];
+  if ~isreal( traj )
+    traj = [ real( traj(:) ) imag( traj(:) ) ];
   end
 
   if numel( weights ) == 0
-    if ismatrix( trajs )
-      weights = makePrecompWeights_2D( trajs, sImg, 'alg', alg, ...
+    if ismatrix( traj )
+      weights = makePrecompWeights_2D( traj, sImg, 'alg', alg, ...
         'alpha', alpha, 'W', W, 'nC', nC );
     else
-      trajs = reshape( trajs, [ sData(1) 2 nImgs ] );
+      traj = reshape( traj, [ sData(1) 2 nImgs ] );
       weights = cell( 1, nImgs );
       if verbose == true
         disp( 'mri_gridRecon: creating gridding weights' );
       end
       parfor imgIndx = 1 : nImgs
-        weights{imgIndx} = makePrecompWeights_2D( trajs(:,:,imgIndx), sImg, ...
+        weights{imgIndx} = makePrecompWeights_2D( traj(:,:,imgIndx), sImg, ...
           'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC );
       end
       weights = cell2mat( weights );
     end
   end
 
-  if ismatrix( trajs )
-    recons = grid_2D( kData, trajs, sImg, weights, 'alpha', alpha, 'W', W, 'nC', nC );
+  if ismatrix( traj )
+    recons = grid_2D( kData, traj, sImg, weights, 'alpha', alpha, 'W', W, 'nC', nC );
 
   else
-    nImgs = size( trajs, 3 );
+    nImgs = size( traj, 3 );
     recons = cell( 1, 1, 1, nImgs );
     p = parforProgress( nImgs );
     parfor imgIndx = 1 : nImgs
       if verbose == true, p.progress( imgIndx ); end   %#ok<PFBNS>
-      thisTraj = trajs(:,:,imgIndx);
+      thisTraj = traj(:,:,imgIndx);
       theseWeights = weights(:,imgIndx);
       recons{ 1, 1, 1, imgIndx } = grid_2D( kData(:,:,imgIndx), thisTraj, sImg, ...
           theseWeights, 'alpha', alpha, 'W', W, 'nC', nC );
