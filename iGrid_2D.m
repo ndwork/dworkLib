@@ -68,8 +68,7 @@ function F = iGrid_2D( data, traj, varargin )
   preEmphasized( data == 0 ) = 0;
 
   % Perform an fft
-  fftData = fftshift( fftshift( fft( fft( ifftshift( ifftshift( ...
-    preEmphasized, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 ) / ( prod( sData(1:2) ) );
+  fftData = fftshift2( ufft2( ifftshift2( preEmphasized ) ) );
 
   % Perform a circular convolution
   sData = size( fftData );
