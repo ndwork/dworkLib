@@ -2,9 +2,8 @@
 function recon = grid_2D( F, kTraj, N, weights, varargin )
   % recon = grid_2D( F, kTraj, N, weights, [ 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
-  % The gridding non-uniform fft algorithm
-  % Based on EE369C notes by John Pauly and Beatty et. al., IEEE TMI, 2005
-  % Adjoint of gridding operation.  Definitions and details according to
+  % The gridding non-uniform FFT algorithm based on EE369C notes by John Pauly
+  % and Beatty et. al., IEEE TMI, 2005.  Definitions and details according to
   % http://nicholasdwork.com/tutorials/dworkGridding.pdf
   %
   % Inputs:
