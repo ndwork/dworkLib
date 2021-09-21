@@ -60,72 +60,96 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
   kyDistThresh = max( kCy );
   kxDistThresh = max( kCx );
 
+  segLength = 500;
+
 	nTraj = size( domTraj, 1 );
   if rangeTrajIsGrid == true
     % rangeTraj is a grid and domTraj is not
 
     sF = size( F );
     sOut = [ numel(rangeTrajKy) numel(rangeTrajKx) prod( sF(2:end) ) ];
-    out = zeros( sOut );
     F = reshape( F, [ sF(1), 1, prod( sF(2:end) ) ] );
-    for domTrajIndx = 1 : nTraj
 
-      kyDists = min( abs( domTraj(domTrajIndx,1)       - rangeTrajKy ), ...
-                     abs( domTraj(domTrajIndx,1) + 1.0 - rangeTrajKy ) );
-      kyDists = min( kyDists, ...
-                     abs( domTraj(domTrajIndx,1) - 1.0 - rangeTrajKy ) );
+    nSegs = ceil( nTraj / segLength );
+    outSegs = cell( nSegs, 1 );
+    parfor segIndx = 1 : nSegs
+      sIndx = ( segIndx - 1 ) * segLength + 1;
+      eIndx = min( sIndx + segLength, nTraj );
+      segOut = zeros( sOut );
 
-      kxDists = min( abs( domTraj(domTrajIndx,2)       - rangeTrajKx ), ...
-                     abs( domTraj(domTrajIndx,2) + 1.0 - rangeTrajKx ) );
-      kxDists = min( kxDists, ...
-                     abs( domTraj(domTrajIndx,2) - 1.0 - rangeTrajKx ) );
+      for domTrajIndx = sIndx : eIndx
+        kyDists = min( abs( domTraj( domTrajIndx, 1 )       - rangeTrajKy ), ...
+                       abs( domTraj( domTrajIndx, 1 ) + 1.0 - rangeTrajKy ) );   %#ok<PFBNS>
+        kyDists = min( kyDists, ...
+                       abs( domTraj( domTrajIndx, 1 ) - 1.0 - rangeTrajKy ) );
 
-      shortIndxsY = find( kyDists < kyDistThresh );
-      if numel( shortIndxsY ) == 0, continue; end
+        kxDists = min( abs( domTraj( domTrajIndx, 2 )       - rangeTrajKx ), ...
+                       abs( domTraj( domTrajIndx, 2 ) + 1.0 - rangeTrajKx ) );
+        kxDists = min( kxDists, ...
+                       abs( domTraj( domTrajIndx, 2 ) - 1.0 - rangeTrajKx ) );
 
-      shortIndxsX = find( kxDists < kxDistThresh );
-      if numel( shortIndxsX ) == 0, continue; end
+        shortIndxsY = find( kyDists < kyDistThresh );
+        if numel( shortIndxsY ) == 0, continue; end
 
-      CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
-      CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
-      CValsYX = CValsY * CValsX';
+        shortIndxsX = find( kxDists < kxDistThresh );
+        if numel( shortIndxsX ) == 0, continue; end
 
-      outValues = bsxfun( @times, F(domTrajIndx,1,:), CValsYX );
-      out( shortIndxsY, shortIndxsX, : ) = out( shortIndxsY, shortIndxsX, : ) + outValues;
+        CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
+        CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
+        CValsYX = CValsY * CValsX';
+
+        outValues = bsxfun( @times, F(domTrajIndx,1,:), CValsYX );
+        segOut( shortIndxsY, shortIndxsX, : ) = segOut( shortIndxsY, shortIndxsX, : ) + outValues;
+      end
+      outSegs{segIndx} = segOut;
     end
+    out = outSegs{1};
+    for segIndx = 2 : nSegs
+      out = out + outSegs{segIndx};
+    end
+    clear outSegs;
     out = reshape( out, [ numel(rangeTrajKy) numel(rangeTrajKx) sF(2:end) ] );
 
   elseif domTrajIsGrid == true
     % domTraj is a grid and rangeTraj is not
-
-    nNew = size( rangeTraj, 1 );
+    nTraj = size( rangeTraj, 1 );
     nFs = size( F, 3 );
-    out = zeros( nNew, nFs );
 
-    for rangeTrajIndx = 1 : nNew
-      kyDists = min( abs( rangeTraj(rangeTrajIndx,1)       - domTrajKy ), ...
-                     abs( rangeTraj(rangeTrajIndx,1) + 1.0 - domTrajKy ) );
-      kyDists = min( kyDists, ...
-                     abs( rangeTraj(rangeTrajIndx,1) - 1.0 - domTrajKy ) );
+    nSegs = ceil( nTraj / segLength );
+    out = cell( nSegs, 1 );
 
-      kxDists = min( abs( rangeTraj(rangeTrajIndx,2)       - domTrajKx ), ...
-                     abs( rangeTraj(rangeTrajIndx,2) + 1.0 - domTrajKx ) );
-      kxDists = min( kxDists, ...
-                     abs( rangeTraj(rangeTrajIndx,2) - 1.0 - domTrajKx ) );
+    parfor segIndx = 1 : nSegs
+      sIndx = ( segIndx - 1 ) * segLength + 1;
+      eIndx = min( sIndx + segLength - 1, nTraj );
+      segOut = zeros( eIndx - sIndx + 1, nFs );
 
-      shortIndxsY = find( kyDists < kyDistThresh );
-      if numel( shortIndxsY ) == 0, continue; end
+      for rangeTrajIndx = sIndx : eIndx
+        kyDists = min( abs( rangeTraj( rangeTrajIndx, 1 )       - domTrajKy ), ...
+                       abs( rangeTraj( rangeTrajIndx, 1 ) + 1.0 - domTrajKy ) );   %#ok<PFBNS>
+        kyDists = min( kyDists, ...
+                       abs( rangeTraj( rangeTrajIndx, 1 ) - 1.0 - domTrajKy ) );
 
-      shortIndxsX = find( kxDists < kxDistThresh );
-      if numel( shortIndxsX ) == 0, continue; end
+        kxDists = min( abs( rangeTraj( rangeTrajIndx, 2 )       - domTrajKx ), ...
+                       abs( rangeTraj( rangeTrajIndx, 2 ) + 1.0 - domTrajKx ) );
+        kxDists = min( kxDists, ...
+                       abs( rangeTraj( rangeTrajIndx, 2 ) - 1.0 - domTrajKx ) );
 
-      CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
-      CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
-      CValsYX = CValsY * CValsX';
-      FCVals = bsxfun( @times, F( shortIndxsY, shortIndxsX, : ), CValsYX );
+        shortIndxsY = find( kyDists < kyDistThresh );
+        if numel( shortIndxsY ) == 0, continue; end
 
-      out( rangeTrajIndx, : ) = sum( sum( FCVals, 1 ), 2 );
+        shortIndxsX = find( kxDists < kxDistThresh );
+        if numel( shortIndxsX ) == 0, continue; end
+
+        CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
+        CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
+        CValsYX = CValsY * CValsX';
+        FCVals = bsxfun( @times, F( shortIndxsY, shortIndxsX, : ), CValsYX );
+
+        segOut( rangeTrajIndx - sIndx + 1, : ) = sum( sum( FCVals, 1 ), 2 );
+      end
+      out{ segIndx } = segOut;
     end
+    out = cell2mat( out );
 
   else
     % Neither domTraj nor rangeTraj are a grid
@@ -133,7 +157,6 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
     nRangeTraj = size( rangeTraj, 1 );
     nFs = size( F, 2 );
 
-    segLength = 2000;
     nSegs = ceil( nTraj / segLength );
 
     out = cell( 1, 1, nSegs );
