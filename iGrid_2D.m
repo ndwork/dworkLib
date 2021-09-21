@@ -56,6 +56,8 @@ function F = iGrid_2D( data, traj, varargin )
     data = padData( data, sData );
   end
 
+  if ~isreal( traj ), traj = [ real(traj(:))  imag(traj(:)) ]; end
+
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
   [kCy,Cy,cY] = makeKbKernel( Gy, Ny, 'alpha', alphaY, 'W', W, 'nC', nC );
@@ -72,5 +74,12 @@ function F = iGrid_2D( data, traj, varargin )
 
   % Perform a circular convolution
   sData = size( fftData );
+  if ndims( fftData ) > 2   %#ok<ISMAT>
+    fftData = reshape( fftData, [ sData(1:2) prod( sData(3:end) ) ] );
+  end
   F = applyC_2D( fftData, sData(1:2), traj, kCy, kCx, Cy, Cx );
+  if ndims( fftData ) > 2   %#ok<ISMAT>
+    F = reshape( F, [ size(traj,1) sData(3:end) ] );
+  end
 end
+
