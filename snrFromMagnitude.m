@@ -10,6 +10,8 @@ function snr = snrFromMagnitude( in, noiseCoords )
   % in - array of magnitude data
   % noiseCoords - indices of noise region within input array with values
   %   [ minNoise_dim1 maxNoise_dim1 ... minNoise_dimN maxNoise_dimN ]
+  %   Any dimension where noise coordinates are not supplied is assumed to be
+  %   all noise.
   %
   % Outputs:
   % snr - scalar representing the signal to noise ratio
