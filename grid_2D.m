@@ -33,6 +33,12 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  recon = grid_2D( F, kTraj, N, weights, [ ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
+    if nargout > 0, recon = []; end
+    return
+  end
+  
   Fw = bsxfun( @times, F, weights );
 
   recon = iGridT_2D( Fw, kTraj, N, varargin{:} );
