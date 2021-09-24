@@ -19,6 +19,7 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin
   %     CLS - constrained least squares on trajectory points
   %     FP - specifies fixed point iteration
   %     GP - gradient projection algorithm
+  %     GP_sparse - sparse matrix approximation of GP algorithm
   %     LSQR - least squares on trajectory points
   %     SAMSANOV - Constrainted Least Squares on grid points
   %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
@@ -89,6 +90,10 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin
       % Gradient Projection method
       [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu, nIter );
 
+    case 'GP_sparse'
+      % sparse approximation to GP method
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP_sparse( kTraj, N, gamma, mu, nIter );
+      
     case 'JACKSON'
       weights = makePrecompWeights_2D_JACKSON( kTraj, N );
 
@@ -236,8 +241,8 @@ end
 
 
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
-  
-  defaultNIter = 100;
+
+  defaultNIter = 250;  % 300 works well
   p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
   p.parse( varargin{:} );
@@ -245,9 +250,9 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
 
   if numel( nIter ) == 0, nIter = defaultNIter; end
 
-  segLength = 30000;
-
+  segLength = 25000;
   nTraj = size( traj, 1 );
+  nSegs = ceil( nTraj / segLength );
   D = size( traj, 2 );
   if numel( N ) == 1, N = N * ones( D ); end
   if numel( gamma ) == 0, gamma = 0.25 * N; end
@@ -260,44 +265,44 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
     out = cell( nIn, 1 );
 
     parfor tIndx = 1 : nIn
-      row = 2 * ones( nTraj, 1 );
+      rowInSum = 0;
+      eIndx = 0;
+      for segIndx = 1 : nSegs
+        sIndx = eIndx + 1;  % start index
+        eIndx = min( segIndx * segLength, nTraj );  % end index
 
-      for dIndx = 1 : D
-        Nd = N( dIndx );   %#ok<PFBNS>
-        thisGamma = gamma( dIndx );   %#ok<PFBNS>
+        prodRowIn = 2 * in( sIndx : eIndx );   %#ok<PFBNS>
 
-        eIndx = 0;
-        nSegs = ceil( nTraj / segLength );
-        for segIndx = 1 : nSegs
-          sIndx = eIndx + 1;  % start index
-          eIndx = min( segIndx * segLength, nTraj );  % end index
+        for dIndx = 1 : D
+          Nd = N( dIndx );   %#ok<PFBNS>
+          thisGamma = gamma( dIndx );   %#ok<PFBNS>
 
           if strcmp( op, 'notransp' )  % notransp
-            nu = 2 * pi * ( traj( tIndx, dIndx ) - traj( sIndx:eIndx, dIndx ) );   %#ok<PFBNS>
+            nu = 2 * pi * ( traj( tIndx, dIndx ) - traj( sIndx : eIndx, dIndx ) );   %#ok<PFBNS>
           else
-            nu = 2 * pi * ( traj( sIndx:eIndx, dIndx ) - traj( tIndx, dIndx ) );
+            nu = 2 * pi * ( traj( sIndx : eIndx, dIndx ) - traj( tIndx, dIndx ) );
           end
 
           if numel( thisGamma ) > 0  &&  thisGamma < Inf
-            tmp1 = ( -thisGamma * exp( -Nd / thisGamma ) ) * cos( nu * Nd ) ;
-            tmp2 = ( thisGamma * thisGamma * exp( -Nd / thisGamma ) ) * nu .* sin( nu * Nd );
-            tmp = tmp1 + tmp2 + thisGamma;
-            factors = 2 ./ ( 1 + ( thisGamma * nu ).^2 ) .* tmp;
-            factors( nu == 0 ) = 2 * thisGamma * ( 1 - exp( -Nd / thisGamma ) );
+            tmp = exp( -Nd / thisGamma ) * ( cos( nu * Nd ) - thisGamma * nu .* sin( nu * Nd ) );
+            factors = ( 2 * thisGamma ) ./ ( 1 + ( thisGamma * nu ).^2 ) .* ( 1 - tmp );
 
           else
             factors = 2 * sin( nu * Nd ) ./ nu;
             factors( nu == 0 ) = 2 * Nd;
           end
 
-          row( sIndx : eIndx ) = row( sIndx : eIndx ) .* factors;
+          prodRowIn = prodRowIn .* factors;
         end
+
+        rowInSum = rowInSum + sum( prodRowIn );
       end
 
-      out{ tIndx } = sum( row .* in );
+      out{ tIndx } = rowInSum;
     end
     out = cell2mat( out );
   end
+
   
   doAdjointCheck = false;
   if doAdjointCheck == true && ...
@@ -327,25 +332,29 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
   w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
 
+pid = feature('getpid');
+dFile = ['datacase_', num2str(pid), '.mat'];
+load( dFile, 'datacase' );
+
+nFile = ['normA_', indx2str(datacase,99), '.mat'];
+if exist( nFile, 'file' )
+  load( nFile, 'normA' );
+else
   normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
+  save( nFile, 'normA' );
+end
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
-%load( 'datacase.mat', 'datacase' );
-%save( [ 'normA_', indx2str( datacase, 99 ) ], 'normA' );
-
-  alg = 'pogm';
+  alg = 'fista_wLS';
   if strcmp( 'fista_wLS', alg )
-    stepSize = 1d-4;
-    minStep = 10 / grdNrm;
-    tol = 0.01;
-tol = 0.0;
-    [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', minStep, ...
-      'N', nIter, 't0', stepSize, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
+    t0 = 10 * stepSize;
+    tol = 1d-3;
+    [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
+      'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
-%load( 'datacase.mat', 'datacase' );
-%save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
-    
+save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
+
   elseif strcmp( 'pogm', alg )
     stepSize = 0.999 / grdNrm;
     [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
@@ -354,7 +363,6 @@ tol = 0.0;
   elseif strcmp( 'projSubgrad', alg )
     [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
   end 
-  %figure;  plotnice( objValues );
   flag = 0;
 
   % Now find kappa scaling
@@ -388,6 +396,181 @@ function [out,costPerPixel] = calculateCost_GP( psf, weights, distWeight, mu )
   end
   out = sum( costPerPixel(:) );
 end
+
+
+
+function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP_sparse( traj, N, gamma, mu, varargin )
+  
+  defaultNIter = 100;
+  p = inputParser;
+  p.addOptional( 'nIter', defaultNIter, @ispositive );
+  p.parse( varargin{:} );
+  nIter = p.Results.nIter;
+
+  if numel( nIter ) == 0, nIter = defaultNIter; end
+
+  nTraj = size( traj, 1 );
+  D = size( traj, 2 );
+  if numel( N ) == 1, N = N * ones( D ); end
+  if numel( gamma ) == 0, gamma = 0.25 * N; end
+  if numel( gamma ) == 1, gamma = gamma * ones( numel(N), 1 ); end
+
+
+pid = feature('getpid');
+dFile = ['datacase_', num2str(pid), '.mat'];
+load( dFile, 'datacase' );
+
+
+aSparseFile = ['A_sparse_', indx2str(datacase,99), '.mat'];
+
+if exist( aSparseFile, 'file' )
+  load( aSparseFile, 'A' );
+else
+  A = makeSparseA( traj, N, gamma, 2.0 );
+  save( aSparseFile, 'A' );
+end
+
+
+  function out = applyA( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = A * in;
+    else
+      out = A' * in;
+    end
+  end
+
+  function out = g( w )
+    psf = grid_2D( w, traj, 2*N, ones( size( w ) ) );
+    [out,costPerPixel] = calculateCost_GP( psf, w, gamma, mu );   %#ok<ASGLU>
+  end
+
+  h = @(w) 0;
+
+  function out = gGrad( w )
+    out = A * w;
+
+    if mu > 0
+      out = out + ( mu / nTraj ) * w;
+    end
+  end
+
+  proxth = @(x,t) projectOntoProbSimplex( x );
+
+
+
+  %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
+  w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
+  %w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
+
+
+nFile = ['normA_sparse_', indx2str(datacase,99), '.mat'];
+if exist( nFile, 'file' )
+  load( nFile, 'normA' );
+else
+  normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
+  save( nFile, 'normA' );
+end
+  grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
+  stepSize = 0.99 / grdNrm;
+
+  alg = 'fista_wLS';
+  if strcmp( 'fista_wLS', alg )
+    t0 = 10 * stepSize;
+    tol = 1d-3;
+    [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
+      'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
+
+%load( 'datacase.mat', 'datacase' );
+save( [ 'relDiffs_sparse_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
+    
+  elseif strcmp( 'pogm', alg )
+    stepSize = 0.999 / grdNrm;
+    [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'verbose', true );
+
+  elseif strcmp( 'projSubgrad', alg )
+    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
+  end 
+  %figure;  plotnice( objValues );
+  flag = 0;
+
+  % Now find kappa scaling
+  centerRegion = round( N ./ 20 );
+  threshSmallK = repmat( min( 0.5 ./ N, 1d-6 ), [ size( traj, 1 ) 1 ] );
+  useCenterRegion = true;
+  if useCenterRegion == true
+    scaledSincTraj = sin( bsxfun( @times, traj, 2 * pi * centerRegion ) ) ./ ( pi * traj );
+    twoN = repmat( 2 * centerRegion, [ size( traj, 1 ) 1 ] );
+  else
+    scaledSincTraj = sin( bsxfun( @times, traj, 2 * pi * N ) ) ./ ( pi * traj );
+    twoN = repmat( 2 * N, [ size( traj, 1 ) 1 ] );
+  end
+  scaledSincTraj( abs( traj ) < threshSmallK ) = twoN( abs( traj ) < threshSmallK );
+  prodScaledSincTraj = prod( scaledSincTraj, 2 );
+  kappa = 1 ./ ( sum( w .* prodScaledSincTraj ) );
+  w = kappa * w;
+
+  if nargout > 1, nIter = numel( objValues ); end
+end
+
+
+function A = makeSparseA( traj, N, gamma, thresh )
+
+  nTraj = size( traj, 1 );
+  rowIndxs = cell( nTraj, 1 );
+  colIndxs = cell( nTraj, 1 );
+  valuesA = cell( nTraj, 1 );
+  D = numel( N );
+
+  segLength = 30000;
+
+  p = parforProgress( nTraj );
+  parfor trajIndx = 1 : nTraj
+    p.progress( trajIndx, 250 );   %#ok<PFBNS>
+    a = 2 * ones( nTraj, 1 );
+
+    for dIndx = 1 : D
+      Nd = N( dIndx );   %#ok<PFBNS>
+      thisGamma = gamma( dIndx );   %#ok<PFBNS>
+
+      eIndx = 0;
+      nSegs = ceil( nTraj / segLength );
+      for segIndx = 1 : nSegs
+        sIndx = eIndx + 1;  % start index
+        eIndx = min( segIndx * segLength, nTraj );  % end index
+
+        nu = 2 * pi * ( traj( trajIndx, dIndx ) - traj( sIndx:eIndx, dIndx ) );   %#ok<PFBNS>
+
+        if numel( thisGamma ) > 0  &&  thisGamma < Inf
+          tmp1 = ( -thisGamma * exp( -Nd / thisGamma ) ) * cos( nu * Nd ) ;
+          tmp2 = ( thisGamma * thisGamma * exp( -Nd / thisGamma ) ) * nu .* sin( nu * Nd );
+          tmp = tmp1 + tmp2 + thisGamma;
+          factors = 2 ./ ( 1 + ( thisGamma * nu ).^2 ) .* tmp;
+          factors( nu == 0 ) = 2 * thisGamma * ( 1 - exp( -Nd / thisGamma ) );
+
+        else
+          factors = 2 * sin( nu * Nd ) ./ nu;
+          factors( nu == 0 ) = 2 * Nd;
+        end
+
+        a( sIndx : eIndx ) = a( sIndx : eIndx ) .* factors;
+      end
+    end
+
+    rowIndxs{ trajIndx } = trajIndx * ones( sum( a > thresh ), 1 );
+    colIndxs{ trajIndx } = find( a > thresh );
+    valuesA{ trajIndx } = a( a > thresh );
+  end
+  p.clean;
+
+  rowIndxs = cell2mat( rowIndxs );
+  colIndxs = cell2mat( colIndxs );
+  valuesA = cell2mat( valuesA );
+
+  A = sparse( colIndxs, rowIndxs, valuesA, nTraj, nTraj );
+end
+
+
 
 
 
