@@ -107,7 +107,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
     if numel(h) == 0
       warning('fista_wLS.m - Cannot calculate objective values without h function handle');
     else
-      objectiveValues = zeros(N,1);
+      objectiveValues = zeros( N+1, 1 );
       calculateObjectiveValues = true;
     end
   end
@@ -121,14 +121,16 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
     calculateRelDiffs = true;
   end
 
-  if calculateObjectiveValues == true, gx = g( x ); end
+  if calculateObjectiveValues == true
+    gx = g( x );
+    hx = h( x );
+  end
   t = t0 / s;
   v = x;
   theta = 1;
   k = 0;
-  iter = 0;
 
-  while iter < N
+  for iter = 1 : N
     if verbose>0 && iter>0 && mod( iter, printEvery ) == 0
       verboseString = [ 'FISTA (with Line Search) Iteration: ', indx2str(iter,N), ...
         ' of ', num2str(N) ];
@@ -136,6 +138,9 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
         verboseString = [ verboseString, ',  objective: ', ...
           num2str( objectiveValues(iter), 15 ), '   parts: ', num2str(gx), ...
           ',  ', num2str( hx ) ];   %#ok<AGROW>
+      end
+      if calculateRelDiffs == true  &&  iter > 1
+        verboseString = [ verboseString, ', relDiff: ', num2str( relDiffs( iter-1 ) ) ];   %#ok<AGROW>
       end
       disp( verboseString );
     end
@@ -198,7 +203,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
         disp([ '  Relative error: ', num2str( relDiff ) ]);
       end
 
-      if nargout > 2, relDiffs( iter + 1 ) = relDiff; end
+      if nargout > 2, relDiffs( iter ) = relDiff; end
 
       if numel( tol ) > 0  &&  tol > 0
         if relDiff < tol, break; end
@@ -215,7 +220,6 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       v = x + (1/theta) * ( x - lastX );
     end
 
-    iter = iter + 1;
   end
 
   if nargout > 1, objectiveValues = objectiveValues( 1 : iter ); end
