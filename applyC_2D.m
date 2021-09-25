@@ -74,41 +74,42 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
     out = cell( numel( rangeTrajKy ), 1, 1 );
 
     parfor kyIndx = 1 : numel( rangeTrajKy )
-      outSeg = zeros( 1, numel( rangeTrajKx ), prod( sF(2:end) ) );
-      
-      kyDists = min( [ abs( rangeTrajKy( kyIndx )       - domTrajKy ); ...
-                       abs( rangeTrajKy( kyIndx ) + 1.0 - domTrajKy ); ...
-                       abs( rangeTrajKy( kyIndx ) - 1.0 - domTrajKy ); ], [], 1 );
+      outSeg = zeros( 1, numel( rangeTrajKx ), prod( sF(2:end) ) );   %#ok<PFBNS>
+
+      kyDists = min( [ abs( rangeTrajKy( kyIndx ) - domTrajKy       ), ...
+                       abs( rangeTrajKy( kyIndx ) - domTrajKy + 1.0 ), ...
+                       abs( rangeTrajKy( kyIndx ) - domTrajKy - 1.0 ), ], [], 2 );
 
       shortIndxsY = find( kyDists < kyDistThresh );
-      if numel( shortIndxsY ) == 0, continue; end
+      if numel( shortIndxsY ) == 0
+        out{ kyIndx } = outSeg;
+        continue;
+      end
 
       CValsY = interp1( kCy, Cy, kyDists( shortIndxsY ), 'linear', 0 );
-      
+
+      subF = F( shortIndxsY, : );   %#ok<PFBNS>
       subDomTrajKx = domTrajKx( shortIndxsY );   %#ok<PFBNS>
 
       for kxIndx = 1 : numel( rangeTrajKx )
-        kxDists = min( [ abs( rangeTrajKx( kxIndx )       - subDomTrajKx ); ...
-                         abs( rangeTrajKx( kxIndx ) + 1.0 - subDomTrajKx ); ...
-                         abs( rangeTrajKx( kxIndx ) - 1.0 - subDomTrajKx ); ], [], 1 );
+        kxDists = min( [ abs( rangeTrajKx( kxIndx ) - subDomTrajKx ), ...
+                         abs( rangeTrajKx( kxIndx ) - subDomTrajKx + 1.0 ), ...
+                         abs( rangeTrajKx( kxIndx ) - subDomTrajKx - 1.0 ), ], [], 2 );
 
         shortIndxsX = find( kxDists < kxDistThresh );
-
-        %shortIndxs = find( ( kyDists < kyDistThresh ) & ( kxDists < kxDistThresh ) );
         if numel( shortIndxsX ) == 0, continue; end
 
-        shortIndxs = shortIndxsY( shortIndxsX );
-        CValsX = interp1( kCx, Cx, kxDists( shortIndxs ), 'linear', 0 );
+        CValsX = interp1( kCx, Cx, kxDists( shortIndxsX ), 'linear', 0 );
         CValsYX = CValsY( shortIndxsX ) .* CValsX;
 
-        outValues = CValsYX * F( shortIndxs, : );
+        outValues = bsxfun( @times, CValsYX, subF( shortIndxsX, : ) );
         outSeg( 1, kxIndx, : ) = sum( outValues, 1 );
       end
       out{ kyIndx } = outSeg;
     end
 
     out = cell2mat( out );
-    out = reshape( out, [ numel( rangeTrajKy ) numel( rangeTrajKx ) sF(2:end) ] );
+    out = reshape( out, sOut );
 
   elseif domTrajIsGrid == true
     % domTraj is a grid and rangeTraj is not
@@ -120,9 +121,9 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
     F = reshape( F, [ sF(1:2) prod( sF(3:end) ) ] );
 
     for kyIndx = 1 : sF( 1 )
-      kyDists = min( [ abs( domTrajKy( kyIndx )       - rangeTrajKy ); ...
-                       abs( domTrajKy( kyIndx ) + 1.0 - rangeTrajKy ); ...
-                       abs( domTrajKy( kyIndx ) - 1.0 - rangeTrajKy ); ], [], 1 );
+      kyDists = min( [ abs( domTrajKy( kyIndx )       - rangeTrajKy ), ...
+                       abs( domTrajKy( kyIndx ) + 1.0 - rangeTrajKy ), ...
+                       abs( domTrajKy( kyIndx ) - 1.0 - rangeTrajKy ), ], [], 2 );
 
       shortIndxsY = find( kyDists < kyDistThresh );
       if numel( shortIndxsY ) == 0, continue; end
@@ -131,9 +132,9 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
       subRangeTrajKx = rangeTrajKx( shortIndxsY );
       
       for kxIndx = 1 : sF( 2 )
-        kxDists = min( [ abs( domTrajKx( kxIndx )       - subRangeTrajKx ); ...
-                         abs( domTrajKx( kxIndx ) + 1.0 - subRangeTrajKx ); ...
-                         abs( domTrajKx( kxIndx ) - 1.0 - subRangeTrajKx ); ], [], 1 );
+        kxDists = min( [ abs( domTrajKx( kxIndx )       - subRangeTrajKx ), ...
+                         abs( domTrajKx( kxIndx ) + 1.0 - subRangeTrajKx ), ...
+                         abs( domTrajKx( kxIndx ) - 1.0 - subRangeTrajKx ), ], [], 2 );
 
         shortIndxsX = find( kxDists < kxDistThresh );
         if numel( shortIndxsX ) == 0, continue; end
