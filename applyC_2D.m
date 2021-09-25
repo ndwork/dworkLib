@@ -148,7 +148,9 @@ function out = applyC_2D( F, domTraj, rangeTraj, kCy, kCx, Cy, Cx )
       end
     end
 
-    out = reshape( out, [ nRangeTraj sF(3:end) ] );
+    if numel( sF ) > 2
+      out = reshape( out, [ nRangeTraj sF(3:end) ] );
+    end
 
   else
     % Neither domTraj nor rangeTraj are a grid
