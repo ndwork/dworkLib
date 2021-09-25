@@ -36,7 +36,7 @@ function testDworkLib
   F = rand( size(traj,1), nD ) + 1i * rand( size( traj, 1 ), nD );
   [ checkC_traj_N, errCheckC ] = checkAdjoint( F, C_traj_N, 'fAdj', CT_traj_N );
   if checkC_traj_N == false
-    error([ 'applyC failed with error: ', num2str( errCheckC ) ]);
+    error([ 'applyC / applyCT failed with error: ', num2str( errCheckC ) ]);
   end
 
   C_N_traj = @(x) applyC_2D( x, N, traj, kCy, kCx, Cy, Cx );
@@ -45,7 +45,7 @@ function testDworkLib
   F = rand( [ N(1) N(2) nD ] ) + 1i * rand( [ N(1) N(2) nD ] );
   [ checkC_N_traj, errCheckC ] = checkAdjoint( F, C_N_traj, 'fAdj', CT_N_traj );
   if checkC_N_traj == false
-    error([ 'applyC failed with error: ', num2str( errCheckC ) ]);
+    error([ 'applyC / applyCT failed with error: ', num2str( errCheckC ) ]);
   end
 
   nReadout = 50;
@@ -546,7 +546,55 @@ function testDworkLib
   else
     disp('isEven (2D) passed');
   end
-  
+
+
+  %% iGridT_2D - 2D data
+  N = [ 256 256 ];
+  p = 0.1;
+
+  % Let the image be sinc( x / W )
+  imgCoords = size2imgCoordinates( N );
+  [xs, ys] = meshgrid( imgCoords{2}, imgCoords{1} );
+  fx = p * sinc( p * xs );
+  fy = p * sinc( p * ys );
+  f = fx .* fy;
+  figure; imshowscale( f, 5 );
+
+  % The inverse Fourier transform is W * rect( W x )
+  % Make the right answer for the Fourier data
+  nK = 20000;
+  kTraj = rand( nK, 2 ) - 0.5;
+  % Fourier values of a rect function with width p
+  F = ( abs( kTraj(:,1) ) < ( 0.5 * p ) )  &  ...
+      ( abs( kTraj(:,2) ) < ( 0.5 * p ) );
+  F = F * 1.0;
+  figure;  scatterIntensity( kTraj(:,1), kTraj(:,2), F );
+  axis( [ -0.5 0.5 -0.5 0.5 ] );    axis equal;
+  colorbarnice;  titlenice( 'Right answer' );
+
+  % Determine the estimate and compare
+  F_hat = iGrid_2D( f, kTraj );
+  figure;  scatterIntensity( kTraj(:,1), kTraj(:,2), abs(F_hat) );
+  axis( [ -0.5 0.5 -0.5 0.5 ] );  axis equal;
+  colorbarnice;  titlenice( 'Estimate' );
+
+
+  %% Make sure iGrid_2D and iGridT_2D are adjoints
+  sizeX = [ 256 256 ];
+  nY = 50000;
+  nD = 1;
+  kTraj = rand( nY, 2 ) - 0.5;
+  x = rand( [ sizeX nD ] );
+  y = rand( nY, nD );
+  Ax = iGrid_2D( x, kTraj );
+  dp1 = dotP( Ax, y );
+
+  ATy = iGridT_2D( y, kTraj, sizeX );
+  dp2 = dotP( x, ATy );
+  err = abs( dp1 - dp2 ) / abs( dp1 );
+  disp([ 'iGrid/iGridT 2D Adjointness error:  ', num2str(err) ]);
+
+
   %% isHermitian - 1D data
   fprintf( '\nTesting isHermitian (1D): \n');
   A1 = rand(5,1);
@@ -1018,6 +1066,22 @@ function testDworkLib
   else
     error([ 'smoothImg failed with an error of ', num2str(err) ]);
   end
+
+  %% ufft2
+  x = rand( 128, 128 );
+  y = rand( 128, 128 );
+  Fx = ufft2( x );
+  FHy = uifft2( y );
+  d1 = dotP( x, FHy );
+  d2 = dotP( Fx, y );
+  err = norm( d1(:) - d2(:) ) / norm( d1(:) );
+  disp( err );
+  if err < 1d-12
+    disp( 'uifft2 is the adjoint of ufft2' );
+  else
+    error( [ 'ufft2 failed with an error of ', num2str( err ) ] );
+  end
+
 
   %% vecVolMatrixProd
   v = rand(1,5);
