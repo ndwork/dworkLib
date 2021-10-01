@@ -69,11 +69,11 @@ function out = iGridT_2D( F, traj, N, varargin )
   Nc = [ numel( cY )  numel( cX ) ];
 
   % Perform a circular convolution
-  fftGridded = applyC_2D( F, traj, Nc, kCy, kCx, Cy, Cx );
+  fftGridded = applyCT_2D( F, Nc, traj, kCy, kCx, Cy, Cx );
 
   % Perform an inverse fft
-  data = fftshift( fftshift( ifft( ifft( ifftshift( ifftshift( ...
-    fftGridded, 1 ), 2 ), [], 1 ), [], 2 ), 1 ), 2 );
+  data = fftshift2( fft2( ifftshift2( fftGridded ) ) ) / ...
+    ( size( fftGridded, 1 ) * size( fftGridded, 2 ) );
 
   % Perform deapodization
   deapod = ( 1 ./ cY ) * transpose( ( 1 ./ cX ) );

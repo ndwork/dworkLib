@@ -65,21 +65,14 @@ function F = iGrid_2D( data, traj, varargin )
   [kCx,Cx,cX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
-  preEmphasis = 1 ./ ( cY * cX' );
-  preEmphasized = bsxfun( @times, data, preEmphasis );
-  preEmphasized( data == 0 ) = 0;
+  preEmphasized = bsxfun( @rdivide, data, cY );
+  preEmphasized = bsxfun( @rdivide, preEmphasized, cX' );
 
   % Perform an fft
   fftData = fftshift2( ifft2( ifftshift2( preEmphasized ) ) );
 
   % Perform a circular convolution
   sData = size( fftData );
-  if ndims( fftData ) > 2   %#ok<ISMAT>
-    fftData = reshape( fftData, [ sData(1:2) prod( sData(3:end) ) ] );
-  end
   F = applyC_2D( fftData, sData(1:2), traj, kCy, kCx, Cy, Cx );
-  if ndims( fftData ) > 2   %#ok<ISMAT>
-    F = reshape( F, [ size(traj,1) sData(3:end) ] );
-  end
 end
 
