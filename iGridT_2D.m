@@ -76,8 +76,8 @@ function out = iGridT_2D( F, traj, N, varargin )
     ( size( fftGridded, 1 ) * size( fftGridded, 2 ) );
 
   % Perform deapodization
-  deapod = ( 1 ./ cY ) * transpose( ( 1 ./ cX ) );
-  out = bsxfun( @times, data, deapod );
+  out = bsxfun( @rdivide, data, cY );
+  out = bsxfun( @rdivide, out, transpose( cX ) );
 
   % Crop out center region if oversampling was used
   if ( alphaY ~= 1 ) || ( alphaX ~= 1 )
