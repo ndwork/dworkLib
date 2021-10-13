@@ -96,13 +96,13 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     if numel( g ) == 0
       error( 'gradDescent.m - Cannot calculate objective values without g function handle' );
     end
-    objectiveValues = zeros( N, 1 );
+    objectiveValues = zeros( N+1, 1 );
     calculateObjectiveValues = true;
   end
 
   calculateRelDiffs = false;
   if nargout > 2
-    relDiffs = zeros( N, 1 );
+    relDiffs = zeros( N+1, 1 );
     calculateRelDiffs = true;
   end
 
@@ -112,20 +112,20 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   end
   
   for k = 0 : N-1
-    if calculateObjectiveValues == true, objectiveValues(k+1) = g(x); end
-    
-    if verbose == true  &&  mod( k+1, printEvery ) == 1
-      if calculateObjectiveValues == true
-        disp([ 'gradDescent Iteration: ', num2str(k), ' with objective value ', ...
-          num2str( objectiveValues(k+1) ) ]);
-      else
-        disp([ 'gradDescent Iteration: ', num2str(k) ]);
-      end
-    end
-
     if numel( tol ) > 0  ||  calculateObjectiveValues == true, gx = g( x ); end
 
     if calculateObjectiveValues == true, objectiveValues( k+1 ) = gx; end
+
+    if verbose == true  &&  mod( k+1, printEvery ) == 0
+      verboseStr = [ 'gradDescent Iteration: ', num2str(k) ];
+      if calculateObjectiveValues == true
+        verboseStr = [ verboseStr, ' with objective value ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+      end 
+      if calculateRelDiffs == true && k > 0
+        verboseStr = [ verboseStr, ' with relDiff ', num2str( relDiffs(k) ) ];   %#ok<AGROW>
+      end
+      disp( verboseStr );
+    end
 
     if numel( tol ) > 0 && tol ~= 0, lastX = x; end
 
