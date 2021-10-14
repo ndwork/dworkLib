@@ -65,8 +65,7 @@ function F = iGrid_2D( data, traj, varargin )
   [kCx,Cx,cX] = makeKbKernel( Gx, Nx, 'alpha', alphaX, 'W', W, 'nC', nC );
 
   % Pre-emphasize the image
-  preEmphasized = bsxfun( @rdivide, data, cY );
-  preEmphasized = bsxfun( @rdivide, preEmphasized, cX' );
+  preEmphasized = bsxfun( @rdivide, data, cY * transpose( cX ) );
 
   % Perform an fft
   fftData = fftshift2( ifft2( ifftshift2( preEmphasized ) ) );

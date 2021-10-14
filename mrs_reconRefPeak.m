@@ -31,20 +31,27 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
   end
 
   p = inputParser;
+  p.addParameter( 'alpha', [], @isnumeric );
   p.addParameter( 'kTraj', [], @isnumeric );
+  p.addParameter( 'nC', [], @ispositive );
   p.addParameter( 'sImg', [], @isnumeric );
+  p.addParameter( 'W', [], @ispositive );
   p.parse( varargin{:} );
+  alpha = p.Results.alpha;
   kTraj = p.Results.kTraj;
+  nC = p.Results.nC;
   sImg = p.Results.sImg;
+  W = p.Results.W;
 
   sKData = size( kData );
   if numel( kTraj ) > 0
-    coilSpectrums = mri_reconGridding( kData, kTraj, sImg );
+    coilSpectrums = mri_reconGridding( kData, kTraj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
     Ns = sKData(4:end);
   else
     coilSpectrums = fftshift( fftshift( uifft2( kData ), 1 ), 2 );
     Ns = sKData(5:end);
   end
+  if numel( Ns ) == 0, Ns = 1; end
 
   sCSs = size( coilSpectrums );
   coilSpectrums = reshape( coilSpectrums, [ sCSs(1:4) prod( sCSs(5:end) ) ] );
@@ -55,12 +62,12 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
   maxImgs = max( coilSpectrums, [], freqIndx );
   sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( maxImgs.^2, coilIndx ) ) );
 
-
   [ M, N, nSlices, nCoils ] = size( sMaps );
   sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N nSlices nCoils ] ), coilSpectrums );
 
   recon = sum( sMapped, coilIndx );
-  sRecon = size( recon );
+  sRecon = ones( 1, coilIndx-1 );
+  sRecon( 1 : ndims(recon) ) = size( recon );
   recon = reshape( recon, [ sRecon(1:coilIndx-1) Ns ] );
 end
 

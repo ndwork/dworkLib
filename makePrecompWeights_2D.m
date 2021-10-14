@@ -1,6 +1,6 @@
 
-function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin )
-  % [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N [, ...
+function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
+  % [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj [, 'sImg', sImg, ...
   %   'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
@@ -9,7 +9,6 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin
   %   kTraj is a Mx2 element array specifying the k-space trajectory.
   %     The first/second column is the ky/kx location.
   %     The units are normalized to [-0.5,0.5)
-  %   N is a 2 element array [Ny Nx] representing the number of grid points
   %
   % Optional Inputs:
   %   alpha - the oversampling factor > 1
@@ -27,6 +26,8 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin
   %     ( default is 0.25 * N )
   %   nIter - number of iterations for iterative algorithms
   %   psfMask - only used by space domain optimizations
+  %   sImg is a 2 element array [Ny Nx] representing the number of grid points
+  %     A scalar can be supplied and the image is assumed square
   %   verbose - true/false
   %
   % Outputs:
@@ -57,22 +58,32 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin
     return
   end
 
-  if numel( N ) == 1, N = [ N N ]; end
   if ~isreal( kTraj ), kTraj = [ real( kTraj(:) ) imag( kTraj(:) ) ]; end
 
   defaultAlg = 'VORONOI';
   p = inputParser;
+  p.addParameter( 'alpha', [], @isnumeric );
   p.addParameter( 'gamma', [], @isnumeric );
   p.addParameter( 'mu', 0, @isnumeric );
+  p.addParameter( 'nC', [], @isnumeric );
   p.addParameter( 'nIter', [], @ispositive );
+  p.addParameter( 'sImg', [], @ispositive );
+  p.addParameter( 'W', [], @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alg = p.Results.alg;
+  alpha = p.Results.alpha;
   gamma = p.Results.gamma;
   mu = p.Results.mu;
+  nC = p.Results.nC;
   nIter = p.Results.nIter;
+  sImg = p.Results.sImg;
   verbose = p.Results.verbose;
+  W = p.Results.W;
+
+  if numel( alg ) == 0, alg = defaultAlg; end
+  if numel( sImg ) == 1, sImg = [ sImg sImg ]; end
 
   nOptIter = 1;
   flag = 0;
@@ -80,28 +91,31 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N, varargin
   switch alg
     case 'CLS'
       % Constrained least squares density compensation
-      [weights,nOptIter,flag,res] = makePrecompWeights_2D_CLS( kTraj, N );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_CLS( kTraj, sImg );
 
     case 'FP'
       % Fixed point iteration
-      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, N, 'verbose', verbose );
+      [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, sImg, 'verbose', verbose, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
 
     case 'GP'
       % Gradient Projection method
-      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP( kTraj, N, gamma, mu, nIter );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP( kTraj, sImg, gamma, mu, nIter );
 
     case 'GP_sparse'
       % sparse approximation to GP method
-      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP_sparse( kTraj, N, gamma, mu, nIter );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP_sparse( kTraj, sImg, gamma, mu, nIter );
       
     case 'JACKSON'
-      weights = makePrecompWeights_2D_JACKSON( kTraj, N );
+      weights = makePrecompWeights_2D_JACKSON( kTraj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
 
     case 'LSQR'
-      [weights,nOptIter,flag,res] = makePrecompWeights_2D_LSQR( kTraj, N );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_LSQR( kTraj, sImg, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
 
     case 'SAMSANOV'
-      [weights,nOptIter,flag,res] = makePrecompWeights_2D_SAMSANOV( kTraj, N );
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_SAMSANOV( kTraj, sImg, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
 
     case 'VORONOI'
       weights = makePrecompWeights_2D_VORONOI( kTraj );
@@ -116,8 +130,17 @@ end
 function [weights,nIter,flag,residual] = makePrecompWeights_2D_CLS( traj, N, varargin )
   % Optimization analog of FP with a non-negativity constraint
 
-  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
-  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
+  p = inputParser;
+  p.addParameter( 'alpha', [], @isnumeric );
+  p.addParameter( 'W', [], @ispositive );
+  p.addParameter( 'nC', [], @ispositive );
+  p.parse( varargin{:} );
+  alpha = p.Results.alpha;
+  W = p.Results.W;
+  nC = p.Results.nC;
+  
+  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
   CyCx = Cy(:) * Cx(:)';
   dkCy = zeros( size( kCy ) );  dkCy(1) = kCy(2);  dkCy(2:end) = kCy(2:end) - kCy(1:end-1);
@@ -609,8 +632,17 @@ end
 function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, varargin )
   % Optimization analog of FP
 
-  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny );
-  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx );
+  p = inputParser;
+  p.addParameter( 'alpha', [], @isnumeric );
+  p.addParameter( 'W', [], @ispositive );
+  p.addParameter( 'nC', [], @ispositive );
+  p.parse( varargin{:} );
+  alpha = p.Results.alpha;
+  W = p.Results.W;
+  nC = p.Results.nC;
+
+  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
 
   CyCx = Cy(:) * Cx(:)';
   dkCy = zeros( size( kCy ) );  dkCy(1) = kCy(2);  dkCy(2:end) = kCy(2:end) - kCy(1:end-1);

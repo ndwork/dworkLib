@@ -22,5 +22,5 @@ function scatterIntensity( x, y, z, varargin )
   if numel( x ) ~= numel( z ), error( 'x, y, and z must have the same number of elements' ); end
 
   pointsize = 4;
-  scatternice( x, y, pointsize, z );
+  scatternice( x, y, pointsize, z, varargin{:} );
 end

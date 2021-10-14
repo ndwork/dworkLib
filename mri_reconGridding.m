@@ -58,7 +58,7 @@ function recons = mri_reconGridding( kData, traj, sImg, varargin )
 
   if numel( weights ) == 0
     if ismatrix( traj )
-      weights = makePrecompWeights_2D( traj, sImg, 'alg', alg, ...
+      weights = makePrecompWeights_2D( traj, 'sImg', sImg, 'alg', alg, ...
         'alpha', alpha, 'W', W, 'nC', nC );
     else
       traj = reshape( traj, [ sData(1) 2 nImgs ] );
@@ -67,7 +67,7 @@ function recons = mri_reconGridding( kData, traj, sImg, varargin )
         disp( 'mri_gridRecon: creating gridding weights' );
       end
       parfor imgIndx = 1 : nImgs
-        weights{imgIndx} = makePrecompWeights_2D( traj(:,:,imgIndx), sImg, ...
+        weights{imgIndx} = makePrecompWeights_2D( traj(:,:,imgIndx), 'sImg', sImg, ...
           'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC );
       end
       weights = cell2mat( weights );
