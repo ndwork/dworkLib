@@ -23,8 +23,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   %     two inputs: the vector and the scalar value of the parameter t
   %
   % Optional Inputs:
-  % h - a handle to the h function.  This is needed to calculate the
-  %     objective values.
+  % h - a handle to the h function.  This is needed to calculate the objective values.
   % innerProd - function handle to the inner product.
   %     ( default is real( dotP( x, y ) ) )
   %     Note: for complex vectors, innerProd should be real( dotP( x, y ) )
