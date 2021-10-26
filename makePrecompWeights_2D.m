@@ -430,6 +430,51 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   if numel( gamma ) == 0, gamma = 0.25 * N; end
   if numel( gamma ) == 1, gamma = gamma * ones( numel(N), 1 ); end
 
+  function out = applySubA( in, indxs )
+    nIn = numel( in );
+    out = cell( nIn, 1 );
+
+    expNGammas = exp( -N ./ gamma );
+
+    parfor tIndx = indxs
+      rowInSum = 0;
+      eIndx = 0;
+      for segIndx = 1 : nSegs
+        sIndx = eIndx + 1;  % start index
+        eIndx = min( segIndx * segLength, nTraj );  % end index
+
+        prodRowIn = 2 * in( sIndx : eIndx );   %#ok<PFBNS>
+
+        nu = 2 * pi * ( traj( tIndx, : ) - traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
+
+        nuNd = bsxfun( @times, nu, N );
+        if numel( gamma ) > 0  &&  max( gamma ) < Inf
+          tmp = bsxfun( @times, expNGammas, ...
+            cos( nuNd ) - bsxfun( @times, nu .* sin( nuNd ), gamma ) );
+          factors = bsxfun( @rdivide, 2 * gamma, ...
+            1 + ( bsxfun( @times, nu, gamma ).^2 ) .* ( 1 - tmp ) );
+
+        else
+          factors = 2 * sin( nuNd ) ./ nu;
+          for dIndx = 1 : D
+            dFactors = factors( :, dIndx );
+            dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
+            factors( :, dIndx ) = dFactors;
+          end
+        end
+
+        prodRowIn = prodRowIn .* prod( factors, 2 );
+
+        rowInSum = rowInSum + sum( prodRowIn );
+      end
+
+      out{ tIndx } = rowInSum;
+    end
+    out = cell2mat( out );
+  end
+  
+  
+  
   function out = applyA( in, op )
     if nargin < 2, op = 'notransp'; end
 
@@ -493,7 +538,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   end
 
   h = @(w) 0;
-
+  
   function out = gGrad( w )
     out = applyA( w );
 
@@ -502,17 +547,27 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
     end
   end
 
+  function out = gGradHat( w, subIndxs )
+    if numel( subIndxs ) == 0
+      out = numel( w );
+      return;
+    end
+
+    out = applySubA( w, subIndxs );
+  end
+  
   proxth = @(x,t) projectOntoProbSimplex( x );
 
   %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
-  %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );  
-  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
+w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );  
+  %w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
 
 pid = feature('getpid');
 dFile = ['datacase_', num2str(pid), '.mat'];
-load( [ './saves/mu_', num2str(mu), '/', dFile ], 'datacase' );
+distWeightScaling = gamma(1) / N(1);
+load( [ './saves/scaling_', num2str(distWeightScaling), '/', dFile ], 'datacase' );
 
-nFile = [ './saves/mu_', num2str(mu), '/normA_', indx2str(datacase,99), '.mat'];
+nFile = [ './saves/mu_', num2str(distWeightScaling), '/normA_', indx2str(datacase,99), '.mat'];
 if exist( nFile, 'file' )
   load( nFile, 'normA' );
 else
@@ -522,23 +577,32 @@ end
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
-  alg = 'fista_wLS';
+  %alg = 'fista_wLS';
+alg = 'stochasticProxGrad';
   if strcmp( 'fista_wLS', alg )
     t0 = 10 * stepSize;
     tol = 1d-3;
-    [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
+    [ w, objValues, relDiffs ] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
       'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
-save( [ './saves/mu_', num2str(mu), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
+save( [ './saves/mu_', num2str(distWeightScaling), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
   'w', 'objValues', 'relDiffs', 'normA' );
 
   elseif strcmp( 'pogm', alg )
     stepSize = 0.999 / grdNrm;
-    [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+    [ w, objValues ] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
-    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
+    [ w, objValues ] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
+
+  elseif strcmp( 'stochasticProxGrad', alg )
+    [ w, objValues, relDiffs ] = stochasticProxGrad( x0, @gGradHat, proxth, ...
+      'nEpochs', nEpochs, 'nStoch', 1000, 'verbose', true );
+
+save( [ './saves/spg_mu_', num2str(mu), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
+  'w', 'objValues', 'relDiffs', 'normA' );
+
   end 
   flag = 0;
 
@@ -634,11 +698,9 @@ end
   proxth = @(x,t) projectOntoProbSimplex( x );
 
 
-
   %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
-  w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
-  %w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
-
+  %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
+  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
 
 nFile = ['normA_sparse_', indx2str(datacase,99), '.mat'];
 if exist( nFile, 'file' )
@@ -659,14 +721,14 @@ end
 
 %load( 'datacase.mat', 'datacase' );
 save( [ 'relDiffs_sparse_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
-    
+
   elseif strcmp( 'pogm', alg )
-    stepSize = 0.999 / grdNrm;
     [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
     [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
+
   end 
   %figure;  plotnice( objValues );
   flag = 0;
