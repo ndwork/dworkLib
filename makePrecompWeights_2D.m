@@ -292,6 +292,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP_old( traj, N, 
     parfor tIndx = 1 : nIn
       rowInSum = 0;
       eIndx = 0;
+
       for segIndx = 1 : nSegs
         sIndx = eIndx + 1;  % start index
         eIndx = min( segIndx * segLength, nTraj );  % end index
