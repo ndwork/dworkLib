@@ -439,7 +439,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
       eIndx = min( segIndx * segLength, nTraj );  % end index
 
       subTraj = traj( sIndx : eIndx, : );   %#ok<PFBNS>
-      segOut = 2 * ones( eIndx - sIndx + 1, 1 );
+      segOut = zeros( eIndx - sIndx + 1, 1 );
 
       for t = 1 : numel( indxs )
         tIndx = indxs( t );
