@@ -88,6 +88,7 @@ function [ xStar, oValues, relDiffs ] = stochasticProxGrad( x0, stepSize, gGrad,
       if nargout > 2
         relDiff = norm( x(:) - lastX(:) ) / norm( lastX(:) );
         relDiffs( ( epochIndx - 1 ) * nGradTerms + segIndx ) = relDiff;
+        verboseStr = [ verboseStr, ',  Rel Diff: ', num2str( relDiff ) ];   %#ok<AGROW>
       end
 
       if verbose == true, disp( verboseStr ); end
