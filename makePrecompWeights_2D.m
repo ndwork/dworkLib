@@ -433,41 +433,30 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   function out = applySubA( in, indxs )
     expNGammas = exp( -N ./ gamma );
 
-    out = cell( nSegs, 1 );
-    parfor segIndx = 1 : nSegs
-      sIndx = ( segIndx - 1 ) * segLength + 1;  % start index
-      eIndx = min( segIndx * segLength, nTraj );  % end index
+    out = zeros( numel( in ), 1 );
+    for t = 1 : numel( indxs )
+      tIndx = indxs( t );
 
-      subTraj = traj( sIndx : eIndx, : );   %#ok<PFBNS>
-      segOut = zeros( eIndx - sIndx + 1, 1 );
+      nu = 2 * pi * ( bsxfun( @minus, traj, traj( tIndx, : ) ) );
+      nuN = bsxfun( @times, nu, N );
 
-      for t = 1 : numel( indxs )
-        tIndx = indxs( t );
+      if numel( gamma ) > 0  &&  max( gamma ) < Inf
+        tmp = 1 - bsxfun( @times, expNGammas, ...
+          cos( nuN ) - bsxfun( @times, gamma, nu .* sin( nuN ) ) );
+        factors = 2 ./ ( 1 + bsxfun( @times, gamma, nu ).^2 ) .* tmp;
 
-        nu = 2 * pi * ( bsxfun( @minus, subTraj, traj( tIndx, : ) ) );
-        nuN = bsxfun( @times, nu, N );
-
-        if numel( gamma ) > 0  &&  max( gamma ) < Inf
-          tmp = 1 - bsxfun( @times, expNGammas, ...
-            cos( nuN ) - bsxfun( @times, gamma, nu .* sin( nuN ) ) );
-          factors = bsxfun( @rdivide, 2 * gamma, ( 1 + bsxfun( @times, gamma, nu ).^2 ) .* tmp );
-
-        else
-          factors = 2 * sin( nuN ) ./ nu;
-          for dIndx = 1 : D
-            dFactors = factors( :, dIndx );
-            dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
-            factors( :, dIndx ) = dFactors;
-          end
+      else
+        factors = 2 * sin( nuN ) ./ nu;
+        for dIndx = 1 : D
+          dFactors = factors( :, dIndx );
+          dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
+          factors( :, dIndx ) = dFactors;
         end
-
-        segOut = segOut + ( prod( factors, 2 ) * in( tIndx ) );   %#ok<PFBNS>
       end
 
-      out{ segIndx } = segOut;
+      colA = 2 * prod( factors, 2 );
+      out = out + ( colA * in( tIndx ) );
     end
-
-    out = cell2mat( out );
   end
 
   function out = gGradHat( w, subIndxs )
@@ -498,17 +487,16 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
         prodRowIn = 2 * in( sIndx : eIndx );   %#ok<PFBNS>
 
         if strcmp( op, 'notransp' )  % notransp
-          nu = 2 * pi * bsxfun( traj( tIndx, : ), traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
+          nu = 2 * pi * bsxfun( @minus, traj( tIndx, : ), traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
         else
-          nu = 2 * pi * bsxfun( traj( sIndx : eIndx, : ), traj( tIndx, : ) );
+          nu = 2 * pi * bsxfun( @minus, traj( sIndx : eIndx, : ), traj( tIndx, : ) );
         end
 
         nuN = bsxfun( @times, nu, N );
         if numel( gamma ) > 0  &&  max( gamma ) < Inf
           tmp = 1 - bsxfun( @times, expNGammas, ...
             cos( nuN ) - bsxfun( @times, nu .* sin( nuN ), gamma ) );
-          factors = bsxfun( @rdivide, 2 * gamma, ...
-            ( 1 + ( bsxfun( @times, nu, gamma ).^2 ) ) .* tmp );
+          factors = bsxfun( @rdivide, 2 * gamma, ( 1 + ( bsxfun( @times, nu, gamma ).^2 ) ) .* tmp );
 
         else
           factors = 2 * sin( nuN ) ./ nu;
