@@ -422,7 +422,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
 
   if numel( nIter ) == 0, nIter = defaultNIter; end
 
-  segLength = 25000;
+  segLength = 2500;
   nTraj = size( traj, 1 );
   nSegs = ceil( nTraj / segLength );
   D = size( traj, 2 );
@@ -431,31 +431,29 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   if numel( gamma ) == 1, gamma = gamma * ones( numel(N), 1 ); end
 
   function out = applySubA( in, indxs )
-    nIn = numel( in );
-    out = cell( nIn, 1 );
-
     expNGammas = exp( -N ./ gamma );
 
-    parfor tIndx = indxs
-      rowInSum = 0;
-      eIndx = 0;
-      for segIndx = 1 : nSegs
-        sIndx = eIndx + 1;  % start index
-        eIndx = min( segIndx * segLength, nTraj );  % end index
+    out = cell( nSegs, 1 );
+    parfor segIndx = 1 : nSegs
+      sIndx = ( segIndx - 1 ) * segLength + 1;  % start index
+      eIndx = min( segIndx * segLength, nTraj );  % end index
 
-        prodRowIn = 2 * in( sIndx : eIndx );   %#ok<PFBNS>
+      subTraj = traj( sIndx : eIndx, : );   %#ok<PFBNS>
+      segOut = 2 * ones( eIndx - sIndx + 1, 1 );
 
-        nu = 2 * pi * ( traj( tIndx, : ) - traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
+      for t = 1 : numel( indxs )
+        tIndx = indxs( t );
 
-        nuNd = bsxfun( @times, nu, N );
+        nu = 2 * pi * ( bsxfun( @minus, subTraj, traj( tIndx, : ) ) );
+        nuN = bsxfun( @times, nu, N );
+
         if numel( gamma ) > 0  &&  max( gamma ) < Inf
-          tmp = bsxfun( @times, expNGammas, ...
-            cos( nuNd ) - bsxfun( @times, nu .* sin( nuNd ), gamma ) );
-          factors = bsxfun( @rdivide, 2 * gamma, ...
-            1 + ( bsxfun( @times, nu, gamma ).^2 ) .* ( 1 - tmp ) );
+          tmp = 1 - bsxfun( @times, expNGammas, ...
+            cos( nuN ) - bsxfun( @times, gamma, nu .* sin( nuN ) ) );
+          factors = bsxfun( @rdivide, 2 * gamma, ( 1 + bsxfun( @times, gamma, nu ).^2 ) .* tmp );
 
         else
-          factors = 2 * sin( nuNd ) ./ nu;
+          factors = 2 * sin( nuN ) ./ nu;
           for dIndx = 1 : D
             dFactors = factors( :, dIndx );
             dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
@@ -463,18 +461,25 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
           end
         end
 
-        prodRowIn = prodRowIn .* prod( factors, 2 );
-
-        rowInSum = rowInSum + sum( prodRowIn );
+        segOut = segOut + ( prod( factors, 2 ) * in( tIndx ) );   %#ok<PFBNS>
       end
 
-      out{ tIndx } = rowInSum;
+      out{ segIndx } = segOut;
     end
+
     out = cell2mat( out );
   end
-  
-  
-  
+
+  function out = gGradHat( w, subIndxs )
+    if numel( subIndxs ) == 0
+      out = numel( w );
+      return;
+    end
+
+    out = applySubA( w, subIndxs );
+  end
+
+
   function out = applyA( in, op )
     if nargin < 2, op = 'notransp'; end
 
@@ -493,20 +498,20 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
         prodRowIn = 2 * in( sIndx : eIndx );   %#ok<PFBNS>
 
         if strcmp( op, 'notransp' )  % notransp
-          nu = 2 * pi * ( traj( tIndx, : ) - traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
+          nu = 2 * pi * bsxfun( traj( tIndx, : ), traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
         else
-          nu = 2 * pi * ( traj( sIndx : eIndx, : ) - traj( tIndx, : ) );
+          nu = 2 * pi * bsxfun( traj( sIndx : eIndx, : ), traj( tIndx, : ) );
         end
 
-        nuNd = bsxfun( @times, nu, N );
+        nuN = bsxfun( @times, nu, N );
         if numel( gamma ) > 0  &&  max( gamma ) < Inf
-          tmp = bsxfun( @times, expNGammas, ...
-            cos( nuNd ) - bsxfun( @times, nu .* sin( nuNd ), gamma ) );
+          tmp = 1 - bsxfun( @times, expNGammas, ...
+            cos( nuN ) - bsxfun( @times, nu .* sin( nuN ), gamma ) );
           factors = bsxfun( @rdivide, 2 * gamma, ...
-            1 + ( bsxfun( @times, nu, gamma ).^2 ) .* ( 1 - tmp ) );
+            ( 1 + ( bsxfun( @times, nu, gamma ).^2 ) ) .* tmp );
 
         else
-          factors = 2 * sin( nuNd ) ./ nu;
+          factors = 2 * sin( nuN ) ./ nu;
           for dIndx = 1 : D
             dFactors = factors( :, dIndx );
             dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
@@ -546,15 +551,6 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
       out = out + ( mu / nTraj ) * w;
     end
   end
-
-  function out = gGradHat( w, subIndxs )
-    if numel( subIndxs ) == 0
-      out = numel( w );
-      return;
-    end
-
-    out = applySubA( w, subIndxs );
-  end
   
   proxth = @(x,t) projectOntoProbSimplex( x );
 
@@ -567,7 +563,7 @@ dFile = ['datacase_', num2str(pid), '.mat'];
 distWeightScaling = gamma(1) / N(1);
 load( [ './saves/scaling_', num2str(distWeightScaling), '/', dFile ], 'datacase' );
 
-nFile = [ './saves/mu_', num2str(distWeightScaling), '/normA_', indx2str(datacase,99), '.mat'];
+nFile = [ './saves/scaling_', num2str(distWeightScaling), '/normA_', indx2str(datacase,99), '.mat'];
 if exist( nFile, 'file' )
   load( nFile, 'normA' );
 else
@@ -597,8 +593,8 @@ save( [ './saves/mu_', num2str(distWeightScaling), '/', 'relDiffs_', indx2str( d
     [ w, objValues ] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
 
   elseif strcmp( 'stochasticProxGrad', alg )
-    [ w, objValues, relDiffs ] = stochasticProxGrad( x0, @gGradHat, proxth, ...
-      'nEpochs', nEpochs, 'nStoch', 1000, 'verbose', true );
+    [ w, objValues, relDiffs ] = stochasticProxGrad( w0, stepSize, @gGradHat, proxth, ...
+      'g', @g, 'h', @h, 'nEpochs', 10, 'nStoch', 1000, 'verbose', true );
 
 save( [ './saves/spg_mu_', num2str(mu), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
   'w', 'objValues', 'relDiffs', 'normA' );
