@@ -263,7 +263,7 @@ function scale = getScaleOfPSF( weights, traj, N )
 end
 
 
-function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
+function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP_old( traj, N, gamma, mu, varargin )
 
   defaultNIter = 250;  % 300 works well
   p = inputParser;
@@ -287,6 +287,8 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
     nIn = numel( in );
     out = cell( nIn, 1 );
 
+    expNGammas = exp( -N ./ gamma );
+
     parfor tIndx = 1 : nIn
       rowInSum = 0;
       eIndx = 0;
@@ -299,6 +301,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
         for dIndx = 1 : D
           Nd = N( dIndx );   %#ok<PFBNS>
           thisGamma = gamma( dIndx );   %#ok<PFBNS>
+          expNdGamma = expNGammas( dIndx );   %#ok<PFBNS>
 
           if strcmp( op, 'notransp' )  % notransp
             nu = 2 * pi * ( traj( tIndx, dIndx ) - traj( sIndx : eIndx, dIndx ) );   %#ok<PFBNS>
@@ -307,7 +310,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
           end
 
           if numel( thisGamma ) > 0  &&  thisGamma < Inf
-            tmp = exp( -Nd / thisGamma ) * ( cos( nu * Nd ) - thisGamma * nu .* sin( nu * Nd ) );
+            tmp = expNdGamma * ( cos( nu * Nd ) - thisGamma * nu .* sin( nu * Nd ) );
             factors = ( 2 * thisGamma ) ./ ( 1 + ( thisGamma * nu ).^2 ) .* ( 1 - tmp );
 
           else
@@ -377,6 +380,156 @@ end
       'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
 save( [ 'relDiffs_', indx2str( datacase, 99 ) ], 'w', 'objValues', 'relDiffs', 'normA' );
+
+  elseif strcmp( 'pogm', alg )
+    stepSize = 0.999 / grdNrm;
+    [w,objValues] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'verbose', true );
+
+  elseif strcmp( 'projSubgrad', alg )
+    [w,objValues] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
+  end 
+  flag = 0;
+
+  % Now find kappa scaling
+  centerRegion = round( N ./ 20 );
+  threshSmallK = repmat( min( 0.5 ./ N, 1d-6 ), [ size( traj, 1 ) 1 ] );
+  useCenterRegion = true;
+  if useCenterRegion == true
+    scaledSincTraj = sin( bsxfun( @times, traj, 2 * pi * centerRegion ) ) ./ ( pi * traj );
+    twoN = repmat( 2 * centerRegion, [ size( traj, 1 ) 1 ] );
+  else
+    scaledSincTraj = sin( bsxfun( @times, traj, 2 * pi * N ) ) ./ ( pi * traj );
+    twoN = repmat( 2 * N, [ size( traj, 1 ) 1 ] );
+  end
+  scaledSincTraj( abs( traj ) < threshSmallK ) = twoN( abs( traj ) < threshSmallK );
+  prodScaledSincTraj = prod( scaledSincTraj, 2 );
+  kappa = 1 ./ ( sum( w .* prodScaledSincTraj ) );
+  w = kappa * w;
+
+  if nargout > 1, nIter = numel( objValues ); end
+end
+
+
+function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
+
+  defaultNIter = 250;  % 300 works well
+  p = inputParser;
+  p.addOptional( 'nIter', defaultNIter, @ispositive );
+  p.parse( varargin{:} );
+  nIter = p.Results.nIter;
+
+  if numel( nIter ) == 0, nIter = defaultNIter; end
+
+  segLength = 25000;
+  nTraj = size( traj, 1 );
+  nSegs = ceil( nTraj / segLength );
+  D = size( traj, 2 );
+  if numel( N ) == 1, N = N * ones( D ); end
+  if numel( gamma ) == 0, gamma = 0.25 * N; end
+  if numel( gamma ) == 1, gamma = gamma * ones( numel(N), 1 ); end
+
+  function out = applyA( in, op )
+    if nargin < 2, op = 'notransp'; end
+
+    nIn = numel( in );
+    out = cell( nIn, 1 );
+
+    expNGammas = exp( -N ./ gamma );
+
+    parfor tIndx = 1 : nIn
+      rowInSum = 0;
+      eIndx = 0;
+      for segIndx = 1 : nSegs
+        sIndx = eIndx + 1;  % start index
+        eIndx = min( segIndx * segLength, nTraj );  % end index
+
+        prodRowIn = 2 * in( sIndx : eIndx );   %#ok<PFBNS>
+
+        if strcmp( op, 'notransp' )  % notransp
+          nu = 2 * pi * ( traj( tIndx, : ) - traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
+        else
+          nu = 2 * pi * ( traj( sIndx : eIndx, : ) - traj( tIndx, : ) );
+        end
+
+        nuNd = bsxfun( @times, nu, N );
+        if numel( gamma ) > 0  &&  max( gamma ) < Inf
+          tmp = bsxfun( @times, expNGammas, ...
+            cos( nuNd ) - bsxfun( @times, nu .* sin( nuNd ), gamma ) );
+          factors = bsxfun( @rdivide, 2 * gamma, ...
+            1 + ( bsxfun( @times, nu, gamma ).^2 ) .* ( 1 - tmp ) );
+
+        else
+          factors = 2 * sin( nuNd ) ./ nu;
+          for dIndx = 1 : D
+            dFactors = factors( :, dIndx );
+            dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
+            factors( :, dIndx ) = dFactors;
+          end
+        end
+
+        prodRowIn = prodRowIn .* prod( factors, 2 );
+
+        rowInSum = rowInSum + sum( prodRowIn );
+      end
+
+      out{ tIndx } = rowInSum;
+    end
+    out = cell2mat( out );
+  end
+
+
+  doAdjointCheck = false;
+  if doAdjointCheck == true && ...
+    ~checkAdjoint( rand( nTraj, 1 ), @applyA, 'y', rand( nTraj, 1 ) )
+    error( 'A adjoint is incorrect' );
+  end
+
+
+  function out = g( w )
+    psf = grid_2D( w, traj, 2*N, ones( size( w ) ) );
+    [out,costPerPixel] = calculateCost_GP( psf, w, gamma, mu );   %#ok<ASGLU>
+  end
+
+  h = @(w) 0;
+
+  function out = gGrad( w )
+    out = applyA( w );
+
+    if mu > 0
+      out = out + ( mu / nTraj ) * w;
+    end
+  end
+
+  proxth = @(x,t) projectOntoProbSimplex( x );
+
+  %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
+  %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );  
+  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
+
+pid = feature('getpid');
+dFile = ['datacase_', num2str(pid), '.mat'];
+load( [ './saves/mu_', num2str(mu), '/', dFile ], 'datacase' );
+
+nFile = [ './saves/mu_', num2str(mu), '/normA_', indx2str(datacase,99), '.mat'];
+if exist( nFile, 'file' )
+  load( nFile, 'normA' );
+else
+  normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
+  save( nFile, 'normA' );
+end
+  grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
+  stepSize = 0.99 / grdNrm;
+
+  alg = 'fista_wLS';
+  if strcmp( 'fista_wLS', alg )
+    t0 = 10 * stepSize;
+    tol = 1d-3;
+    [w,objValues,relDiffs] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
+      'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
+
+save( [ './saves/mu_', num2str(mu), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
+  'w', 'objValues', 'relDiffs', 'normA' );
 
   elseif strcmp( 'pogm', alg )
     stepSize = 0.999 / grdNrm;
