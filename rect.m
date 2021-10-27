@@ -20,5 +20,11 @@ function out = rect( x, a )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  out = rect( x, a )' );
+    if nargout > 0, out = []; end
+    return;
+  end
+
   out = abs( x ./ a ) < 0.5;
 end
