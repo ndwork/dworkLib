@@ -36,14 +36,16 @@ function [ xStar, oValues, relDiffs ] = stochasticProxGrad( x0, stepSize, gGrad,
   p = inputParser;
   p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
-  p.addParameter( 'nEpochs', 100, @ispositive );
+  p.addParameter( 'nEpochs', 10, @ispositive );
   p.addParameter( 'nStoch', 10, @ispositive );
+  p.addParameter( 'saveEvery', 10, @ispositive );
   p.addParameter( 'verbose', false, @islogical );
   p.parse( varargin{:} );
   g = p.Results.g;
   h = p.Results.g;
   nEpochs = p.Results.nEpochs;
   nStoch = p.Results.nStoch;
+  saveEvery = p.Results.saveEvery;
   verbose = p.Results.verbose;
 
   if nargin < 1
@@ -79,16 +81,18 @@ function [ xStar, oValues, relDiffs ] = stochasticProxGrad( x0, stepSize, gGrad,
       verboseStr = [ 'Epoch: ', indx2str( epochIndx, nEpochs ), ' of ', num2str(nEpochs), ',  ', ...
                      'Seg: ', indx2str( segIndx, nSegs ), ' of ', num2str(nSegs) ];
 
-      if nargout > 1
-        objValue = g( x ) + h( x );
-        oValues( ( epochIndx - 1 ) * nGradTerms + segIndx ) = objValue;
-        verboseStr = [ verboseStr, ',  Obj Value: ', num2str( objValue ) ];   %#ok<AGROW>
-      end
+      if mod( ( epochIndx - 1 ) * nGradTerms + segIndx - 1, saveEvery ) == 0
+        if nargout > 1
+          objValue = g( x ) + h( x );
+          oValues( ( epochIndx - 1 ) * nGradTerms + segIndx ) = objValue;
+          verboseStr = [ verboseStr, ',  Obj Value: ', num2str( objValue ) ];   %#ok<AGROW>
+        end
 
-      if nargout > 2
-        relDiff = norm( x(:) - lastX(:) ) / norm( lastX(:) );
-        relDiffs( ( epochIndx - 1 ) * nGradTerms + segIndx ) = relDiff;
-        verboseStr = [ verboseStr, ',  Rel Diff: ', num2str( relDiff ) ];   %#ok<AGROW>
+        if nargout > 2
+          relDiff = norm( x(:) - lastX(:) ) / norm( lastX(:) );
+          relDiffs( ( epochIndx - 1 ) * nGradTerms + segIndx ) = relDiff;
+          verboseStr = [ verboseStr, ',  Rel Diff: ', num2str( relDiff ) ];   %#ok<AGROW>
+        end
       end
 
       if verbose == true, disp( verboseStr ); end
