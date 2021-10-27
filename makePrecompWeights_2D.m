@@ -49,8 +49,8 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage: [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, N [, ...' );
-    disp( '  ''alpha'', alpha, ''W'', W, ''nC'', nC, ''alg'', alg ] )' );
+    disp( 'Usage: [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, ...' );
+    disp( '  ''sImg'', sImg, ''alpha'', alpha, ''W'', W, ''nC'', nC, ''alg'', alg ] )' );
     if nargout > 0, weights = []; end
     if nargout > 1, nOptIter = []; end
     if nargout > 2, flag = []; end
