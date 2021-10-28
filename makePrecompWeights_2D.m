@@ -441,10 +441,11 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
       nuN = bsxfun( @times, nu, N );
 
       if numel( gamma ) > 0  &&  max( gamma ) < Inf
-        tmp = 1 - bsxfun( @times, expNGammas, ...
-          cos( nuN ) - bsxfun( @times, gamma, nu .* sin( nuN ) ) );
-        factors = 2 ./ ( 1 + bsxfun( @times, gamma, nu ).^2 ) .* tmp;
+        nuGamma = bsxfun( @times, nu, gamma );
 
+        tmp = 1 - bsxfun( @times, expNGammas, cos( nuN ) - nuGamma .* sin( nuN ) );
+        factors = bsxfun( @rdivide, 2 * gamma, 1 + nuGamma.^2 ) .* tmp;
+        
       else
         factors = 2 * sin( nuN ) ./ nu;
         for dIndx = 1 : D
@@ -493,10 +494,12 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
         end
 
         nuN = bsxfun( @times, nu, N );
+
         if numel( gamma ) > 0  &&  max( gamma ) < Inf
-          tmp = 1 - bsxfun( @times, expNGammas, ...
-            cos( nuN ) - bsxfun( @times, nu .* sin( nuN ), gamma ) );
-          factors = bsxfun( @rdivide, 2 * gamma, ( 1 + ( bsxfun( @times, nu, gamma ).^2 ) ) .* tmp );
+          nuGamma = bsxfun( @times, nu, gamma );
+
+          tmp = 1 - bsxfun( @times, expNGammas, cos( nuN ) -  nuGamma .* sin( nuN ) );
+          factors = bsxfun( @rdivide, 2 * gamma, 1 + nuGamma.^2 ) .* tmp;
 
         else
           factors = 2 * sin( nuN ) ./ nu;
@@ -542,16 +545,29 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   
   proxth = @(x,t) projectOntoProbSimplex( x );
 
-  %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
-w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );  
-  %w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
+  %alg = 'fista_wLS';
+  alg = 'pogm';
+  %alg = 'spg';
 
 pid = feature('getpid');
-dFile = ['datacase_', num2str(pid), '.mat'];
+load( ['datacase_', num2str(pid), '.mat'], 'datacase' );
 distWeightScaling = gamma(1) / N(1);
-load( [ './saves/scaling_', num2str(distWeightScaling), '/', dFile ], 'datacase' );
 
-nFile = [ './saves/scaling_', num2str(distWeightScaling), '/normA_', indx2str(datacase,99), '.mat'];
+saveDir = [ './out/case_', indx2str(datacase,99), '/saves/scaling_', num2str(distWeightScaling) ];
+algDir = [ saveDir, '/', alg ];
+mkdir( saveDir );  mkdir( algDir );
+
+w0File = [ saveDir, '/w0.mat' ];
+if exist( w0File, 'file' )
+  load( w0File, 'w0' );
+else
+  %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
+  %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
+  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
+  save( w0File, 'w0' );
+end
+
+nFile = [ saveDir, '/normA.mat' ];
 if exist( nFile, 'file' )
   load( nFile, 'normA' );
 else
@@ -561,33 +577,27 @@ end
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
-  %alg = 'fista_wLS';
-alg = 'stochasticProxGrad';
+relDiffs = [];
+objValues = [];
   if strcmp( 'fista_wLS', alg )
     t0 = 10 * stepSize;
     tol = 1d-3;
     [ w, objValues, relDiffs ] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
       'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
-save( [ './saves/mu_', num2str(distWeightScaling), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
-  'w', 'objValues', 'relDiffs', 'normA' );
-
   elseif strcmp( 'pogm', alg )
-    stepSize = 0.999 / grdNrm;
     [ w, objValues ] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
     [ w, objValues ] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
 
-  elseif strcmp( 'stochasticProxGrad', alg )
+  elseif strcmp( 'spg', alg )
     [ w, objValues, relDiffs ] = stochasticProxGrad( w0, stepSize, @gGradHat, proxth, ...
-      'g', @g, 'h', @h, 'nEpochs', 10, 'nStoch', 1000, 'verbose', true );
+      'g', @g, 'h', @h, 'nEpochs', 20, 'nStoch', 1000, 'saveEvery', 10, 'verbose', true );
 
-save( [ './saves/spg_mu_', num2str(mu), '/', 'relDiffs_', indx2str( datacase, 99 ) ], ...
-  'w', 'objValues', 'relDiffs', 'normA' );
-
-  end 
+  end
+save( [ algDir, '/results.mat' ], 'w', 'objValues', 'relDiffs' );
   flag = 0;
 
   % Now find kappa scaling
