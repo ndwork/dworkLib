@@ -594,6 +594,26 @@ function testDworkLib
   err = abs( dp1 - dp2 ) / abs( dp1 );
   disp([ 'iGrid/iGridT 2D Adjointness error:  ', num2str(err) ]);
 
+  
+  %% Make sure iGrid_2D and grid_2D approximately undo each other
+  nSpokes = 360;
+  nPtsPerSpoke = 150;
+  sImg = [ 128 128 ];
+  traj = mri_makeTrajPts( 2, 'radial', nSpokes, nPtsPerSpoke );
+  xRect = rect( 1:sImg(2), 25 );
+  yRect = rect( 1:sImg(1), 25 );
+  img = yRect(:) * xRect(:)';
+  img = circshift( img, [ 20 10 ] );
+  FVals = iGrid_2D( img, traj );
+  weights = makePrecompWeights_2D( traj, 'sImg', size( img ) );
+  gridded = grid_2D( FVals, traj, size( img ), weights );
+  relErr = norm( img(:) - gridded(:) ) / norm( img(:) );
+  if relErr >= 0.05
+    error([ 'iGrid_2D and grid_2D do not approximately undo each other with relative err: ', ...
+      num2str(relErr) ]);
+  else
+    disp( 'iGrid_2D / grid_2D passed' );
+  end
 
   %% isHermitian - 1D data
   fprintf( '\nTesting isHermitian (1D): \n');
