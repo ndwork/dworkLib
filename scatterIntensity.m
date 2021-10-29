@@ -1,6 +1,6 @@
 
-function scatterIntensity( x, y, z, varargin )
-  % scatterIntensity( x, y, z, options )
+function out = scatterIntensity( x, y, z, varargin )
+  % out = scatterIntensity( x, y, z, options )
   %
   % Inputs:
   % x - 1D array of horizontal values of the scatter points
@@ -10,6 +10,9 @@ function scatterIntensity( x, y, z, varargin )
   % Optional Inputs:
   % options - all optional arguments of scatter
   %
+  % Outputs:
+  % out - handle to object
+  %
   % Written by Nicholas Dwork - Copyright 2021
   %
   % https://github.com/ndwork/dworkLib.git
@@ -18,9 +21,14 @@ function scatterIntensity( x, y, z, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  if nargin < 1
+    disp( 'Usage:  out = scatterIntensity( x, y, z, varargin )' );
+    return
+  end
+  
   if numel( x ) ~= numel( y ), error( 'x, y, and z must have the same number of elements' ); end
   if numel( x ) ~= numel( z ), error( 'x, y, and z must have the same number of elements' ); end
 
   pointsize = 4;
-  scatternice( x, y, pointsize, z, varargin{:} );
+  out = scatternice( x, y, pointsize, z, varargin{:} );
 end
