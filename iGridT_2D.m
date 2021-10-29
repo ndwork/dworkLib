@@ -71,7 +71,7 @@ function out = iGridT_2D( F, traj, N, varargin )
   % Perform a circular convolution
   fftGridded = applyCT_2D( F, Nc, traj, kCy, kCx, Cy, Cx );
 
-  % Perform an fft
+  % Perform an ifft
   data = fftshift2( ifft2( ifftshift2( fftGridded ) ) );
 
   % Perform deapodization
