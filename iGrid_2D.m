@@ -68,7 +68,8 @@ function F = iGrid_2D( data, traj, varargin )
   preEmphasized = bsxfun( @rdivide, data, cY * transpose( cX ) );
 
   % Perform an fft
-  fftData = fftshift2( ifft2( ifftshift2( preEmphasized ) ) );
+  fftData = fftshift2( fft2( ifftshift2( preEmphasized ) ) ) / ...
+    ( size( preEmphasized, 1 ) * size( preEmphasized, 2 ) );
 
   % Perform a circular convolution
   sData = size( fftData );

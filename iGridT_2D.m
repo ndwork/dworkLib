@@ -72,8 +72,7 @@ function out = iGridT_2D( F, traj, N, varargin )
   fftGridded = applyCT_2D( F, Nc, traj, kCy, kCx, Cy, Cx );
 
   % Perform an fft
-  data = fftshift2( fft2( ifftshift2( fftGridded ) ) ) / ...
-    ( size( fftGridded, 1 ) * size( fftGridded, 2 ) );
+  data = fftshift2( ifft2( ifftshift2( fftGridded ) ) );
 
   % Perform deapodization
   out = bsxfun( @rdivide, data, cY * transpose( cX ) );
