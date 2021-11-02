@@ -21,7 +21,6 @@ function out = iGridT_2D( F, traj, N, varargin )
   %   alpha - a float parameter specifying the oversampling factor
   %   W - an integer specifying the kernel's width
   %   nC - specifies the number of samples in the kernel
-  %   verbose - if set to true, outputs processing status
   %
   % Written by Nicholas Dwork - Copyright 2016
   %
