@@ -982,13 +982,13 @@ function fullWeights = makePrecompWeights_2D_VORONOI( fullKTraj )
   % Voronoi density compensation according to "Resampling of Data Between
   % Arbitrary Grids Using Convolution Interpolation" by Rasche et al.
 
-  [ outerConvHullIndxs, areaOuter ] = convhull( kTraj, 'Simplify', true );
+  [ outerConvHullIndxs, areaOuter ] = convhull( kTraj );
   outerConvHullIndxs = outerConvHullIndxs( 1 : end - 1 );
   outerConvHullIndxs = sort( outerConvHullIndxs );
   outerTraj = kTraj(outerConvHullIndxs,:);
   innerTraj = setdiff( kTraj, outerTraj, 'rows' );
 
-  [ ~, areaInner ] = convhull( innerTraj, 'Simplify', true );
+  [ ~, areaInner ] = convhull( innerTraj );
   alpha = sqrt( areaOuter / areaInner );
   newOuterTraj = alpha * outerTraj;
 
