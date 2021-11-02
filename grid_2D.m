@@ -1,6 +1,6 @@
 
-function recon = grid_2D( F, kTraj, N, weights, varargin )
-  % recon = grid_2D( F, kTraj, N, weights, [ 'alpha', alpha, 'W', W, 'nC', nC ] )
+function recon = grid_2D( F, kTraj, N, varargin )
+  % recon = grid_2D( F, kTraj, N, [ weights, 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % The gridding non-uniform FFT algorithm based on EE369C notes by John Pauly
   % and Beatty et. al., IEEE TMI, 2005.  Definitions and details according to
@@ -12,11 +12,12 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
   %     The first/second column are the kx/ky locations.
   %     The units are normalized to [-0.5,0.5).
   %   N is a 2 element array [Ny Nx] representing the number of grid points
+  %
+  % Optional Inputs:
   %   weights is a 1D array; it is the pre-density compensation weights and
   %     can be generated using makePrecompWeights_2D.  Alternatively, they
   %     can be determined analytically for some sequences.
-  %
-  % Optional Inputs:
+  %     By default, weights are all 1
   %   alpha is the oversampling factor > 1
   %   W is the window width in pixels
   %   nC is the number of points to sample the convolution kernel
@@ -38,8 +39,19 @@ function recon = grid_2D( F, kTraj, N, weights, varargin )
     if nargout > 0, recon = []; end
     return
   end
-  
-  Fw = bsxfun( @times, F, weights );
 
-  recon = iGridT_2D( Fw, kTraj, N, varargin{:} );
+  p = inputParser;
+  p.addOptional( 'weights', [], @isnumeric );
+  p.addParameter( 'alpha', [], @(x) x >= 1 );
+  p.addParameter( 'nC', [], @ispositive );
+  p.addParameter( 'W', [], @ispositive );
+  p.parse( varargin{:} );
+  weights = p.Results.weights;
+  alpha = p.Results.alpha;
+  nC = p.Results.nC;
+  W = p.Results.W;
+
+  if numel( weights ) > 0, F = bsxfun( @times, F, weights ); end
+
+  recon = iGridT_2D( F, kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
 end
