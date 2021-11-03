@@ -42,9 +42,9 @@ function recon = grid_2D( F, kTraj, N, varargin )
 
   p = inputParser;
   p.addOptional( 'weights', [], @isnumeric );
-  p.addParameter( 'alpha', [], @(x) x >= 1 );
-  p.addParameter( 'nC', [], @ispositive );
-  p.addParameter( 'W', [], @ispositive );
+  p.addParameter( 'alpha', [], @(x) numel(x) == 0  ||  x >= 1 );
+  p.addParameter( 'nC', [], @(x) numel(x) == 0  ||  ispositive(x) );
+  p.addParameter( 'W', [], @(x) numel(x) == 0  ||  ispositive(x) );
   p.parse( varargin{:} );
   weights = p.Results.weights;
   alpha = p.Results.alpha;
