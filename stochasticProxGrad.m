@@ -66,10 +66,12 @@ function [ xStar, oValues, relDiffs ] = stochasticProxGrad( x0, stepSize, gGrad,
   if nargout > 2, relDiffs = zeros( nEpochs * nSegs, 1 ); end
 
   x = x0;  clear x0;
+  iter = 0;
   for epochIndx = 1 : nEpochs
     indxs = randperm( nGradTerms );
 
     for segIndx = 1 : nSegs
+      iter = iter + 1;
       subIndxs = indxs( (segIndx - 1 ) * nStoch + 1 : min( segIndx * nStoch, nGradTerms ) );
 
       Dgx = gGrad( x, subIndxs ) * ( nGradTerms / numel( subIndxs ) ) ;
@@ -81,7 +83,7 @@ function [ xStar, oValues, relDiffs ] = stochasticProxGrad( x0, stepSize, gGrad,
       verboseStr = [ 'Epoch: ', indx2str( epochIndx, nEpochs ), ' of ', num2str(nEpochs), ',  ', ...
                      'Seg: ', indx2str( segIndx, nSegs ), ' of ', num2str(nSegs) ];
 
-      if mod( ( epochIndx - 1 ) * nGradTerms + segIndx - 1, saveEvery ) == 0
+      if mod( iter-1, saveEvery ) == 0
         if nargout > 1
           objValue = g( x ) + h( x );
           oValues( ( epochIndx - 1 ) * nGradTerms + segIndx ) = objValue;
