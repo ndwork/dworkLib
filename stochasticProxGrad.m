@@ -49,7 +49,7 @@ function [ xStar, oValues, relDiffs ] = stochasticProxGrad( x0, stepSize, gGrad,
   verbose = p.Results.verbose;
 
   if nargin < 1
-    disp( 'Usage:  [ out, oValues, relDiffs ] = sgm( x0, gGrad, proxth [, ' );
+    disp( 'Usage:  [ out, oValues, relDiffs ] = stochasticProxGrad( x0, gGrad, proxth [, ' );
     disp( '  ''g'', g, ''h'', h, ''nEpochs'', nEpochs, ''nStoch'', nStoch, ' );
     disp( '  ''verbose'', true/false ] )' );
     if nargout > 0, xStar = []; end
