@@ -261,13 +261,9 @@ end
 
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
 
-<<<<<<< HEAD
   defaultNIter = 250;  % 300 works well
   defaultAlg = 'adaptiveAcceleration';
 
-=======
-  defaultNIter = 200;  % 300 works well
->>>>>>> 9a6a7894f86434f5540909f163529ff623c21da1
   p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
