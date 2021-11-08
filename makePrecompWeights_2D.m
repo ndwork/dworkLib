@@ -414,7 +414,7 @@ end
 
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
 
-  defaultNIter = 250;  % 300 works well
+  defaultNIter = 200;  % 300 works well
   p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
   p.parse( varargin{:} );
@@ -594,7 +594,7 @@ objValues = [];
 
   elseif strcmp( 'spg', alg )
     [ w, objValues, relDiffs ] = stochasticProxGrad( w0, stepSize, @gGradHat, proxth, ...
-      'g', @g, 'h', @h, 'nEpochs', 20, 'nStoch', 1000, 'saveEvery', 10, 'verbose', true );
+      'g', @g, 'h', @h, 'nEpochs', 100, 'nStoch', 2000, 'saveEvery', 20, 'verbose', true );
 
   end
 save( [ algDir, '/results.mat' ], 'w', 'objValues', 'relDiffs' );
