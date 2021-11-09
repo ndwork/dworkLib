@@ -18,7 +18,7 @@ function nLines = findNumLinesInFile( file )
   persistent fileOpened;
   if isempty( fileOpened ), fileOpened = false; end
 
-  while fileOpened == true, pause( 0.1 ); end
+  if fileOpened == true, pause( 0.1 ); end
 
   fileOpened = true;   %#ok<NASGU>
   fid = fopen(file);
