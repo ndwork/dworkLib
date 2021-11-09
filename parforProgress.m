@@ -101,8 +101,9 @@ classdef parforProgress
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
       if mod( nLines+1, downsample ) == 1
-        disp([obj.msgHdr, moreMsgHdr, 'Working on ', num2str(n), ' of ', ...
-          num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), '%' ]);
+        disp([ obj.msgHdr, moreMsgHdr, 'Working on ', indx2str(nLines,obj.nTotal), ' of ', ...
+          num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), '%', ...
+          'index: ', num2str( n ) ]);
         drawnow( 'update' );
       end
     end
