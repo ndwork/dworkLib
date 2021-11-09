@@ -89,6 +89,7 @@ function [zStar,objValues,relDiffs] = adaptiveAccelerationOptimization( z, gGrad
   if calculateRelDiffs == true, relDiffs = zeros( N, 1 ); end
 
   H = zeros( q );
+  H( 1:q-1, 2:end ) = eye( q-1 );
   if strcmp( alg, 'fista' ), y=z; end
 
   relDiff = 2 * tol + 1;
