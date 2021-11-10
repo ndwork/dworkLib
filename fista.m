@@ -65,13 +65,15 @@ function [xStar,objectiveValues] = fista( x, gGrad, proxth, varargin )
   end
 
   z = x;
-  y = 0;
+  y = [];
 
   for k = 0 : N-1
     x = z - t * gGrad( z );
 
     lastY = y;
     y = proxth( x, t );
+    if numel( y ) == 0, y = lastY; end
+
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
 
     if verbose>0 && mod( k, printEvery ) == 0
