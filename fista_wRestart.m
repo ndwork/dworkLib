@@ -1,7 +1,7 @@
 
-function [xStar,objectiveValues] = fista_wRestart( x, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth [, ...
-  %   'g', g, 'h', h, 'N', N, 'verbose', verbose ] )
+function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, varargin )
+  % [xStar,objectiveValues,relDiffs] = fista_wRestart( x, g, gGrad, proxth [, ...
+  %   'g', g, 'h', h, 'N', N, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
@@ -23,10 +23,15 @@ function [xStar,objectiveValues] = fista_wRestart( x, gGrad, proxth, varargin )
   %     objective values.
   % N - the number of iterations that FISTA will perform
   % t - step size (default is 1)
+  % tol - if relDiff is less than this value then optimization ends
   % verbose - if set then prints fista iteration
   %
   % Outputs:
   % xStar - the optimal point
+  %
+  % Optional Outputs:
+  % objectiveValues - value for each iteration
+  % relDiffs - value for each iteration
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -35,31 +40,51 @@ function [xStar,objectiveValues] = fista_wRestart( x, gGrad, proxth, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  [xStar,objectiveValues,relDiffs] = fista_wRestart( x, g, gGrad, proxth [, ... ' );
+    disp( '  ''g'', g, ''h'', h, ''N'', N, ''tol'', tol, ''verbose'', verbose ] ) ' );
+    if nargout > 0, xStar = [];  end
+    if nargout > 1, objectiveValues = []; end
+    if nargout > 2, relDiffs = []; end
+    return
+  end
+
+
+  defaultTol = 1d-4;
+  
   p = inputParser;
   p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 't', 1, @isnumeric );
+  p.addParameter( 'tol', defaultTol, @(x) isnumeric(x) || numel(x) == 0 );
   p.addParameter( 'verbose', 0, @isnumeric );
   p.parse( varargin{:} );
   g = p.Results.g;
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
   t = p.Results.t;  % t0 must be greater than 0
+  tol = p.Results.tol;
   verbose = p.Results.verbose;
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
   
-  calculateObjectiveValues = 0;
+  calculateObjectiveValues = false;
   if nargout > 1
     if numel(h) == 0
       warning('fista.m - Cannot calculate objective values without h function handle');
     else
-      objectiveValues = zeros(N,1);
-      calculateObjectiveValues = 1;
+      objectiveValues = zeros( N, 1 );
+      calculateObjectiveValues = true;
     end
   end
 
+  calculateRelDiffs = false;
+  if numel( tol ) > 0  &&  tol > 0  &&  tol < Inf
+    calculateRelDiffs = true;
+    relDiffs = zeros( N, 1 );
+  end
+  
   z = x;
   y = [];
   restarted = 0;
@@ -82,6 +107,14 @@ function [xStar,objectiveValues] = fista_wRestart( x, gGrad, proxth, varargin )
     lastZ = z;
     z = y + (k/(k+3)) * (y-lastY);
 
+    if calculateRelDiffs == true
+      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
+      relDiffs( iter + 1 ) = relDiff;
+      if relDiff < tol
+        break;
+      end
+    end
+
     traj = z - lastZ;
     if dotP( traj, gGradZ ) > 0 && restarted == 0
       % Restarts when trajectory and -gradient form oblique angles
@@ -95,6 +128,13 @@ function [xStar,objectiveValues] = fista_wRestart( x, gGrad, proxth, varargin )
     end
     iter = iter + 1;
 
+  end
+
+  if calculateObjectiveValues == true
+    objectiveValues = objectiveValues( 1 : iter );
+  end
+  if calculateRelDiffs == true
+    relDiffs = relDiffs( 1 : iter );
   end
 
   xStar = y;
