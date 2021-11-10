@@ -1,7 +1,7 @@
 
-function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin )
+function [xStar,objectiveValues] = fista_wRestart( x, gGrad, proxth, varargin )
   % [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth [, ...
-  %   'h', h, 'N', N, 'verbose', verbose ] )
+  %   'g', g, 'h', h, 'N', N, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
@@ -11,14 +11,14 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   %
   % Inputs:
   % x - the starting point
-  % g - a function handle representing the g function; accepts a vector x
-  %     as input and returns a scalar.
   % gGrad - a function handle representing the gradient function of g;
   %     input: the point to evaluation, output: the gradient vector
   % proxth - the proximal operator of the h function (with parameter t);
   %     two inputs: the vector and the scalar value of the parameter t
   %
   % Optional Inputs:
+  % g - a function handle representing the g function; accepts a vector x
+  %     as input and returns a scalar.
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
   % N - the number of iterations that FISTA will perform
@@ -36,11 +36,13 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   % purpose.
 
   p = inputParser;
+  p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'verbose', 0, @isnumeric );
   p.parse( varargin{:} );
+  g = p.Results.g;
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
   t = p.Results.t;  % t0 must be greater than 0
@@ -59,8 +61,7 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   end
 
   z = x;
-  lastZ = z;
-  y = 0;
+  y = [];
   restarted = 0;
 
   k = 0;
@@ -73,20 +74,23 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
 
     gGradZ = gGrad( z );
     x = z - t * gGradZ;
+
     lastY = y;
     y = proxth( x, t );
+    if numel( lastY ) == 0, lastY = y; end
+    
+    lastZ = z;
     z = y + (k/(k+3)) * (y-lastY);
 
     traj = z - lastZ;
     if dotP( traj, gGradZ ) > 0 && restarted == 0
       % Restarts when trajectory and -gradient form oblique angles
       restarted = 1;
-      z = lastZ;
+      y = [];
       k = 0;
       nRestarts = nRestarts + 1;
     else
       restarted = 0;
-      lastZ = z;
       k = k + 1;
     end
     iter = iter + 1;
@@ -94,6 +98,8 @@ function [xStar,objectiveValues] = fista_wRestart( x, g, gGrad, proxth, varargin
   end
 
   xStar = y;
-  disp([ 'Fista w Restart Number of restarts: ', num2str(nRestarts) ]);
+  if verbose == true
+    disp([ 'Fista w Restart Number of restarts: ', num2str(nRestarts) ]);
+  end
 end
 
