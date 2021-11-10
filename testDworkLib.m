@@ -395,7 +395,7 @@ function testDworkLib
 
   normATA = norm( A' * A );
   t = 0.999 / normATA;
-  xHat_leastSquares = fista_wRestart( x0, gGrad, proxth, 't', t, 'N', 1000 );
+  xHat_leastSquares = fista_wRestart( x0, gGrad, proxth, 't', t, 'tol', 1d-6, 'N', 1000 );
 
   err = norm( xHat_leastSquares - bestX ) / M;
   if err < 1d-7
