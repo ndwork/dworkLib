@@ -380,6 +380,30 @@ function testDworkLib
     error( 'fista test 1 failed' );
   end
 
+  %% fista_wRestart
+  M = 300;
+  N = 20;
+  A = rand(M,N);
+  b = rand(M,1);
+
+  bestX = A \ b;
+
+  %g = @(x) 0.5 * norm( A*x - b, 2 ).^2;
+  gGrad = @(x) A' * A * x - A' * b;
+  proxth = @(x,t) x;  % Least squares
+  x0 = zeros(N,1);
+
+  normATA = norm( A' * A );
+  t = 0.999 / normATA;
+  xHat_leastSquares = fista_wRestart( x0, gGrad, proxth, 't', t, 'N', 1000 );
+
+  err = norm( xHat_leastSquares - bestX ) / M;
+  if err < 1d-7
+    disp( 'fista_wRestart passed' );
+  else
+    error( 'fista_wRestart failed' );
+  end
+
   %% fitPolyToData2
   xOrder = 3;
   yOrder = 2;
