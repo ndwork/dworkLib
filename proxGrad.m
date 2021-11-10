@@ -46,7 +46,7 @@ function [xStar,objectiveValues] = proxGrad( x, g, gGrad, proxth, varargin )
   t = p.Results.t;  % t0 must be greater than 0
   verbose = p.Results.verbose;
 
-  if t <= 0, error('fista: t0 must be greater than 0'); end;
+  if t <= 0, error('fista: t0 must be greater than 0'); end
   
   calculateObjectiveValues = 0;
   if nargout > 1
@@ -59,7 +59,7 @@ function [xStar,objectiveValues] = proxGrad( x, g, gGrad, proxth, varargin )
   end
 
   for k=0:N-1
-    if verbose, disp([ 'proxGrad Iteration: ', num2str(k) ]); end;
+    if verbose, disp([ 'proxGrad Iteration: ', num2str(k) ]); end
     if numel(calculateObjectiveValues) > 0, objectiveValues(k+1) = g(x) + h(x); end
 
     y = x - t * gGrad( x );
