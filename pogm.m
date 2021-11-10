@@ -1,6 +1,6 @@
 
-function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = pogm( x, g, gGrad, proxth [, N, ...
+function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
+  % [xStar,objectiveValues,relDiffs] = pogm( x, g, gGrad, proxth [, N, ...
   %   'g', g, 'h', h, 't', t, 'verbose', verbose ] )
   %
   % This function implements the POGM optimization algorithm
@@ -68,6 +68,12 @@ function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
     end
   end
 
+  calculateRelDiffs = false;
+  if nargout > 2 || verbose == true
+    relDiffs = zeros(N,1);
+    calculateRelDiffs = true;
+  end
+  
   theta = 1;
   w = x;
   z = x;
@@ -85,6 +91,7 @@ function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
     lastW = w;
     w = x - t * gGrad( x );
 
+    lastZ = z;
     z = w ...
       + ( lastTheta - 1 ) / theta * ( w - lastW ) ...
       + lastTheta / theta * ( w - x ) ...
@@ -92,6 +99,10 @@ function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
 
     x = proxth( z, gamma );
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(x) + h(x); end
+    if calculateRelDiffs == true
+      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
+      relDiffs(k+1) = relDiff;
+    end
 
     if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
@@ -99,6 +110,9 @@ function [xStar,objectiveValues] = pogm( x, gGrad, proxth, varargin )
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', ...
           num2str( objectiveValues(k+1), 15 ) ];   %#ok<AGROW>
+      end
+      if calculateRelDiffs > 0
+        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiffs(k+1) ) ];
       end
       disp( verboseString );
     end
