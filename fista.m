@@ -1,6 +1,6 @@
 
-function [xStar,objectiveValues] = fista( x, gGrad, proxth, varargin )
-  % [xStar,objectiveValues] = fista( x, gGrad, proxth [, ...
+function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
+  % [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth [, ...
   %   'g', g, 'h', h, 'N', N, 't', t, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
@@ -59,11 +59,17 @@ function [xStar,objectiveValues] = fista( x, gGrad, proxth, varargin )
     if numel(h) == 0 || numel(g) == 0
       error( 'fista.m - Cannot calculate objective values without g and h function handles' );
     else
-      objectiveValues = zeros(N,1);
+      objectiveValues = zeros( N, 1 );
       calculateObjectiveValues = 1;
     end
   end
 
+  calculateRelDiffs = false;
+  if nargout > 2 || verbose == true
+    relDiffs = zeros( N, 1 );
+    calculateRelDiffs = true;
+  end
+  
   z = x;
   y = [];
 
@@ -76,11 +82,19 @@ function [xStar,objectiveValues] = fista( x, gGrad, proxth, varargin )
 
     if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
 
+    if calculateRelDiffs == true
+      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
+      relDiffs(k+1) = relDiff;
+    end
+
     if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'FISTA Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0
         verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+      end
+      if calculateRelDiffs > 0
+        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiffs(k+1) ) ];   %#ok<AGROW>
       end
       disp( verboseString );
     end

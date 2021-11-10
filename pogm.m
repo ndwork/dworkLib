@@ -112,7 +112,7 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
           num2str( objectiveValues(k+1), 15 ) ];   %#ok<AGROW>
       end
       if calculateRelDiffs > 0
-        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiffs(k+1) ) ];
+        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiffs(k+1) ) ];   %#ok<AGROW>
       end
       disp( verboseString );
     end
