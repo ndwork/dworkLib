@@ -118,7 +118,8 @@ function [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth, 
       extrapRelDiff  = Inf;
       while nExtraped < nMaxExtrap  &&  extrapRelDiff  > tol  &&  k < N
         dz = V * c;
-        zBar = z + dz;
+        xBar = z + dz;
+        zBar = proxth( xBar, t );
         objValueBar = g( zBar ) + h( zBar );
         dObjValue = objectiveValues( k + 1 ) - objectiveValues( k );
           % Note:  k >= q at this point.
