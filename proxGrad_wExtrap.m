@@ -153,6 +153,9 @@ function [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth, 
     k = k + 1;
   end
 
+  if calculateObjectiveValues == true, objectiveValues = objectiveValues( 1 : k ); end
+  if calculateRelDiffs == true, relDiffs = relDiffs( 1 : k ); end
+
   xStar = z;
 end
 
