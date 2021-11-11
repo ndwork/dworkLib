@@ -261,8 +261,9 @@ end
 
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
 
-  defaultNIter = 250;  % 300 works well
-  defaultAlg = 'adaptiveAcceleration';
+  defaultNIter = 1000;
+  %defaultAlg = 'fista_wExtrap';
+  defaultAlg = 'proxGrad_wExtrap';
 
   p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
@@ -330,10 +331,10 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
 
     expNGammas = exp( -N ./ gamma );
 
-    p = parforProgress( nIn );
+    %p = parforProgress( nIn );
     parfor tIndx = 1 : nIn
-      p.progress( tIndx, 1000 );
-      
+      %p.progress( tIndx, 2500 );
+
       rowInSum = 0;
       eIndx = 0;
       for segIndx = 1 : nSegs
@@ -372,7 +373,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
 
       out{ tIndx } = rowInSum;
     end
-    p.clean;
+    %p.clean;
 
     out = cell2mat( out );
   end
@@ -390,8 +391,8 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
     [out,costPerPixel] = calculateCost_GP( psf, w, gamma, mu );   %#ok<ASGLU>
   end
 
-  h = @(w) 0;
-  
+  h = @(w) indicatorFunction( sum( w(:) ), [0.999 1.001] );
+
   function out = gGrad( w )
     out = applyA( w );
 
@@ -410,15 +411,9 @@ saveDir = [ './out/case_', indx2str(datacase,99), '/saves/scaling_', num2str(dis
 algDir = [ saveDir, '/', alg ];
 mkdir( saveDir );  mkdir( algDir );
 
-w0File = [ saveDir, '/w0.mat' ];
-if exist( w0File, 'file' )
-  load( w0File, 'w0' );
-else
-  %w0 = makePrecompWeights_2D( traj, N, 'alg', 'VORONOI' );
+  w0 = makePrecompWeights_2D( traj, 'sImg', N, 'alg', 'VORONOI' );
   %w0 = (1/size(traj,1)) * ones( size(traj,1), 1 );
-  w0 = makePrecompWeights_2D_JACKSON( traj, N, 'scaleIt', false );
-  save( w0File, 'w0' );
-end
+  %w0 = makePrecompWeights_2D_JACKSON( traj, N );
 
 nFile = [ saveDir, '/normA.mat' ];
 if exist( nFile, 'file' )
@@ -430,25 +425,38 @@ end
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
-relDiffs = [];
-objValues = [];
+  relDiffs = [];
+  objValues = [];
+  tol = 1d-4;
   if strcmp( 'adaptiveAcceleration', alg )
-    tol = 1d-3;
     [ w, objValues, relDiffs ] = adaptiveAccelerationOptimization( w0, @gGrad, 'proxth', proxth, ...
       'g', @g, 'h', h, 'N', nIter, 't', stepSize, 'verbose', true );
 
+  elseif strcmp( 'fista_wExtrap', alg )
+    [ w, objValues, relDiffs ] = fista_wExtrap( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'verbose', true );
+
   elseif strcmp( 'fista_wLS', alg )
     t0 = 10 * stepSize;
-    tol = 1d-3;
+    tol = 1d-4;
     [ w, objValues, relDiffs ] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
       'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
+  elseif strcmp( 'fista_wRestart', alg )
+    [ w, objValues, relDiffs ] = fista_wRestart( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'tol', tol, 'verbose', true );
+    
   elseif strcmp( 'pogm', alg )
     [ w, objValues ] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
 
+  elseif strcmp( 'proxGrad_wExtrap', alg )
+    [ w, objValues, relDiffs ] = proxGrad_wExtrap( w0, @gGrad, proxth, 'N', nIter, ...
+      't', stepSize, 'tol', tol, 'g', @g, 'h', h, 'verbose', true );
+
   elseif strcmp( 'projSubgrad', alg )
-    [ w, objValues ] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, 't', stepSize, 'N', nIter );
+    [ w, objValues ] = projSubgrad( w0, @gGrad, @projectOntoProbSimplex, 'g', @g, ...
+      't', stepSize, 'N', nIter );
 
   elseif strcmp( 'proxSVRG', alg )
     [ w, objValues, relDiffs ] = proxSVRG( w0, stepSize, @gGradHat, proxth, ...
@@ -495,8 +503,6 @@ function [out,costPerPixel] = calculateCost_GP( psf, weights, distWeight, mu )
 end
 
 
-
-
 function weights = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
   % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
@@ -504,14 +510,14 @@ function weights = makePrecompWeights_2D_JACKSON( traj, N, varargin )
   checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
   p = inputParser;
   p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'scaleIt', true, @islogical );
   p.addParameter( 'W', [], checknum );
   p.addParameter( 'nC', [], checknum );
-  p.addParameter( 'scaleIt', true, @islogical );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
+  scaleIt = p.Results.scaleIt;
   W = p.Results.W;
   nC = p.Results.nC;
-  scaleIt = p.Results.scaleIt;
 
   % Make the Kaiser Bessel convolution kernel
   Ny = N(1);  Nx = N(2);
@@ -522,9 +528,9 @@ function weights = makePrecompWeights_2D_JACKSON( traj, N, varargin )
 
   nTraj = size( traj, 1 );
   weights = 1 ./ applyC_2D( ones( nTraj, 1 ), traj, traj, kCy, kCx, Cy, Cx );
-
+  
   if scaleIt == true
-    weights = weights / sum( weights );
+    weights = weights / sum( weights(:) );
   end
 end
 
