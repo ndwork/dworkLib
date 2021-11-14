@@ -1,5 +1,5 @@
 
-function [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth, varargin )
+function [xStar,objectiveValues,relDiffs,extrapolated] = proxGrad_wExtrap( x, gGrad, proxth, varargin )
   % [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth [, ...
   %   'g', g, 'h', h, 'N', N, 'q', q, 't', t, 'tol', tol, 'verbose', verbose ] )
   %
@@ -77,6 +77,10 @@ function [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth, 
     relDiffs = zeros(N,1);
   end
 
+  if nargout > 3
+    extrapolated = zeros(N,1);
+  end
+
   z = x;
   V = zeros( numel(z), q );
   nSinceExtrap = 0;
@@ -132,6 +136,7 @@ function [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth, 
 
         z = zBar;
         k = k + 1;
+        if nargout > 3, extrapolated( k ) = 1; end
         objectiveValues( k + 1 ) = objValueBar;
         if calculateRelDiffs == true
           extrapRelDiff = norm( dz(:) ) / norm( z(:) );
