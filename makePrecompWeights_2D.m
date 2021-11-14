@@ -422,6 +422,7 @@ else
   normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
   save( nFile, 'normA' );
 end
+extrapolated = [];
   grdNrm = normA + ( 0.5 * mu / nTraj );  % bound on norm of gradient
   stepSize = 0.99 / grdNrm;
 
@@ -451,7 +452,7 @@ end
       'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'proxGrad_wExtrap', alg )
-    [ w, objValues, relDiffs ] = proxGrad_wExtrap( w0, @gGrad, proxth, 'N', nIter, ...
+    [ w, objValues, relDiffs, extrapolated ] = proxGrad_wExtrap( w0, @gGrad, proxth, 'N', nIter, ...
       't', stepSize, 'tol', tol, 'g', @g, 'h', h, 'verbose', true );
 
   elseif strcmp( 'projSubgrad', alg )
@@ -467,7 +468,7 @@ end
       'g', @g, 'h', @h, 'nEpochs', 100, 'nStoch', 2000, 'saveEvery', 20, 'verbose', true );
 
   end
-save( [ algDir, '/results.mat' ], 'w', 'objValues', 'relDiffs' );
+save( [ algDir, '/results.mat' ], 'w', 'objValues', 'relDiffs', 'extrapolated' );
   flag = 0;
 
   % Now find kappa scaling
@@ -582,7 +583,7 @@ function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, va
   end
 
   b = ones( size( w0 ) );
-  [ weights, flag, residual, nIter ] = lsqr( @applyA, b, [], 60, [], [], w0 );
+  [ weights, flag, residual, nIter ] = lsqr( @applyA, b, [], 100, [], [], w0 );
 
   weights = weights / sum( weights );
 end
