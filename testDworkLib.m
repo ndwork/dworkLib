@@ -869,7 +869,7 @@ function testDworkLib
   normA = sqrt( s(1,1) );
   tau = 0.01 / s(1);
   [xStar,objValues] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
-    'N', 10000, 'f', f, 'g', g );   %#ok<ASGLU>
+    'N', 10000, 'f', f, 'g', g, 'printEvery', 1000, 'verbose', true );   %#ok<ASGLU>
   xDiff = norm( x(:) - xStar(:) );
   fprintf([ '\npdhg ran to completion with xDiff ', num2str(xDiff), '\n' ]);
 
