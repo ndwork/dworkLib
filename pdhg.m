@@ -135,7 +135,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
       if nargout > 1
         verboseStr = [ verboseStr, '  objective value: ', num2str( objValues( optIter ) ) ];   %#ok<AGROW>
       end
-      if nargout > 2
+      if nargout > 2  ||  ( numel(tol) > 0  &&  tol > 0  &&  tol < Inf )
         verboseStr = [ verboseStr, '  relative diff: ', num2str( relDiff( optIter ) ) ];   %#ok<AGROW>
       end
       if mod( optIter, printEvery ) == 1  ||  optIter == 1, disp( verboseStr ); end
