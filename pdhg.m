@@ -102,7 +102,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
 
   optIter = 0;
   relDiff = Inf;
-  while optIter <= N
+  while optIter < N
     optIter = optIter + 1;
 
     if optIter == 1 && numel( z ) == 0
