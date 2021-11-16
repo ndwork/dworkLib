@@ -1,8 +1,8 @@
 
-function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
-  % [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ...
+function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
+  % [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'sigma', sigma, ...
-  %    'lambda', lambda, 'theta', theta, 'verbose', verbose, 'z', z ] )
+  %    'lambda', lambda, 'theta', theta, 'tol', tol, 'verbose', verbose, 'z', z ] )
   %
   % Implements the Primal Dual Hybrid Gradient (Chambolle-Pock) method that
   % solves problems of the form:  minimize f( x ) + g( A x )
@@ -29,6 +29,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   %
   % Optional Outputs:
   % objValues - a 1D array containing the objective value of each iteration
+  % relDiffs - a 1D array containing the relative difference of each iteration
   %
   % Written by Nicholas Dwork - Copyright 2019
   %
@@ -41,12 +42,14 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
     disp( 'Usage;  ' );
     disp( '  [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ... ');
     disp( '  ''A'', A, ''f'', f, ''g'', g, ''N'', N, ''normA'', normA, ''sigma'', sigma, ...' );
-    disp( '  ''lambda'', lambda, ''theta'', theta, ''verbose'', verbose, ''z'', z ] )' );
+    disp( '  ''lambda'', lambda, ''theta'', theta, ''tol'', tol, ''verbose'', verbose, ''z'', z ] )' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objValues = []; end
     return;
   end
-  
+
+  defaultTol = 1d-4;
+
   p = inputParser;
   p.addParameter( 'A', [] );
   p.addParameter( 'f', [] );
@@ -55,6 +58,7 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'normA', [], @ispositive );
   p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 1 );
+  p.addParameter( 'tol', defaultTol, @(x) numel(x) == 0 || ispositive(x) );
   p.addParameter( 'lambda', 1, @(x) x >= 0 && x <= 2 );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
@@ -67,11 +71,14 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   normA = p.Results.normA;
   sigma = p.Results.sigma;
   theta = p.Results.theta;
+  tol = p.Results.tol;
   lambda = p.Results.lambda;
   printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
   z = p.Results.z;
 
+  if numel( tol ) == 0, tol = defaultTol; end
+  
   if numel( A ) == 0
     applyA = @(x) x;
     applyAT = @(x) x;
@@ -91,23 +98,11 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
   end
 
   if nargout > 1,  objValues = zeros( N, 1 ); end
+  if nargout > 2,  relDiffs = zeros( N, 1 ); end
 
-  for optIter = 1 : N
-    if nargout > 1
-      objValues( optIter ) = f( x ) + g( applyA( x ) );
-    end
-
-    if verbose == true
-      if mod(optIter,printEvery) == 0 || optIter == 1
-        if nargout > 1
-          disp([ 'pdhg: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
-            'objective value: ', num2str( objValues( optIter ) ) ]);
-        else
-          disp([ 'pdhg: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
-        end
-      end
-    end
-
+  optIter = 1;
+  relDiff = Inf;
+  while optIter <= N  &&  relDiff > tol
     if optIter == 1 && numel( z ) == 0
       % z == 0 => ATz=0 => tmp == x
       z = 0;
@@ -123,9 +118,34 @@ function [xStar,objValues] = pdhg( x, proxf, proxgConj, tau, varargin )
     tmp = z + sigma * AxTmp;
     zBar = proxgConj( tmp, sigma );
 
+    lastX = x;
     x = x + lambda * ( xBar - x );
     z = z + lambda * ( zBar - z );
+
+    if nargout > 1
+      objValues( optIter ) = f( x ) + g( applyA( x ) );
+    end
+    if nargout > 2
+      relDiff = norm( x(:) - lastX(:) ) / norm( lastX(:) );
+      relDiffs( optIter ) = relDiff;
+    end
+
+    if verbose == true
+      verboseStr = [ 'pdhg: iteration ', indx2str(optIter,N), ' of ', num2str(N) ];
+      if nargout > 1
+        verboseStr = [ verboseStr, '  objective value: ', num2str( objValues( optIter ) ) ];   %#ok<AGROW>
+      end
+      if nargout > 2
+        verboseStr = [ verboseStr, '  relative diff: ', num2str( relDiff( optIter ) ) ];   %#ok<AGROW>
+      end
+      if mod( optIter, printEvery ) == 1  ||  optIter == 1, disp( verboseStr ); end
+    end
+
+    optIter = optIter + 1;
   end
+
+  if nargout > 1, objValues = objValues( 1 : optIter ); end
+  if nargout > 2, relDiffs = relDiffs( 1 : optIter ); end
 
   xStar = x;
 end
