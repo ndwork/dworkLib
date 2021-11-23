@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   % [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth [, ...
-  %   'g', g, 'h', h, 'N', N, 't', t, 'verbose', verbose ] )
+  %   'g', g, 'h', h, 'N', N, 't', t, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
@@ -21,6 +21,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   %     objective values.
   % N - the number of iterations that FISTA will perform (default is 100)
   % t - step size (default is 1)
+  % tol - runs until relDiff is less than tol or until iterations is N
   % verbose - if set then prints fista iteration
   %
   % Outputs:
@@ -41,6 +42,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x)==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
+  p.addParameter( 'tol', 1d-4, @(x) numel(x) == 0  ||  x >= 0 );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   g = p.Results.g;
@@ -48,6 +50,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   N = p.Results.N;  % total number of iterations
   printEvery = p.Results.printEvery;  % display result printEvery iterations
   t = p.Results.t;  % t0 must be greater than 0
+  tol = p.Results.tol;
   verbose = p.Results.verbose;
 
   if numel( N ) == 0, N = defaultN; end
@@ -65,27 +68,26 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   end
 
   calculateRelDiffs = false;
-  if nargout > 2 || verbose == true
-    relDiffs = zeros( N, 1 );
+  if nargout > 2  ||  verbose == true  ||  ( numel(tol) > 0 && tol < Inf )
     calculateRelDiffs = true;
   end
-  
+
+  if nargout > 2, relDiffs = zeros( N, 1 ); end
+
   z = x;
   y = [];
 
-  for k = 0 : N-1
+  k = 0;
+  while k < N
+    k = k + 1;
+
     x = z - t * gGrad( z );
 
     lastY = y;
     y = proxth( x, t );
     if numel( y ) == 0, y = lastY; end
 
-    if calculateObjectiveValues > 0, objectiveValues(k+1) = g(y) + h(y); end
-
-    if calculateRelDiffs == true
-      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
-      relDiffs(k+1) = relDiff;
-    end
+    if calculateObjectiveValues > 0, objectiveValues(k) = g(y) + h(y); end
 
     if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
@@ -99,8 +101,25 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
       disp( verboseString );
     end
 
-    z = y + ( k / (k+3) ) * ( y - lastY );
+    lastZ = z;
+    if numel( lastY ) > 0
+      z = y + ( k / (k+3) ) * ( y - lastY );
+    else
+      z = y;
+    end
+
+    if calculateRelDiffs == true
+      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
+    end
+    if nargout < 2, relDiffs(k) = relDiff; end
+
+    if numel(tol) > 0  &&  tol < Inf  &&  relDiff < tol
+      break;
+    end
   end
+
+  if nargout < 1, objectiveValues = objectiveValues( 1 : k ); end
+  if nargout < 2, relDiffs = relDiffs( 1 : k ); end
 
   xStar = y;
 end

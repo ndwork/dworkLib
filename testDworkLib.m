@@ -316,10 +316,10 @@ function testDworkLib
   
   normATA = norm( A' * A );
   t = 0.999 / normATA;
-  xHat_leastSquares = fista( x0, gGrad, proxth, 't', t, 'N', 1000 );
+  xHat_leastSquares = fista( x0, gGrad, proxth, 't', t, 'tol', 1d-5, 'N', 1000 );
   
   err = norm( xHat_leastSquares - bestX ) / M;
-  if err < 1d-7
+  if err < 1d-6
     disp( 'fista test 1 passed' );
   else
     error( 'fista test 1 failed' );
@@ -868,7 +868,7 @@ function testDworkLib
   [~,s,~] = svd( A );
   normA = sqrt( s(1,1) );
   tau = 0.01 / s(1);
-  [xStar,objValues] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
+  [xStar,objValues,relDiffs] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
     'N', 10000, 'f', f, 'g', g, 'printEvery', 1000, 'verbose', true );   %#ok<ASGLU>
   xDiff = norm( x(:) - xStar(:) );
   fprintf([ '\npdhg ran to completion with xDiff ', num2str(xDiff), '\n' ]);
