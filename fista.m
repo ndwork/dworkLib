@@ -76,6 +76,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
 
   z = x;
   y = [];
+  maxAbsZ = max( abs( z(:) ) );
 
   k = 0;
   while k < N
@@ -88,11 +89,13 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
     if numel( y ) == 0, y = lastY; end
 
     lastZ = z;
+    lastMaxAbsZ = maxAbsZ;
     if numel( lastY ) > 0
       z = y + ( k / (k+3) ) * ( y - lastY );
     else
       z = y;
     end
+    maxAbsZ = max( abs( z(:) ) );
 
     if calculateObjectiveValues > 0, objectiveValues(k) = g(z) + h(z); end
 
@@ -116,8 +119,8 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
     if numel(tol) > 0  &&  tol < Inf  &&  relDiff < tol
       break;
     end
-    if max( abs( z(:) ) ) == 0  && max( abs( lastZ(:) ) ) == 0
-      break
+    if maxAbsZ == 0  && lastMaxAbsZ == 0
+      break;
     end
   end
 

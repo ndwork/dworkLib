@@ -105,6 +105,8 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     calculateRelDiffs = true;
   end
 
+  maxAbsX = max( abs( x(:) ) );
+  
   optIter = 0;
   relDiff = Inf;
   while optIter < N
@@ -126,8 +128,11 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     zBar = proxgConj( tmp, sigma );
 
     lastX = x;
+    lastMaxAbsX = maxAbsX;
     x = x + lambda * ( xBar - x );
     z = z + lambda * ( zBar - z );
+
+    maxAbsX = max( abs( x(:) ) );
 
     if nargout > 1
       objValues( optIter ) = f( x ) + g( applyA( x ) );
@@ -151,8 +156,8 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     if optIter > 1  &&  numel( tol ) > 0  &&  tol > 0  &&  tol < Inf
       if relDiff < tol, break; end
     end
-    if max( abs( x(:) ) ) == 0  && max( abs( lastX(:) ) ) == 0
-      break
+    if maxAbsX == 0  && lastMaxAbsX == 0
+      break;
     end
   end
 
