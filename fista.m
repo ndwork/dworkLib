@@ -118,8 +118,8 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
     end
   end
 
-  if nargout < 1, objectiveValues = objectiveValues( 1 : k ); end
-  if nargout < 2, relDiffs = relDiffs( 1 : k ); end
+  if nargout > 1, objectiveValues = objectiveValues( 1 : k ); end
+  if nargout > 2, relDiffs = relDiffs( 1 : k ); end
 
   xStar = z;
 end
