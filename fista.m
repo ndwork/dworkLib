@@ -116,6 +116,9 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
     if numel(tol) > 0  &&  tol < Inf  &&  relDiff < tol
       break;
     end
+    if max( abs( z(:) ) ) == 0  && max( abs( lastZ(:) ) ) == 0
+      break
+    end
   end
 
   if nargout > 1, objectiveValues = objectiveValues( 1 : k ); end

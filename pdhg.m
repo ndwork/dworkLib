@@ -147,9 +147,12 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
       end
       if mod( optIter, printEvery ) == 0  ||  optIter == 1, disp( verboseStr ); end
     end
-    
+
     if optIter > 1  &&  numel( tol ) > 0  &&  tol > 0  &&  tol < Inf
       if relDiff < tol, break; end
+    end
+    if max( abs( x(:) ) ) == 0  && max( abs( lastX(:) ) ) == 0
+      break
     end
   end
 
