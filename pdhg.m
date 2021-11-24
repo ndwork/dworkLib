@@ -100,6 +100,11 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   if nargout > 1,  objValues = zeros( N, 1 ); end
   if nargout > 2,  relDiffs = zeros( N, 1 ); end
 
+  calculateRelDiffs = false;
+  if nargout > 2  ||  ( numel( tol ) > 0  &&  tol < Inf )
+    calculateRelDiffs = true;
+  end
+
   optIter = 0;
   relDiff = Inf;
   while optIter < N
@@ -127,17 +132,17 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     if nargout > 1
       objValues( optIter ) = f( x ) + g( applyA( x ) );
     end
-    if nargout > 2  ||  ( numel(tol) > 0  &&  tol > 0  &&  tol < Inf )
+    if calculateRelDiffs == true
       relDiff = norm( x(:) - lastX(:) ) / norm( lastX(:) );
-      relDiffs( optIter ) = relDiff;
     end
+    if nargout > 2, relDiffs( optIter ) = relDiff; end
 
     if verbose == true
       verboseStr = [ 'pdhg: iteration ', indx2str(optIter,N), ' of ', num2str(N) ];
       if nargout > 1
         verboseStr = [ verboseStr, ',  objective value: ', num2str( objValues( optIter ) ) ];   %#ok<AGROW>
       end
-      if nargout > 2  ||  ( numel(tol) > 0  &&  tol > 0  &&  tol < Inf )
+      if calculateRelDiffs == true
         verboseStr = [ verboseStr, ',  relative diff: ', num2str( relDiff ) ];   %#ok<AGROW>
       end
       if mod( optIter, printEvery ) == 0  ||  optIter == 1, disp( verboseStr ); end
