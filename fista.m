@@ -87,7 +87,19 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
     y = proxth( x, t );
     if numel( y ) == 0, y = lastY; end
 
-    if calculateObjectiveValues > 0, objectiveValues(k) = g(y) + h(y); end
+    lastZ = z;
+    if numel( lastY ) > 0
+      z = y + ( k / (k+3) ) * ( y - lastY );
+    else
+      z = y;
+    end
+
+    if calculateObjectiveValues > 0, objectiveValues(k) = g(z) + h(z); end
+
+    if calculateRelDiffs == true
+      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
+    end
+    if nargout > 2  &&  k > 1, relDiffs(k) = relDiff; end
 
     if verbose>0 && mod( k, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
@@ -96,23 +108,11 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
         verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
       end
       if calculateRelDiffs > 0
-        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiffs(k+1) ) ];   %#ok<AGROW>
+        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiff ) ];   %#ok<AGROW>
       end
       disp( verboseString );
     end
-
-    lastZ = z;
-    if numel( lastY ) > 0
-      z = y + ( k / (k+3) ) * ( y - lastY );
-    else
-      z = y;
-    end
-
-    if calculateRelDiffs == true
-      relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
-    end
-    if nargout < 2, relDiffs(k) = relDiff; end
-
+    
     if numel(tol) > 0  &&  tol < Inf  &&  relDiff < tol
       break;
     end
@@ -121,6 +121,6 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   if nargout < 1, objectiveValues = objectiveValues( 1 : k ); end
   if nargout < 2, relDiffs = relDiffs( 1 : k ); end
 
-  xStar = y;
+  xStar = z;
 end
 
