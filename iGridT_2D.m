@@ -10,8 +10,8 @@ function out = iGridT_2D( F, traj, N, varargin )
   %
   % Inputs:
   %   F is a 1D array of M elements specifying the k-space data values
-  %   traj is a Mx2 array specifying the k-space trajectory.
-  %     The first/second column is kx/ky
+  %   traj is a Mx2 array specifying the k-space trajectory or an M element complex array.
+  %     If Mx2, then the first/second column is kx/ky.  Otherwise, kx/ky is real/imag.
   %     The units are normalized to [-0.5,0.5).
   %   N is the size of the output image
   %     If N is a scalar, then the final image is assumed to be square
