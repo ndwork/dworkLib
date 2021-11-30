@@ -1,6 +1,6 @@
 
 function [ recon, oValues, lambda ] = csReconLASSO_msbpd( samples, lambda, varargin )
-  % recon = csReconFISTA( samples, lambda [, 'nIter', nIter, 'printEvery', printEvery, ...
+  % recon = csReconLASSO_msbpd( samples, lambda [, 'nIter', nIter, 'printEvery', printEvery, ...
   %   'transformType', transformType, 'verbose', verbose, 'waveletType', waveletType, ...
   %   'wavSplit', wavSplit ] )
   %
@@ -15,6 +15,7 @@ function [ recon, oValues, lambda ] = csReconLASSO_msbpd( samples, lambda, varar
   %   Moreover, it uses the fully sampled scheme in a way to increase
   %   sparsity in the optimization problem according to
   %   "Utilizing the Wavelet Transform's Structure in Compressed Sensing" by Dwork et al.
+  %   and "Utilizing the Structure of the Curvelet Transform with Compressed Sensing" by Dwork et al.
   %
   % Inputs:
   % samples - a 2D array that is zero wherever a sample wasn't acquired
