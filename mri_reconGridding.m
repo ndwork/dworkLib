@@ -53,7 +53,10 @@ function recons = mri_reconGridding( kData, traj, sImg, varargin )
   kData = reshape( kData, [ sData(1) nImgs ] );
 
   if ~isreal( traj )
+    sTraj = size( traj );
     traj = [ real( traj(:) ) imag( traj(:) ) ];
+    traj = reshape( traj, [ sTraj 2 ] );
+    traj = permute( traj, [ 1 ndims(traj) 2:ndims(traj)-1 ] );
   end
 
   if numel( weights ) == 0
