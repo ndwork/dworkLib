@@ -108,7 +108,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'FISTA Iteration: ', num2str(k,formatString) ];
       if calculateObjectiveValues > 0
-        verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+        verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(k) ) ];   %#ok<AGROW>
       end
       if calculateRelDiffs > 0
         verboseString = [ verboseString, ',  relDiff: ', num2str( relDiff ) ];   %#ok<AGROW>
