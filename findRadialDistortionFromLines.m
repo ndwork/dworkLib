@@ -8,6 +8,9 @@ function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
   % lines - a 1D cell array where each cell contains a set of points belonging to a line
   %   The element of each cell is a NL x 2 array where NL is the number of points for that line
   %
+  % Optional Inputs:
+  % order - the order of the parameters to identify
+  %
   % Outputs:
   % ks - a 1D array specifying the radial distortion parameters
   % c - a 2 element array specifying the center of the image
