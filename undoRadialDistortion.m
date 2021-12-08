@@ -1,6 +1,6 @@
 
 function out = undoRadialDistortion( img, ks, varargin )
-  % out = undoRadialDistortion( img, k [, c ] )
+  % out = undoRadialDistortion( img, k [, 'c', c, 'space', 'full',[] ] )
   %
   % Written according to section 7.4 of Multiple View Geometry, 2nd edition
   % by Hartley and Zisserman
