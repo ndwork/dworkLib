@@ -49,8 +49,9 @@ function recons = mri_reconGridding( kData, traj, sImg, varargin )
   weights = p.Results.weights;
 
   sData = size( kData );
-  nImgs = prod( sData(2:end) );
-  kData = reshape( kData, [ sData(1) nImgs ] );
+  nCoils = sData(2);
+  nImgs = prod( sData(3:end) );
+  kData = reshape( kData, [ sData(1) nCoils nImgs ] );
 
   if ~isreal( traj )
     sTraj = size( traj );
