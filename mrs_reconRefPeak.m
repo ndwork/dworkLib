@@ -7,8 +7,8 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
   % combination of signals from multi-element coil arrays" by Hall et al. (2014)
   %
   % Inputs:
-  % kData - array representing the Fourier values of size M x N x nSlices x nCoils x N1 x N2 x ... x N
-  %         or nTraj x nSlices x nCoils x N1 x N2 x ... x N
+  % kData - array representing the Fourier values of size M x N x nCoils x N1 x N2 x ... x N
+  %         or nTraj x nCoils x N1 x N2 x ... x N
   %
   % Optional Inputs:
   % kTraj - An Nx2 array specifying (ky,kx) for each trajectory point
@@ -46,28 +46,28 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
   sKData = size( kData );
   if numel( kTraj ) > 0
     coilSpectrums = mri_reconGridding( kData, kTraj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
-    Ns = sKData(4:end);
+    Ns = sKData(3:end);
   else
     coilSpectrums = fftshift( fftshift( uifft2( kData ), 1 ), 2 );
-    Ns = sKData(5:end);
+    Ns = sKData(4:end);
   end
   if numel( Ns ) == 0, Ns = 1; end
 
   sCSs = size( coilSpectrums );
-  coilSpectrums = reshape( coilSpectrums, [ sCSs(1:4) prod( sCSs(5:end) ) ] );
+  coilSpectrums = reshape( coilSpectrums, [ sCSs(1:3) prod( sCSs(4:end) ) ] );
 
-  coilIndx = 4;
+  coilIndx = 3;
   freqIndx = ndims( coilSpectrums );
 
   maxImgs = max( coilSpectrums, [], freqIndx );
   sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( maxImgs.^2, coilIndx ) ) );
 
-  [ M, N, nSlices, nCoils ] = size( sMaps );
-  sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N nSlices nCoils ] ), coilSpectrums );
+  [ M, N, nCoils ] = size( sMaps );
+  sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N nCoils ] ), coilSpectrums );
 
   recon = sum( sMapped, coilIndx );
-  sRecon = ones( 1, coilIndx-1 );
-  sRecon( 1 : ndims(recon) ) = size( recon );
-  recon = reshape( recon, [ sRecon(1:coilIndx-1) Ns ] );
+  recon = permute( recon, [ 1:coilIndx-1 coilIndx+1:ndims(recon) coilIndx ] );
+  sRecon = size( recon );
+  recon = reshape( recon, [ sRecon(1:2) Ns ] );
 end
 
