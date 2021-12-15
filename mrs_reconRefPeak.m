@@ -48,7 +48,7 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
     coilSpectrums = mri_reconGridding( kData, kTraj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
     Ns = sKData(3:end);
   else
-    coilSpectrums = fftshift( fftshift( uifft2( kData ), 1 ), 2 );
+    coilSpectrums = fftshift2( uifft2( ifftshift2( kData ) ) );
     Ns = sKData(4:end);
   end
   if numel( Ns ) == 0, Ns = 1; end
