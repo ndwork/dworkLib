@@ -18,6 +18,12 @@ function out = mse( est, true )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  out = mse( est, true )' );
+    if nargout > 0, out = []; end
+    return;
+  end
+
   out = norm( est(:) - true(:) )^2 / numel( est );
 
 end
