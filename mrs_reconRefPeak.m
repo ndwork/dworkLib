@@ -20,8 +20,7 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
-  % implied warranties of merchantability or fitness for a particular
-  % purpose.
+  % implied warranties of merchantability or fitness for a particular purpose.
 
   if nargin < 1
     disp( 'Usage:  [ recon, sMaps ] = mrs_reconRefPeak( kData [, ''kTraj'', kTraj ] )' );
@@ -59,8 +58,16 @@ function [ recon, sMaps ] = mrs_reconRefPeak( kData, varargin )
   coilIndx = 3;
   freqIndx = ndims( coilSpectrums );
 
-  maxImgs = max( coilSpectrums, [], freqIndx );
-  sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( maxImgs.^2, coilIndx ) ) );
+  maxImgs = zeros( sCSs(1:coilIndx) );
+  for u = 1 : size( coilSpectrums, 1 )
+    for v = 1 : size( coilSpectrums, 2 )
+      for w = 1 : size( coilSpectrums, 3 )
+        maxImgs(u,v,w) = max( coilSpectrums( u, v, w, : ), [], freqIndx );
+      end
+    end
+  end
+
+  sMaps = bsxfun( @times, maxImgs, 1 ./ sqrt( sum( abs( maxImgs ).^2, coilIndx ) ) );
 
   [ M, N, nCoils ] = size( sMaps );
   sMapped = bsxfun( @times, reshape( conj( sMaps ), [ M N nCoils ] ), coilSpectrums );
