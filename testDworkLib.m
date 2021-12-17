@@ -572,7 +572,7 @@ function testDworkLib
   end
 
 
-  %% iGridT_2D - 2D data
+  %% iGrid_2D - 2D data
   N = [ 256 256 ];
   p = 0.1;
 
@@ -592,6 +592,7 @@ function testDworkLib
   F = ( abs( kTraj(:,1) ) < ( 0.5 * p ) )  &  ...
       ( abs( kTraj(:,2) ) < ( 0.5 * p ) );
   F = F * 1.0;
+
   figure;  scatterIntensity( kTraj(:,1), kTraj(:,2), F );
   axis( [ -0.5 0.5 -0.5 0.5 ] );    axis equal;
   colorbarnice;  titlenice( 'Right answer' );
