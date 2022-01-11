@@ -1,7 +1,7 @@
 
 function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   % [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj [, 'sImg', sImg, ...
-  %   'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg ] )
+  %   'alpha', alpha, 'W', W, 'nC', nC, 'alg', alg, 'subAlg', subAlg ] )
   %
   % Determine the density pre-compensation weights to be used in gridding
   %
@@ -51,6 +51,7 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   if nargin < 1
     disp( 'Usage: [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, ...' );
     disp( '  ''sImg'', sImg, ''alpha'', alpha, ''W'', W, ''nC'', nC, ''alg'', alg ] )' );
+    disp( '  ''subAlg'', subAlg ' );
     if nargout > 0, weights = []; end
     if nargout > 1, nOptIter = []; end
     if nargout > 2, flag = []; end
@@ -68,9 +69,9 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   p.addParameter( 'nC', [], @isnumeric );
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'sImg', [], @ispositive );
-  p.addParameter( 'subAlg', [] );
   p.addParameter( 'W', [], @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
+  p.addParameter( 'subAlg', [], @(x) true );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alg = p.Results.alg;
@@ -83,9 +84,10 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   subAlg = p.Results.subAlg;
   verbose = p.Results.verbose;
   W = p.Results.W;
-
+  
   if numel( alg ) == 0, alg = defaultAlg; end
   if numel( sImg ) == 1, sImg = [ sImg sImg ]; end
+  if numel( subAlg ) == 0  &&  strcmp( alg, 'GP' ), subAlg = 'proxGrad_wExtrap'; end
 
   nOptIter = 1;
   flag = 0;
@@ -262,8 +264,11 @@ end
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
 
   defaultNIter = 1000;
+  %defaultAlg = 'fista';
   %defaultAlg = 'fista_wExtrap';
-  defaultAlg = 'proxGrad_wExtrap';
+  %defaultAlg = 'proxGrad_wExtrap';
+defaultAlg = 'fista_wRestart';
+defaultNIter = 250;
 
   p = inputParser;
   p.addOptional( 'nIter', defaultNIter, @ispositive );
