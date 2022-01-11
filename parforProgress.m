@@ -100,7 +100,7 @@ classdef parforProgress
         % n is the index of the current iteration
       fclose( fid );
       nLines = findNumLinesInFile( obj.tmpFile );
-      if mod( nLines+1, downsample ) == 1
+      if mod( nLines+1, downsample ) == 0
         disp([ obj.msgHdr, moreMsgHdr, 'Working on ', indx2str( nLines, obj.nTotal ), ' of ', ...
           num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), '%', ...
           '   index: ', indx2str( n, obj.nTotal ) ]);
