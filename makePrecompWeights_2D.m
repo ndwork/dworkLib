@@ -438,6 +438,10 @@ extrapolated = [];
     [ w, objValues, relDiffs ] = adaptiveAccelerationOptimization( w0, @gGrad, 'proxth', proxth, ...
       'g', @g, 'h', h, 'N', nIter, 't', stepSize, 'verbose', true );
 
+  elseif strcmp( 'fista', alg )
+    [ w, objValues, relDiffs ] = fista( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'verbose', true );
+
   elseif strcmp( 'fista_wExtrap', alg )
     [ w, objValues, relDiffs ] = fista_wExtrap( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
