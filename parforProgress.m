@@ -1,6 +1,8 @@
 
 classdef parforProgress
-  % p = parforProgress( [ N, tmpFile, 'msgHdr', msgHdr ] );
+  % p = parforProgress( [ N, tmpFile, 'msgHdr', msgHdr, 'msgFtr', msgFtr ] );
+  % p.progress( n, D, 'msgHdr', msgHdr, 'msgFtr', 'msgFtr' );
+  % p.clean;
   % 
   % Function measures progress of an iteration implemented with parfor
   %
@@ -34,6 +36,7 @@ classdef parforProgress
     nTotal
     tmpFile
     msgHdr
+    msgFtr
   end
 
   methods
@@ -47,14 +50,17 @@ classdef parforProgress
 
       st = dbstack;
       defaultMsgHdr = [ st(2).name, ':  ' ]; % The function caller's name (parent)
-      
+      defaultMsgFtr = [];
+
       p = inputParser;
       p.addOptional( 'tmpFile', defaultTmpFile, ...
         @(x) validateattributes(x,{'char'}) );
       p.addParameter( 'msgHdr', defaultMsgHdr, @(x) true );
+      p.addParameter( 'msgFtr', defaultMsgFtr, @(x) true );
       p.parse( varargin{:} );
       obj.tmpFile = p.Results.tmpFile;
       obj.msgHdr = p.Results.msgHdr;
+      obj.msgFtr = p.Results.msgFtr;
 
       obj.nTotal = nTotal;
       fid = fopen( obj.tmpFile, 'w' );
@@ -89,9 +95,11 @@ classdef parforProgress
       p = inputParser;
       p.addOptional( 'downsample', 1, @isnumeric );
       p.addParameter( 'msgHdr', [], @(x) true );
+      p.addParameter( 'msgFtr', [], @(x) true );
       p.parse( varargin{:} );
       downsample = p.Results.downsample;
       moreMsgHdr = p.Results.msgHdr;
+      moreMsgFtr = p.Results.msgFtr;
 
       fid = fopen( obj.tmpFile, 'a' );
       if fid<0, error( 'Unable to open parforProgress.txt temporary file' ); end
@@ -103,7 +111,7 @@ classdef parforProgress
       if mod( nLines+1, downsample ) == 0
         disp([ obj.msgHdr, moreMsgHdr, 'Working on ', indx2str( nLines, obj.nTotal ), ' of ', ...
           num2str(obj.nTotal), ': ', num2str( nLines / obj.nTotal * 100 ), '%', ...
-          '   index: ', indx2str( n, obj.nTotal ) ]);
+          '   index: ', indx2str( n, obj.nTotal ), '  ', obj.msgFtr, moreMsgFtr ]);
         drawnow( 'update' );
       end
     end
