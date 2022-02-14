@@ -86,7 +86,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, va
   if nargout > 2, relDiffs = zeros( N, 1 ); end
 
   z = x;
-  y = 0;
+  y = x;
   maxAbsZ = max( abs( z(:) ) );
 
   k = -1;
@@ -96,16 +96,14 @@ function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, va
     k = k + 1;
     iter = iter + 1;
 
-    lastX = x;
     x = z - t * gGrad( z );
 
     lastY = y;
     y = proxth( x, t );
-    if numel( y ) == 0, y = lastY; end
 
-    Gy = y - z;  % composite gradient mapping with factor of t
+    Gz = z - y;  % composite gradient mapping with factor of t
     restarted = false;
-    if dotP( Gy, x - lastX ) > 0
+    if dotP( Gz, y - lastY ) > 0
       k = 0;  % Restart by eliminating momentum
       restarted = true;
       nRestarts = nRestarts + 1;
@@ -134,7 +132,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, va
         verboseString = [ verboseString, ',  relDiff: ', num2str( relDiff ) ];   %#ok<AGROW>
       end
       if restarted == true
-        verboseStr = [ verboseStr, ' - RESTARTED' ];   %#ok<AGROW>
+        verboseString = [ verboseString, ' - RESTARTED' ];   %#ok<AGROW>
       end
       disp( verboseString );
     end
