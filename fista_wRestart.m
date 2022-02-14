@@ -1,7 +1,7 @@
 
 function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, varargin )
   % [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth [, ...
-  %   'g', g, 'h', h, 'N', N, 'tol', tol, 'verbose', verbose ] )
+  %   'g', g, 'h', h, 'N', N, 't', t, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
@@ -21,17 +21,13 @@ function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, va
   %     as input and returns a scalar.
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
-  % N - the number of iterations that FISTA will perform
+  % N - the number of iterations that FISTA will perform (default is 100)
   % t - step size (default is 1)
-  % tol - if relDiff is less than this value then optimization ends
+  % tol - runs until relDiff is less than tol or until iterations is N
   % verbose - if set then prints fista iteration
   %
   % Outputs:
   % xStar - the optimal point
-  %
-  % Optional Outputs:
-  % objectiveValues - value for each iteration
-  % relDiffs - value for each iteration
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -49,30 +45,33 @@ function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, va
     return
   end
 
+  defaultN = 100;
 
-  defaultTol = 1d-4;
-  
   p = inputParser;
   p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
-  p.addParameter( 'N', 100, @isnumeric );
+  p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x)==0 );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
-  p.addParameter( 'tol', defaultTol, @(x) isnumeric(x) || numel(x) == 0 );
-  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
+  p.addParameter( 'tol', 1d-4, @(x) numel(x) == 0  ||  x >= 0 );
+  p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   g = p.Results.g;
   h = p.Results.h;
   N = p.Results.N;  % total number of iterations
+  printEvery = p.Results.printEvery;  % display result printEvery iterations
   t = p.Results.t;  % t0 must be greater than 0
   tol = p.Results.tol;
   verbose = p.Results.verbose;
 
-  if t <= 0, error('fista: t0 must be greater than 0'); end
-  
-  calculateObjectiveValues = false;
+  if numel( N ) == 0, N = defaultN; end
+
+  if t <= 0, error('fista_wRestart: t0 must be greater than 0'); end
+
+  calculateObjectiveValues = 0;
   if nargout > 1
-    if numel(h) == 0
-      warning('fista.m - Cannot calculate objective values without h function handle');
+    if numel(h) == 0 || numel(g) == 0
+      error( 'fista_wRestart.m - Cannot calculate objective values without g and h function handles' );
     else
       objectiveValues = zeros( N, 1 );
       calculateObjectiveValues = true;
@@ -80,80 +79,81 @@ function [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth, va
   end
 
   calculateRelDiffs = false;
-  if numel( tol ) > 0  &&  tol > 0  &&  tol < Inf
+  if nargout > 2  ||  verbose == true  ||  ( numel(tol) > 0 && tol < Inf )
     calculateRelDiffs = true;
-    relDiffs = zeros( N, 1 );
   end
-  
-  z = x;
-  y = [];
-  restarted = 0;
 
-  k = 0;
+  if nargout > 2, relDiffs = zeros( N, 1 ); end
+
+  z = x;
+  y = 0;
+  maxAbsZ = max( abs( z(:) ) );
+
+  k = -1;
   iter = 0;
   nRestarts = 0;
   while iter < N
+    k = k + 1;
+    iter = iter + 1;
 
-    verboseStr = [ 'FISTA wRestart Iteration: ', indx2str(iter,N) ];
-
-    gGradZ = gGrad( z );
-    x = z - t * gGradZ;
+    lastX = x;
+    x = z - t * gGrad( z );
 
     lastY = y;
     y = proxth( x, t );
-    if numel( lastY ) == 0, lastY = y; end
+    if numel( y ) == 0, y = lastY; end
+
+    Gy = y - z;  % composite gradient mapping with factor of t
+    restarted = false;
+    if dotP( Gy, x - lastX ) > 0
+      k = 0;  % Restart by eliminating momentum
+      restarted = true;
+      nRestarts = nRestarts + 1;
+    end
 
     lastZ = z;
-    z = y + (k/(k+3)) * (y-lastY);
+    lastMaxAbsZ = maxAbsZ;
+    z = y + ( k / (k+3) ) * ( y - lastY );
+
+    maxAbsZ = max( abs( z(:) ) );
+
+    if calculateObjectiveValues > 0, objectiveValues(iter) = g(z) + h(z); end
 
     if calculateRelDiffs == true
       relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );
-      relDiffs( iter + 1 ) = relDiff;
-      if verbose == true
-        verboseStr = [ verboseStr, ',  relDiff: ', num2str( relDiff ) ];   %#ok<AGROW>
+    end
+    if nargout > 2  &&  iter > 1, relDiffs(iter) = relDiff; end
+
+    if verbose>0 && mod( iter, printEvery ) == 0
+      formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
+      verboseString = [ 'FISTA wRestart Iteration: ', num2str(iter,formatString) ];
+      if calculateObjectiveValues > 0
+        verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(iter) ) ];   %#ok<AGROW>
       end
-      if relDiff < tol
-        break;
+      if calculateRelDiffs > 0
+        verboseString = [ verboseString, ',  relDiff: ', num2str( relDiff ) ];   %#ok<AGROW>
       end
+      if restarted == true
+        verboseStr = [ verboseStr, ' - RESTARTED' ];   %#ok<AGROW>
+      end
+      disp( verboseString );
     end
 
-    if calculateObjectiveValues > 0
-      objectiveValues(iter+1) = g(z) + h(z);
-      if verbose == true
-        verboseStr = [ verboseStr, ',  obj value: ', num2str(objectiveValues(iter+1)) ];   %#ok<AGROW>
-      end
+    if numel(tol) > 0  &&  tol < Inf  &&  relDiff < tol
+      break;
     end
-    
-    traj = z - lastZ;
-    if dotP( traj, gGradZ ) > 0 && restarted == 0
-      % Restarts when trajectory and -gradient form oblique angles
-      restarted = 1;
-      y = [];
-      k = 0;
-      nRestarts = nRestarts + 1;
-      if verbose == true
-        verboseStr = [ verboseStr, ' -  RESTARTED' ];   %#ok<AGROW>
-      end
-    else
-      restarted = 0;
-      k = k + 1;
+    if maxAbsZ == 0  && lastMaxAbsZ == 0
+      break;
     end
-    iter = iter + 1;
-    
-    if verbose == true, disp( verboseStr ); end
-
   end
 
-  if calculateObjectiveValues == true
-    objectiveValues = objectiveValues( 1 : iter );
-  end
-  if calculateRelDiffs == true
-    relDiffs = relDiffs( 1 : iter );
-  end
+  if nargout > 1, objectiveValues = objectiveValues( 1 : iter ); end
+  if nargout > 2, relDiffs = relDiffs( 1 : iter ); end
 
-  xStar = z;
   if verbose == true
-    disp([ 'Fista w Restart Number of restarts: ', num2str(nRestarts) ]);
+    disp([ 'Fista w Restart Number of restarts: ', num2str( nRestarts ) ]);
   end
+  
+  xStar = y;
 end
 
