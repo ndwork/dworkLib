@@ -57,7 +57,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
 
-  calculateObjectiveValues = 0;
+  calculateObjectiveValues = false;
   if nargout > 1
     if numel(h) == 0 || numel(g) == 0
       error( 'fista.m - Cannot calculate objective values without g and h function handles' );
