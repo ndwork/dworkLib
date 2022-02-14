@@ -3,9 +3,11 @@ function [xStar,objectiveValues,relDiffs,extrapolated] = proxGrad_wExtrap( x, gG
   % [xStar,objectiveValues,relDiffs] = proxGrad_wExtrap( x, gGrad, proxth [, ...
   %   'g', g, 'h', h, 'N', N, 'q', q, 't', t, 'tol', tol, 'verbose', verbose ] )
   %
-  % This function implements the FISTA optimization algorithm
-  % FISTA finds the x that minimizes functions of form g(x) + h(x) where
-  % g is differentiable and h has a simple proximal operator.
+  % This function implements the proximal gradient optimization algorithm
+  % which minimizes functions of form g(x) + h(x) where g is differentiable
+  % and h has a simple proximal operator.  This algorithm includes an extrapolation
+  % based on "Geometry of First Order Methods and Adaptive Acceleration" by Poon
+  % and Liang
   %
   % Inputs:
   % x - the starting point
@@ -155,7 +157,7 @@ function [xStar,objectiveValues,relDiffs,extrapolated] = proxGrad_wExtrap( x, gG
     else
       nSinceExtrap = 0;
     end
-    
+
     k = k + 1;
   end
 
