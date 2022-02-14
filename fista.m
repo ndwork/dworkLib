@@ -9,14 +9,14 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   %
   % Inputs:
   % x - the starting point
-  % g - a function handle representing the g function; accepts a vector x
-  %     as input and returns a scalar.
   % gGrad - a function handle representing the gradient function of g;
   %     input: the point to evaluation, output: the gradient vector
   % proxth - the proximal operator of the h function (with parameter t);
   %     two inputs: the vector and the scalar value of the parameter t
   %
   % Optional Inputs:
+  % g - a function handle representing the g function; accepts a vector x
+  %     as input and returns a scalar.
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
   % N - the number of iterations that FISTA will perform (default is 100)
@@ -127,6 +127,6 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   if nargout > 1, objectiveValues = objectiveValues( 1 : k ); end
   if nargout > 2, relDiffs = relDiffs( 1 : k ); end
 
-  xStar = z;
+  xStar = y;
 end
 
