@@ -26,9 +26,11 @@ function out = binarySearch( f, LB, UB, varargin )
   end
 
   p = inputParser;
+  p.addRequired( 'LB', @isfinite );
+  p.addRequired( 'UB', @isfinite );
   p.addParameter( 'nMax', 1000, @ispositive );
   p.addParameter( 'tol', 1d-6, @ispositive );
-  p.parse( varargin{:} );
+  p.parse( LB, UB, varargin{:} );
   nMax = p.Results.nMax;
   tol = p.Results.tol;
 
