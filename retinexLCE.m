@@ -7,7 +7,9 @@ function out = retinexLCE( img, varargin )
   %
   % Inputs:
   % img - a 2D array representing an image.  (Note that the paper describes a color version, but
-  %       that is not yet implemented)
+  %       that is not yet implemented.  A better color algorithm is presented in "Multiscale Retinex" by
+  %       Petro et al.  They show that applying retinexLCE to the intensity channel alone and then going
+  %       back to RGB space is a great way to go.)
   %
   % Outputs:
   % out - a 2D array that is the image with local contrast enhancement
@@ -40,21 +42,21 @@ function out = retinexLCE( img, varargin )
   xCoords = ones( size( img, 1 ), 1 ) * imgCoords{2}';
   kerCoords = -( xCoords .* xCoords + yCoords .* yCoords );
 
-  out = zeros( size( img ) );
   nSigmas = numel( sigmas );
+  out = cell( 1, 1, nSigmas );
   for k = 1 : nSigmas
     sigmaSq = sigmas( k ) * sigmas( k );
 
-    ker = exp( kerCoords / sigmaSq );
+    ker = exp( 0.5 * kerCoords / sigmaSq );
     ker = ker / sum( ker(:) );
-    fftKer = fftshift( fft2( ifftshift( ker ) ) );
 
+    fftKer = fftshift( fft2( ifftshift( ker ) ) );
     kerConvI = fftshift( ifft2( ifftshift( fftKer .* fftImg ) ) );
 
-    thisOut = logImg - log( kerConvI );
-    out = out + thisOut;
+    out{ 1, 1, k } = logImg - log( kerConvI );
   end
 
-  out = exp( out / nSigmas );
+  out = cell2mat( out );
+  out = mean( out, 3 );
 end
 
