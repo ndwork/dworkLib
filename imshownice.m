@@ -40,7 +40,7 @@ function [scaling,imH] = imshownice( img, varargin )
   p.addOptional( 'scale', defaultScale, @isnumeric );
   p.addParameter( 'method', defaultMethod, @(x) true );
   p.addParameter( 'sdevScale', [], @isnumeric );
-  p.addParameter( 'thresh', [], @(x) x >= 0 && x < 1 );
+  p.addParameter( 'thresh', [], @(x) ( numel(x) == 0 || ( x >= 0 && x < 1 ) ) );
   p.addParameter( 'border', defaultBorder );
   p.parse( varargin{:} );
   scale = p.Results.scale;
