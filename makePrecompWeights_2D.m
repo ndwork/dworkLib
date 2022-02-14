@@ -263,21 +263,25 @@ end
 
 function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamma, mu, varargin )
 
-  defaultNIter = 1000;
   %defaultAlg = 'fista';
   %defaultAlg = 'fista_wExtrap';
-  %defaultAlg = 'proxGrad_wExtrap';
-defaultAlg = 'fista_wRestart';
-defaultNIter = 250;
+  defaultAlg = 'proxGrad_wExtrap';
+  %defaultAlg = 'fista_wRestart';
 
   p = inputParser;
-  p.addOptional( 'nIter', defaultNIter, @ispositive );
+  p.addOptional( 'nIter', [], @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
   p.parse( varargin{:} );
   nIter = p.Results.nIter;
   alg = p.Results.alg;
 
-  if numel( nIter ) == 0, nIter = defaultNIter; end
+  if numel( nIter ) == 0
+    if strcmp( alg, 'proxGrad_wExtrap' )
+      nIter = 2000;
+    else
+      nIter = 250;
+    end
+  end
   if numel( alg ) == 0, alg = defaultAlg; end
 
   segLength = 2500;
