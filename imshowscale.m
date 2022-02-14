@@ -46,6 +46,7 @@ function imH = imshowscale( img, varargin )
   p.addParameter( 'method', defaultMethod );
   p.addParameter( 'range', [] );
   p.addParameter( 'sdevScale', [], @isnumeric );
+  p.addParameter( 'thresh', [], @ispositive );
   p.addParameter( 'xAxis', [], @isnumeric );
   p.addParameter( 'yAxis', [], @isnumeric );
   p.parse( varargin{:} );
@@ -55,6 +56,7 @@ function imH = imshowscale( img, varargin )
   method = p.Results.method;
   range = p.Results.range;
   sdevScale = p.Results.sdevScale;
+  thresh = p.Results.thresh;
   xAxis = p.Results.xAxis;
   yAxis = p.Results.yAxis;
 
@@ -72,7 +74,7 @@ function imH = imshowscale( img, varargin )
   end
 
   if strcmp( 'nice', range )
-    [~,imH] = imshownice( img, scale, 'method', method, 'sdevScale', sdevScale );
+    [~,imH] = imshownice( img, scale, 'method', method, 'sdevScale', sdevScale, 'thresh', thresh );
 
   else
 
