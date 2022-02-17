@@ -1,7 +1,8 @@
 
-function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, proxth, q, varargin )
-  % [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth [, ...
-  %   'g', g, 'h', h, 'N', N, 't', t, 'tol', tol, 'verbose', verbose ] )
+function [xStar, objectiveValues, relDiffs, restarts] = fista_wAdaptiveRestartFunction( ...
+  x, gGrad, proxth, g, h, varargin )
+  % [xStar,objectiveValues,relDiffs] = fista_wAdaptiveRestartFunction( x, gGrad, proxth, g, h [, ...
+  %   'N', N, 't', t, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
   % FISTA finds the x that minimizes functions of form g(x) + h(x) where
@@ -15,13 +16,12 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   %     input: the point to evaluation, output: the gradient vector
   % proxth - the proximal operator of the h function (with parameter t);
   %     two inputs: the vector and the scalar value of the parameter t
-  % q - an integer specifying how many iterations before restart
-  %
-  % Optional Inputs:
   % g - a function handle representing the g function; accepts a vector x
   %     as input and returns a scalar.
   % h - a handle to the h function.  This is needed to calculate the
   %     objective values.
+  %
+  % Optional Inputs:
   % N - the number of iterations that FISTA will perform (default is 100)
   % t - step size (default is 1)
   % tol - runs until relDiff is less than tol or until iterations is N
@@ -30,7 +30,7 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   % Outputs:
   % xStar - the optimal point
   %
-  % Written by Nicholas Dwork - Copyright 2017
+  % Written by Nicholas Dwork - Copyright 2022
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
@@ -49,16 +49,12 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   defaultN = 100;
 
   p = inputParser;
-  p.addParameter( 'g', [] );
-  p.addParameter( 'h', [] );
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x)==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'tol', 1d-4, @(x) numel(x) == 0  ||  x >= 0 );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
-  g = p.Results.g;
-  h = p.Results.h;
   N = p.Results.N;  % total number of iterations
   printEvery = p.Results.printEvery;  % display result printEvery iterations
   t = p.Results.t;  % t0 must be greater than 0
@@ -73,15 +69,6 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   if nargout > 2, relDiffs = zeros( N, 1 ); end
   if nargout > 3, restarts = zeros( N, 1 ); end
 
-  calculateObjectiveValues = 0;
-  if nargout > 1
-    if numel(h) == 0 || numel(g) == 0
-      error( 'fista_wRestart.m - Cannot calculate objective values without g and h function handles' );
-    else
-      calculateObjectiveValues = true;
-    end
-  end
-
   calculateRelDiffs = false;
   if nargout > 2  ||  verbose == true  ||  ( numel(tol) > 0 && tol < Inf )
     calculateRelDiffs = true;
@@ -91,6 +78,7 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   y = x;
   maxAbsZ = max( abs( z(:) ) );
 
+  objValue = Inf;
   k = -1;
   iter = 0;
   while iter < N
@@ -102,11 +90,15 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
     lastY = y;
     y = proxth( x, t );
 
+    lastObjValue = objValue;
+    objValue = g(y) + h(y);
+
     restarted = false;
-    if mod( iter, q ) == 0
+    if objValue > lastObjValue
       k = 0;  % Restart by eliminating momentum
-      restarted = true;
       nRestarts = nRestarts + 1;
+      restarted = true;
+      if nargout > 3, restarts( iter ) = 1; end
     end
 
     lastZ = z;
@@ -115,7 +107,7 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
 
     maxAbsZ = max( abs( z(:) ) );
 
-    if calculateObjectiveValues > 0, objectiveValues(iter) = g(z) + h(z); end
+    if nargout > 1, objectiveValues(iter) = objValue; end
 
     if calculateRelDiffs == true
       relDiff = norm( z(:) - lastZ(:) ) / norm( lastZ(:) );

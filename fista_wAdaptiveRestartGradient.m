@@ -1,6 +1,6 @@
 
-function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, proxth, q, varargin )
-  % [xStar,objectiveValues,relDiffs] = fista_wRestart( x, gGrad, proxth [, ...
+function [xStar,objectiveValues,relDiffs, restarts] = fista_wAdaptiveRestartGradient( x, gGrad, proxth, varargin )
+  % [xStar,objectiveValues,relDiffs] = fista_wAdaptiveRestartGradient( x, gGrad, proxth [, ...
   %   'g', g, 'h', h, 'N', N, 't', t, 'tol', tol, 'verbose', verbose ] )
   %
   % This function implements the FISTA optimization algorithm
@@ -15,7 +15,6 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   %     input: the point to evaluation, output: the gradient vector
   % proxth - the proximal operator of the h function (with parameter t);
   %     two inputs: the vector and the scalar value of the parameter t
-  % q - an integer specifying how many iterations before restart
   %
   % Optional Inputs:
   % g - a function handle representing the g function; accepts a vector x
@@ -30,7 +29,7 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
   % Outputs:
   % xStar - the optimal point
   %
-  % Written by Nicholas Dwork - Copyright 2017
+  % Written by Nicholas Dwork - Copyright 2022
   %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
@@ -103,10 +102,11 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
     y = proxth( x, t );
 
     restarted = false;
-    if mod( iter, q ) == 0
+    if dotP( Gz, y - lastY ) > 0
       k = 0;  % Restart by eliminating momentum
-      restarted = true;
       nRestarts = nRestarts + 1;
+      restarted = true;
+      if nargout > 3, restarts( iter ) = 1; end
     end
 
     lastZ = z;
