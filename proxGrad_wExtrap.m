@@ -63,24 +63,22 @@ function [xStar,objectiveValues,relDiffs,extrapolated] = proxGrad_wExtrap( x, gG
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
 
-  calculateObjectiveValues = 0;
+  if nargout > 1, objectiveValues = zeros(N,1); end
+  if nargout > 2, relDiffs = zeros(N,1); end
+  if nargout > 3, extrapolated = zeros(N,1); end
+
+  calculateObjectiveValues = false;
   if nargout > 1
     if numel(h) == 0 || numel(g) == 0
       error( 'fista.m - Cannot calculate objective values without g and h function handles' );
     else
-      objectiveValues = zeros(N,1);
-      calculateObjectiveValues = 1;
+      calculateObjectiveValues = true;
     end
   end
 
   calculateRelDiffs = false;
   if nargout > 2 || ( tol > 0  &&  tol < Inf )
     calculateRelDiffs = true;
-    relDiffs = zeros(N,1);
-  end
-
-  if nargout > 3
-    extrapolated = zeros(N,1);
   end
 
   z = x;
@@ -96,11 +94,11 @@ function [xStar,objectiveValues,relDiffs,extrapolated] = proxGrad_wExtrap( x, gG
     z = proxth( x, t );
     dz = z - lastZ;
 
-    objectiveValues(k+1) = g( z ) + h( z );
+    objectiveValues( k + 1 ) = g( z ) + h( z );
 
     if calculateRelDiffs == true
       relDiff = norm( dz(:) ) / norm( lastZ(:) );
-      relDiffs( k + 1 ) = relDiff;
+      if nargout > 2, relDiffs( k + 1 ) = relDiff; end
     end
 
     if verbose>0 && mod( k, printEvery ) == 0
@@ -142,7 +140,7 @@ function [xStar,objectiveValues,relDiffs,extrapolated] = proxGrad_wExtrap( x, gG
         objectiveValues( k + 1 ) = objValueBar;
         if calculateRelDiffs == true
           extrapRelDiff = norm( dz(:) ) / norm( z(:) );
-          relDiffs( k + 1 ) = extrapRelDiff;
+          if nargout > 2, relDiffs( k + 1 ) = extrapRelDiff; end
         end
         nExtraped = nExtraped + 1;
       end
