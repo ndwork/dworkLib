@@ -437,6 +437,7 @@ extrapolated = [];
 
   relDiffs = [];
   objValues = [];
+  restarts = [];
   tol = 1d-4;
   if strcmp( 'adaptiveAcceleration', alg )
     [ w, objValues, relDiffs ] = adaptiveAccelerationOptimization( w0, @gGrad, 'proxth', proxth, ...
@@ -456,8 +457,16 @@ extrapolated = [];
     [ w, objValues, relDiffs ] = fista_wLS( w0, @g, @gGrad, proxth, 'minStep', stepSize, ...
       'N', nIter, 't0', t0, 'tol', tol, 'h', h, 'gradNorm', grdNrm, 'verbose', true );
 
+  elseif strcmp( 'fista_wAdaptiveRestartGradient', alg )
+    [ w, objValues, relDiffs, restarts ] = fista_wAdaptiveRestartGradient( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'tol', tol, 'verbose', true );
+
+  elseif strcmp( 'fista_wAdaptiveRestartFunction', alg )
+    [ w, objValues, relDiffs, restarts ] = fista_wAdaptiveRestartFunction( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+      'g', @g, 'h', h, 'tol', tol, 'verbose', true );
+    
   elseif strcmp( 'fista_wRestart', alg )
-    [ w, objValues, relDiffs ] = fista_wRestart( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+    [ w, objValues, relDiffs, restarts ] = fista_wRestart( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'tol', tol, 'verbose', true );
     
   elseif strcmp( 'pogm', alg )
@@ -481,7 +490,7 @@ extrapolated = [];
       'g', @g, 'h', @h, 'nEpochs', 100, 'nStoch', 2000, 'saveEvery', 20, 'verbose', true );
 
   end
-save( [ algDir, '/results.mat' ], 'w', 'objValues', 'relDiffs', 'extrapolated' );
+save( [ algDir, '/results.mat' ], 'w', 'objValues', 'relDiffs', 'extrapolated', 'restarts' );
   flag = 0;
 
   % Now find kappa scaling
