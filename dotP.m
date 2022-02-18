@@ -13,7 +13,7 @@ function out = dotP( a, b )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel( a ) ~= numel( b )
+  if numel( a ) ~= numel( b )  &&  ( numel( a ) ~= 1 && numel( b ) ~= 1 )
     error( 'Inputs to dot product must have the same number of elements.' );
   end
 
