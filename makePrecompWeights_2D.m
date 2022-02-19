@@ -462,13 +462,14 @@ extrapolated = [];
       'g', @g, 'h', h, 'tol', tol, 'verbose', true );
 
   elseif strcmp( 'fista_wAdaptiveRestartFunction', alg )
-    [ w, objValues, relDiffs, restarts ] = fista_wAdaptiveRestartFunction( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
-      'g', @g, 'h', h, 'tol', tol, 'verbose', true );
-    
+    [ w, objValues, relDiffs, restarts ] = fista_wAdaptiveRestartFunction( w0, @gGrad, proxth, ...
+      @g, h, 't', stepSize, 'N', nIter, 'tol', tol, 'verbose', true );
+
   elseif strcmp( 'fista_wRestart', alg )
-    [ w, objValues, relDiffs, restarts ] = fista_wRestart( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
+    q = 50;
+    [ w, objValues, relDiffs, restarts ] = fista_wRestart( w0, @gGrad, proxth, q, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'tol', tol, 'verbose', true );
-    
+
   elseif strcmp( 'pogm', alg )
     [ w, objValues ] = pogm( w0, @gGrad, proxth, 't', stepSize, 'N', nIter, ...
       'g', @g, 'h', h, 'verbose', true );
