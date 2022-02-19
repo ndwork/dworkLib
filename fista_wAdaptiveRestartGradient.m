@@ -92,7 +92,6 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wAdaptiveRestartGrad
 
   k = -1;
   iter = 0;
-  Gz = 0;
   while iter < N
     k = k + 1;
     iter = iter + 1;
@@ -102,8 +101,7 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wAdaptiveRestartGrad
     lastY = y;
     y = proxth( x, t );
 
-    lastGz = Gz;
-    Gz = z - y;
+    lastGz = lastZ - lastY;
     restarted = false;
     if dotP( lastGz, y - lastY ) > 0
       k = 0;  % Restart by eliminating momentum
