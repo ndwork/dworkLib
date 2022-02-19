@@ -96,7 +96,6 @@ function [xStar, objectiveValues, relDiffs, restarts] = fista_wAdaptiveRestartFu
     restarted = false;
     if objValue > lastObjValue
       k = 0;  % Restart by eliminating momentum
-      nRestarts = nRestarts + 1;
       restarted = true;
       if nargout > 3, restarts( iter ) = 1; end
     end
@@ -116,10 +115,8 @@ function [xStar, objectiveValues, relDiffs, restarts] = fista_wAdaptiveRestartFu
 
     if verbose>0 && mod( iter, printEvery ) == 0
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
-      verboseString = [ 'FISTA wRestart Iteration: ', num2str(iter,formatString) ];
-      if calculateObjectiveValues > 0
-        verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(iter) ) ];   %#ok<AGROW>
-      end
+      verboseString = [ 'FISTA wAdaptiveRestartFunction Iter: ', num2str(iter,formatString) ];
+      verboseString = [ verboseString, ',  objective: ', num2str( objectiveValues(iter) ) ];   %#ok<AGROW>
       if calculateRelDiffs > 0
         verboseString = [ verboseString, ',  relDiff: ', num2str( relDiff ) ];   %#ok<AGROW>
       end

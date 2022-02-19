@@ -106,7 +106,6 @@ function [xStar,objectiveValues,relDiffs, restarts] = fista_wRestart( x, gGrad, 
     if mod( iter, q ) == 0
       k = 0;  % Restart by eliminating momentum
       restarted = true;
-      nRestarts = nRestarts + 1;
     end
 
     lastZ = z;
