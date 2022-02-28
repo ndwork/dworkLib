@@ -18,6 +18,11 @@ function plotnice( in1, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  plotnice( in1 [, in2, ''ax'', ax, options ] )' );
+    return;
+  end
+
   displayNice( @plot, in1, varargin{:} );
   return
 end
