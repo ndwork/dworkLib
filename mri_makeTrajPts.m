@@ -95,6 +95,9 @@ function traj = makeTrajPts_propeller( nDim, nReadout, nLines, dkLine, nAngles )
     traj((i-1)*nKperAngle+1:i*nKperAngle,1) = thisKx;
     traj((i-1)*nKperAngle+1:i*nKperAngle,2) = thisKy;
   end
+  
+  trajNorms = norms( traj, 2, 2 );
+  traj = traj * 0.5 / max( abs( trajNorms ) );
 end
 
 
