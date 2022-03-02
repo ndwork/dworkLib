@@ -19,6 +19,11 @@ function out = scatternice( in1, in2, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage:  scatternice( in1 [, in2, ''ax'', ax, options ] ) ' );
+    if nargout > 0, out = []; end
+    return;
+  end
 
   ax = [];
   if numel( varargin ) > 0
