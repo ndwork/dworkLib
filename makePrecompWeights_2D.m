@@ -529,7 +529,11 @@ nFile = [ saveDir, '/normA.mat' ];
 if exist( nFile, 'file' )
   load( nFile, 'normA' );
 else
-  normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
+  if fast == true
+    normA = powerIteration( A, w0, 'maxIters', 10, 'verbose', true );
+  else
+    normA = powerIteration( @applyA, w0, 'maxIters', 10, 'verbose', true );
+  end
   save( nFile, 'normA' );
 end
 extrapolated = [];
