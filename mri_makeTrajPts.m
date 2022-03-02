@@ -95,7 +95,7 @@ function traj = makeTrajPts_propeller( nDim, nReadout, nLines, dkLine, nAngles )
     traj((i-1)*nKperAngle+1:i*nKperAngle,1) = thisKx;
     traj((i-1)*nKperAngle+1:i*nKperAngle,2) = thisKy;
   end
-  
+
   trajNorms = norms( traj, 2, 2 );
   traj = traj * 0.5 / max( abs( trajNorms ) );
 end
@@ -143,10 +143,12 @@ end
 
 
 function traj = makeTrajPts_rosette( nDim, nPtsPerCycle, nCycles, f1, f2 )
+  % Made according to "Multishot Rosette Trajectories for Spectrally Selective MR Imaging" by Noll., 1997
   if nDim ~= 2, error('Rosette trajectory just for 2 dimensions'); end
 
-  nPts = nPtsPerCycle * nCycles;
-  
+  nK = nPtsPerCycle * nCycles;
+  t = ( 0 : nK-1 ) / nK;
+
   traj = zeros( nK, 2 );
   traj(:,1) = 0.5 * cos( 2*pi * f1 * t ) .* sin( 2*pi * f2 * t );
   traj(:,2) = 0.5 * cos( 2*pi * f1 * t ) .* cos( 2*pi * f2 * t );
