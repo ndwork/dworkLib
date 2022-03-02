@@ -17,6 +17,7 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %   alg - a string specifying the algorithm to use
   %     CLS - constrained least squares on trajectory points
   %     FP - specifies fixed point iteration
+  %     FP_slow - uses less memory but processes much slower
   %     GP - gradient projection algorithm
   %     GP_sparse - sparse matrix approximation of GP algorithm
   %     LSQR - least squares on trajectory points
@@ -97,8 +98,13 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
       % Constrained least squares density compensation
       [weights,nOptIter,flag,res] = makePrecompWeights_2D_CLS( kTraj, sImg );
 
-    case 'FP'
+    case 'FP_slow'
       % Fixed point iteration
+      [weights,flag,res] = makePrecompWeights_2D_FP_slow( kTraj, sImg, 'verbose', verbose, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
+
+    case 'FP'
+      % Fixed point iteration where matrix is created (may take a lot of memory)
       [weights,flag,res] = makePrecompWeights_2D_FP( kTraj, sImg, 'verbose', verbose, ...
         'alpha', alpha, 'W', W, 'nC', nC );
 
@@ -114,9 +120,14 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
     case 'JACKSON'
       weights = makePrecompWeights_2D_JACKSON( kTraj, sImg, 'alpha', alpha, 'W', W, 'nC', nC );
 
+    case 'LSQR_slow'
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_LSQR_slow( kTraj, sImg, ...
+        'alpha', alpha, 'W', W, 'nC', nC );
+
     case 'LSQR'
       [weights,nOptIter,flag,res] = makePrecompWeights_2D_LSQR( kTraj, sImg, ...
         'alpha', alpha, 'W', W, 'nC', nC );
+
 
     case 'SAMSANOV'
       [weights,nOptIter,flag,res] = makePrecompWeights_2D_SAMSANOV( kTraj, sImg, ...
@@ -218,7 +229,7 @@ verbose = true;
 end
 
 
-function [weights,flag,res] = makePrecompWeights_2D_FP( traj, N, varargin )
+function [weights,flag,res] = makePrecompWeights_2D_FP_slow( traj, N, varargin )
   % Fixed point iteration defined in "Sampling Density Compensation in MRI:
   % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
 
@@ -252,6 +263,47 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( traj, N, varargin )
     oldWeights = weights;
     denom = applyC_2D( oldWeights, traj, traj, kCy, kCx, Cy, Cx );
     weights = oldWeights ./ denom;
+  end
+
+  flag = 0;
+  res = norm( weights - oldWeights, 2 ) / norm( weights, 2 );
+
+  weights = weights ./ sum( weights(:) );
+end
+
+
+function [weights,flag,res] = makePrecompWeights_2D_FP( traj, N, varargin )
+  % Fixed point iteration defined in "Sampling Density Compensation in MRI:
+  % Rationale and an Iterative Numerical Solution" by Pipe and Menon, 1999.
+
+  checknum = @(x) numel(x) == 0 || ( isnumeric(x) && isscalar(x) && (x >= 1) );
+  p = inputParser;
+  p.addParameter( 'alpha', [], checknum );
+  p.addParameter( 'W', [], checknum );
+  p.addParameter( 'nC', [], checknum );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
+  p.parse( varargin{:} );
+  alpha = p.Results.alpha;
+  W = p.Results.W;
+  nC = p.Results.nC;
+  verbose = p.Results.verbose;
+
+  nIter = 8;
+
+  % Make the Kaiser Bessel convolution kernel
+  Ny = N(1);  Nx = N(2);
+  Gy = Ny;
+  [kCy,Cy,~] = makeKbKernel( Gy, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  Gx = Nx;
+  [kCx,Cx,~] = makeKbKernel( Gx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
+
+  C = makeC_2D( traj, traj, kCy, kCx, Cy, Cx );
+
+  nTraj = size( traj, 1  );
+  weights = zeros( nTraj, 1 );
+  for iteration = 1 : nIter
+    oldWeights = weights;
+    weights = oldWeights ./ ( C * oldWeights );
   end
 
   flag = 0;
@@ -393,7 +445,6 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
     ~checkAdjoint( rand( nTraj, 1 ), @applyA, 'y', rand( nTraj, 1 ) )
     error( 'A adjoint is incorrect' );
   end
-
 
   function out = g( w )
     psf = grid_2D( w, traj, 2*N, ones( size( w ) ) );
@@ -559,6 +610,49 @@ function weights = makePrecompWeights_2D_JACKSON( traj, N, varargin )
 end
 
 function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR( traj, N, varargin )
+  % Optimization analog of FP
+
+  p = inputParser;
+  p.addParameter( 'alpha', [], @isnumeric );
+  p.addParameter( 'W', [], @ispositive );
+  p.addParameter( 'nC', [], @ispositive );
+  p.parse( varargin{:} );
+  alpha = p.Results.alpha;
+  W = p.Results.W;
+  nC = p.Results.nC;
+
+  Ny = 2 * N(1);   [kCy,Cy,~] = makeKbKernel( Ny, Ny, 'alpha', alpha, 'W', W, 'nC', nC );
+  Nx = 2 * N(2);   [kCx,Cx,~] = makeKbKernel( Nx, Nx, 'alpha', alpha, 'W', W, 'nC', nC );
+
+  CyCx = Cy(:) * Cx(:)';
+  dkCy = zeros( size( kCy ) );  dkCy(1) = kCy(2);  dkCy(2:end) = kCy(2:end) - kCy(1:end-1);
+  dkCx = zeros( size( kCx ) );  dkCx(1) = kCx(2);  dkCx(2:end) = kCx(2:end) - kCx(1:end-1);
+  dkCykCx = dkCy(:) * dkCx(:)';
+  scaling = 1 / sum( CyCx(:) .* dkCykCx(:) );
+  Cy = Cy / scaling;
+  Cx = Cx / scaling;
+
+  nTraj = size( traj, 1 );
+  C = makeC_2D( traj, traj, kCy, kCx, Cy, Cx );
+  w0 = 1 ./ ( C * ones( nTraj, 1 ) );
+
+  doCheckAdjoint = false;
+  if doCheckAdjoint == true
+    [checkAdjA,errCheckAdjA] = checkAdjoint( w0, @applyA );
+    if checkAdjA == false
+      error([ 'Check of A Adjoint failed with error: ', num2str( errCheckAdjA ) ]);
+    else
+      disp( 'Check of A Adjoint passed' );
+    end
+  end
+
+  b = ones( size( w0 ) );
+  [ weights, flag, residual, nIter ] = lsqr( C, b, [], 100, [], [], w0 );
+
+  weights = weights / sum( weights );
+end
+
+function [weights,nIter,flag,residual] = makePrecompWeights_2D_LSQR_slow( traj, N, varargin )
   % Optimization analog of FP
 
   p = inputParser;
