@@ -323,9 +323,11 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   p = inputParser;
   p.addOptional( 'nIter', [], @ispositive );
   p.addParameter( 'alg', defaultAlg, @(x) true );
+  p.addParameter( 'fast', true, @islogical );
   p.parse( varargin{:} );
   nIter = p.Results.nIter;
   alg = p.Results.alg;
+  fast = p.Results.fast;
 
   if numel( nIter ) == 0
     if strcmp( alg, 'proxGrad_wExtrap' )
@@ -422,7 +424,7 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
           factors = 2 * sin( nuN ) ./ nu;
           for dIndx = 1 : D
             dFactors = factors( :, dIndx );
-            dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
+            dFactors( nu( :, dIndx ) == 0 ) = 2 * N( dIndx );
             factors( :, dIndx ) = dFactors;
           end
         end
@@ -440,6 +442,48 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
   end
 
 
+  function out = makeA()
+
+    expNGammas = exp( -N ./ gamma );
+
+    out = zeros( nTraj, nTraj );
+
+    parfor tIndx = 1 : nTraj
+      %if mod( tIndx, 1000 ) == 0, disp( [ 'Iteration ', num2str( tIndx ) ] ); end
+
+      tRow = zeros( 1, nTraj );
+      eIndx = 0;
+      for segIndx = 1 : nSegs
+        sIndx = eIndx + 1;  % start index
+        eIndx = min( segIndx * segLength, nTraj );  % end index
+
+        nu = 2 * pi * bsxfun( @minus, traj( tIndx, : ), traj( sIndx : eIndx, : ) );   %#ok<PFBNS>
+        nuN = bsxfun( @times, nu, N );
+
+        if numel( gamma ) > 0  &&  max( gamma ) < Inf
+          nuGamma = bsxfun( @times, nu, gamma );
+
+          tmp = 1 - bsxfun( @times, expNGammas, cos( nuN ) -  nuGamma .* sin( nuN ) );
+          factors = bsxfun( @rdivide, 2 * gamma, 1 + nuGamma.^2 ) .* tmp;
+
+        else
+          factors = 2 * sin( nuN ) ./ nu;
+          for dIndx = 1 : D
+            dFactors = factors( :, dIndx );
+            dFactors( nu(:,dIndx) == 0 ) = 2 * N( dIndx );
+            factors( :, dIndx ) = dFactors;
+          end
+        end
+
+        tRow( 1, sIndx : eIndx ) = 2 * prod( factors, 2 );
+        %out( tIndx, sIndx : eIndx ) = 2 * prod( factors, 2 );
+      end
+
+      out( tIndx, : ) = tRow;
+    end
+  end
+
+
   doAdjointCheck = false;
   if doAdjointCheck == true && ...
     ~checkAdjoint( rand( nTraj, 1 ), @applyA, 'y', rand( nTraj, 1 ) )
@@ -453,8 +497,14 @@ function [ w, nIter, flag, objValues ] = makePrecompWeights_2D_GP( traj, N, gamm
 
   h = @(w) indicatorFunction( sum( w(:) ), [0.999 1.001] );
 
+  if fast == true, A = makeA(); end
+
   function out = gGrad( w )
-    out = applyA( w );
+    if fast == true
+      out = A * w;
+    else
+      out = applyA( w );
+    end
 
     if mu > 0
       out = out + ( mu / nTraj ) * w;
