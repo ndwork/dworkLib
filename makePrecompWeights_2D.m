@@ -300,10 +300,12 @@ function [weights,flag,res] = makePrecompWeights_2D_FP( traj, N, varargin )
   C = makeC_2D( traj, traj, kCy, kCx, Cy, Cx );
 
   nTraj = size( traj, 1  );
-  weights = zeros( nTraj, 1 );
+  weights = ones( nTraj, 1 );
   for iteration = 1 : nIter
-    oldWeights = weights;
-    weights = oldWeights ./ ( C * oldWeights );
+    if iteration == nIter
+      oldWeights = weights;
+    end
+    weights = weights ./ ( C * weights );
   end
 
   flag = 0;
@@ -871,6 +873,11 @@ function fullWeights = makePrecompWeights_2D_VORONOI( fullKTraj )
     end
   end
 
+  nWeightsNotFinite = sum( ~isfinite( fullWeights ) );
+  nFullTraj = size( fullKTraj, 1 );
+  if nWeightsNotFinite > 0
+    fullWeights( ~isfinite( fullWeights ) ) = 1 / nFullTraj;
+  end
 end
 
 
