@@ -113,6 +113,11 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
       [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP( kTraj, sImg, gamma, mu, nIter, ...
         'alg', subAlg );
 
+    case 'GP_slow'
+      % Gradient Projection method
+      [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP( kTraj, sImg, gamma, mu, nIter, ...
+        'alg', subAlg, 'fast', false );
+
     case 'GP_sparse'
       % sparse approximation to GP method
       [weights,nOptIter,flag,res] = makePrecompWeights_2D_GP_sparse( kTraj, sImg, gamma, mu, nIter );
