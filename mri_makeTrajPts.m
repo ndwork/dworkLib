@@ -146,12 +146,24 @@ function traj = makeTrajPts_rosette( nDim, nPtsPerCycle, nCycles, f1, f2 )
   % Made according to "Multishot Rosette Trajectories for Spectrally Selective MR Imaging" by Noll., 1997
   if nDim ~= 2, error('Rosette trajectory just for 2 dimensions'); end
 
-  nK = nPtsPerCycle * nCycles;
-  t = ( 0 : nK-1 ) / nK;
+  nPts = nPtsPerCycle * nCycles;
+  cyclePts = zeros( nPtsPerCycle, 2 );
+  traj = zeros( nPts, 2 );
 
-  traj = zeros( nK, 2 );
-  traj(:,1) = 0.5 * cos( 2*pi * f1 * t ) .* sin( 2*pi * f2 * t );
-  traj(:,2) = 0.5 * cos( 2*pi * f1 * t ) .* cos( 2*pi * f2 * t );
+  t = ( 0 : nPtsPerCycle-1 ) / nPtsPerCycle;
+
+  eIndx = 0;
+  for cycle = 1 : nCycles
+    dOffset = ( pi / nCycles ) * ( cycle - 1 );
+
+    cyclePts(:,1) = 0.5 * cos( 2*pi * f1 * t + dOffset ) .* sin( 2*pi * f2 * t + dOffset );
+    cyclePts(:,2) = 0.5 * cos( 2*pi * f1 * t + dOffset ) .* cos( 2*pi * f2 * t + dOffset );
+
+    sIndx = eIndx + 1;
+    eIndx = sIndx + nPtsPerCycle - 1;
+    traj( sIndx : eIndx, : ) = cyclePts;
+  end
+
 end
 
 
