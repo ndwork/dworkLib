@@ -33,7 +33,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 1
+  if nargin < 3
     disp( 'Usage:   [xStar,objValues] = pdhgWLS( x, proxf, proxgConj [, ... ' );
   	disp( '           ''N'', N, ''A'', A, ''beta'', beta, ''f'', f, ''g'', g, ... ' );
     disp( '           ''mu'', mu, ''tau'', tau, ''theta'', theta, ''y'', y, ... ' );
