@@ -2,7 +2,9 @@
 function out = ssim( in1, in2, varargin )
   % out = ssim( in1, in2 [, 'k1', k1, 'k2', k2, 'L', L ] )
   %
-  % Computes the structural similarity metric between inputs 1 and 2
+  % Computes the structural similarity metric between inputs 1 and 2 according
+  % to "Image Quality Assessment: From Error Visibility to Structural
+  % Similarity" by Wang et al.
   %
   % Inputs:
   % in1 - the first array
@@ -21,6 +23,12 @@ function out = ssim( in1, in2, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 2
+    disp( 'Usage:   out = ssim( in1, in2 [, ''k1'', k1, ''k2'', k2, ''L'', L ] )' );
+    if nargout > 0, out = []; end
+    return
+  end
 
   p = inputParser;
   p.addParameter( 'k1', 0.01, @isnumeric );
