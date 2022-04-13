@@ -24,7 +24,7 @@ function out = volVectorOp( volume, vector, varargin )
   % purpose.
 
   p = inputParser;
-  p.addOptional( 'dim', ndims(volume), @isnumeric );
+  p.addParameter( 'dim', ndims(volume), @positive );
   p.addParameter( 'op', 'multiplication', @(x) true );
   p.parse( varargin{:} );
   dim = p.Results.dim;
@@ -40,7 +40,7 @@ function out = volVectorOp( volume, vector, varargin )
     case 'multiplication'
       out = bsxfun( @times, volume, newVec );
     case 'power'
-      out = bsxfun( @power, volume, newVec ):
+      out = bsxfun( @power, volume, newVec );
     otherwise
       error('Operation wasn''t recognized');
   end
