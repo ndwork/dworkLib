@@ -250,6 +250,7 @@ function [ recon, oValues, lambda ] = csReconLASSO_msbpd( samples, lambda, varar
   end
 
   t = stepSize;
+  oValues = [];
   if nargout > 1
     if strcmp( alg, 'pogm' )
       [xStar,oValues] = pogm( PsiX0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t, ...
