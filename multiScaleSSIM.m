@@ -44,7 +44,7 @@ function out = multiScaleSSIM( in1, in2, varargin )
   h = fspecial( 'gaussian', 5, 0.75 );
 
   sScaled = size( in1 );
-  ssims = zeros( log2( min( sScaled ) ), 1 );
+  ssims = zeros( ceil( log2( min( sScaled ) ) ), 1 );
 
   indxSSIM = 0;
   while min( sScaled ) > N
