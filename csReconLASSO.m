@@ -1,6 +1,6 @@
 
 function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
-  % recon = csReconFISTA( samples, lambda [, 'nIter', nIter, ...
+  % recon = csReconFISTA( samples, lambda [, 'nIter', nIter, 'nReweightIter', nReweightIter, ...
   %   'printEvery', printEvery, 'transformType', transformType, 'verbose', verbose, ...
   %   'wavSplit', wavSpit ] )
   %
@@ -8,7 +8,10 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   %   0.5 * || A y - b ||_2^2 + lambda || y ||_1
   %   where A is sampleMask * Fourier Transform * adjoint( Psi ).
   %   Here, Psi is either a wavelet or curvelet transform.
-  %   The reconstruction returned is adjoin( Psi ) * y.
+  %   The reconstruction returned is adjoint( Psi ) * y.
+  %
+  % Iterative reweighting is done according to "Enhancing sparsity by reweighted L1
+  %   minimization" by Candes, Watkin, and Boyd with the nReweightIter optional parameter.
   %
   % Inputs:
   % samples - a 2D array that is zero wherever a sample wasn't acquired
@@ -18,6 +21,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   % alg - choose the algorithm to perform the minimization.  Default is 'FISTA_wLS'.
   %   Options are FISTA_wLS.
   % nIter - the number of iterations that FISTA will perform (default is 100)
+  % nReweightIter - number of reweighting iterations
   % printEvery - FISTA prints a verbose statement every printEvery iterations
   % transformType - Choose the sparifying transformation.  Default is WavCurv (which uses
   %   the wavelet transform and the curvelet transform as a redundant dictionary).
@@ -39,12 +43,13 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   wavSplit = zeros(4);  wavSplit(1,1) = 1;
 
   p = inputParser;
-  p.addOptional( 'lambda', [], @isnumeric );
+  p.addParameter( 'lambda', [], @isnumeric );
   p.addParameter( 'alg', 'fista_wLS', @(x) true );
   p.addParameter( 'checkAdjoints', false, @islogical );
   p.addParameter( 'nIter', [], @ispositive );
+  p.addParameter( 'nReweightIter', [], @ispositive );
   p.addParameter( 'printEvery', 1, @ispositive );
-  p.addParameter( 'stepSize', 1, @ispositive );
+  p.addParameter( 'stepSize', [], @ispositive );
   p.addParameter( 'transformType', 'wavCurv', @(x) true );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'waveletType', [], @(x) true );
@@ -54,12 +59,22 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   alg = p.Results.alg;
   checkAdjoints = p.Results.checkAdjoints;
   nIter = p.Results.nIter;
+  nReweightIter = p.Results.nReweightIter;
   printEvery = p.Results.printEvery;
   stepSize = p.Results.stepSize;
   transformType = p.Results.transformType;
   verbose = p.Results.verbose;
   waveletType = p.Results.waveletType;
   wavSplit = p.Results.wavSplit;
+
+  if numel( nReweightIter ) == 0 || nReweightIter == 0
+    if numel( lambda ) == 0 || lambda == 0
+      nReweightIter = 4;
+    else
+      nReweightIter = 1;
+    end
+  end
+  reweightEpsilon = 0.1;
 
   if numel( transformType ) == 0, transformType = 'wavCurv'; end
   if numel( waveletType ) == 0, waveletType = 'Daubechies-4'; end
@@ -68,11 +83,11 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   nImg = prod( sImg );
 
   function out = F( x )
-    out = fftshift( fftshift( ufft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
+    out = fftshift( fftshift( fft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
   end
 
   function out = FH( y )
-    out = fftshift( fftshift( uifft2( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
+    out = fftshift( fftshift( fft2h( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
   end
 
   function out = findCellSizes( in )
@@ -196,22 +211,30 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
     out = sparsifier( FHMTy );
   end
 
-  if checkAdjoints == true
-    x1 = rand( size(samples) ) + 1i * rand( size( samples ) );
-    if checkAdjoint( x1, @F, @FH ) ~= true, error( 'FH is not the transpose of F' ); end
+  applyATA = @(in) Aadj( A( in ) );
 
-    if checkAdjoint( x1, sparsifier, sparsifierH ) ~= true
+  if checkAdjoints == true
+    innerProd = @(x,y) real( y(:)' * x(:) );
+
+    x1 = rand( size(samples) ) + 1i * rand( size( samples ) );
+    if checkAdjoint( x1, @F, @FH, 'innerProd', innerProd ) ~= true
+      error( 'FH is not the transpose of F' );
+    end
+
+    if checkAdjoint( x1, sparsifier, sparsifierH, 'innerProd', innerProd ) ~= true
       error( 'sparsifierH is not the transpose of sparsifier' );
     end
 
     xA = sparsifier( double( imread( 'cameraman.png' ) ) / 255. );
-    if checkAdjoint( xA, @A, @Aadj ) ~= true, error( 'Aadj is not the transpose of A' ); end
+    if checkAdjoint( xA, @A, @Aadj, 'innerProd', innerProd ) ~= true
+      error( 'Aadj is not the transpose of A' );
+    end
   end
 
   b = samples( M == 1 );
   function out = g( x )
     diff = A( x ) - b;
-    out = 0.5 * norm( diff(:), 2 ).^2;
+    out = 0.5 * norm( diff(:) ).^2;
   end
 
   Aadjb = Aadj( b );
@@ -219,45 +242,66 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
     out = Aadj( A( x ) ) - Aadjb;
   end
 
-  %x0 = zeros( size( samples ) );
-  x0 = FH( samples );
-  PsiX0 = sparsifier( x0 );  % Psi is the sparsifying transformation
-  nPsiX = numel( PsiX0 );
+  %img0 = zeros( size( samples ) );
+  img0 = fftshift( fftshift( uifft2( ifftshift( ifftshift( samples, 1 ), 2 ) ), 1 ), 2 );
+  PsiImg0 = sparsifier( img0 );  % Psi is the sparsifying transformation
+  PsiImg0 = PsiImg0 / norm( PsiImg0(:) ) * norm( img0(:) );
+  nPsi = numel( PsiImg0 );
   if numel( lambda ) == 0  ||  lambda == 0
-    lambda = nPsiX * findValueBelowFraction( abs( PsiX0(:) ), 0.05 );
+    lambda = nPsi ./ ( abs( PsiImg0 ) + reweightEpsilon );
   end
 
-  proxth = @(x,t) proxL1Complex( x, t * lambda / nPsiX );
+  proxth = @(x,t) proxL1Complex( x, ( t / nPsi ) * lambda );
 
   function out = h( x )
-    out = sum( abs( x(:) ) ) * lambda / nPsiX;
+    out = sum( abs( x(:) .* lambda(:) ) ) / nPsi;
   end
 
-  t = stepSize;
-  if nargout > 1
-    if strcmp( alg, 'pogm' )
-      [xStar,oValues] = pogm( PsiX0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t, ...
-        'verbose', verbose, 'printEvery', printEvery );
-    elseif strcmp( alg, 'fista' )
-      [xStar,oValues] = fista( PsiX0, @gGrad, proxth, 'N', nIter, 'g', @g, 'h', @h, 't', t, ...
-        'verbose', verbose, 'printEvery', printEvery );
-    elseif strcmp( alg, 'fista_wLS' )
-      [xStar,oValues] = fista_wLS( PsiX0, @g, @gGrad, proxth, 'h', @h, ...
-        't0', t, 'N', nIter, 'verbose', verbose, 'printEvery', printEvery );
-    else
-      error( 'Unrecognized algorithm' );
+  if numel( stepSize ) == 0
+    [normATA,piFlag] = powerIteration( applyATA, PsiImg0, 'symmetric', true );  %#ok<ASGLU> 
+    stepSize = 0.95 / normATA;
+  end
+
+  for reweightIter = 1 : nReweightIter
+
+    if verbose == true
+      disp([ 'Working on reweighting iteration ', indx2str( reweightIter, nReweightIter ), ...
+        ' of ', num2str( nReweightIter ) ]);
     end
-  else
-    if strcmp( alg, 'pogm' )
-      xStar = pogm( PsiX0, @gGrad, proxth, nIter, 't', t );
-    elseif strcmp( alg, 'fista' )
-      xStar = fista( PsiX0, @gGrad, proxth, 'N', nIter, 't', t );
-    elseif strcmp( alg, 'fista_wLS' )
-      xStar = fista_wLS( PsiX0, @g, @gGrad, proxth, 't0', t, 'N', nIter, ...
-        'verbose', verbose, 'printEvery', printEvery );
-    else
-      error( 'Unrecognized algorithm' );
+
+    if reweightIter > 1
+      PsiImg0 = xStar;
+      lambda = nPsi / ( abs( xStar(:) ) + reweightEpsilon );
     end
+
+    t = stepSize;
+    if nargout > 1
+      if strcmp( alg, 'pogm' )
+        [xStar,oValues] = pogm( PsiImg0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t, ...
+          'tol', 1d-8, 'verbose', false, 'printEvery', printEvery );
+      elseif strcmp( alg, 'fista' )
+        [xStar,oValues] = fista( PsiImg0, @gGrad, proxth, 'N', nIter, 'g', @g, 'h', @h, 't', t, ...
+          'tol', 1d-8, 'verbose', false, 'printEvery', printEvery );
+      elseif strcmp( alg, 'fista_wLS' )
+        t = t * 10;
+        [xStar,oValues] = fista_wLS( PsiImg0, @g, @gGrad, proxth, 'h', @h, ...
+          't0', t, 'tol', 1d-8, 'N', nIter, 'verbose', false, 'printEvery', printEvery );
+      else
+        error( 'Unrecognized algorithm' );
+      end
+    else
+      if strcmp( alg, 'pogm' )
+        xStar = pogm( PsiImg0, @gGrad, proxth, nIter, 't', t', 'tol', 1d-8 );
+      elseif strcmp( alg, 'fista' )
+        xStar = fista( PsiImg0, @gGrad, proxth, 'N', nIter, 't', t, 'tol', 1d-8 );
+      elseif strcmp( alg, 'fista_wLS' )
+        xStar = fista_wLS( PsiImg0, @g, @gGrad, proxth, 't0', t, 'tol', 1d-8, 'N', nIter, ...
+          'verbose', verbose, 'printEvery', printEvery );
+      else
+        error( 'Unrecognized algorithm' );
+      end
+    end
+
   end
 
   recon = reshape( sparsifierH( xStar ), sImg );
