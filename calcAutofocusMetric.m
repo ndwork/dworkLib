@@ -1,7 +1,7 @@
 
-function out = calcAutofocusMetric( in )
-  % Calculates the autofocus metric according to "Automatic compensation of motion
-  % artifacts in MRI" by Loktyushin et al.
+function out = calcAutofocusMetric( in, varargin )
+  % Calculates the autofocus metric according to "Blind retrospective motion correction of
+  % MR images" by Loktyushin et al.
   %
   % Input:
   % in - an array of any number of dimensions
@@ -17,19 +17,22 @@ function out = calcAutofocusMetric( in )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  p = inputParser;
+  p.addParameter( 'minDenom', 1d-6, @ispositive );
+  p.addParameter( 'minV', 1d-6, @ispositive );
+  p.parse( varargin{:} );
+  minDenom = p.Results.minDenom;
+  minV = p.Results.minV;
+
   gradIn = computeGradient( in );
 
   nDimsIn = ndims( in );
   gradIn = reshape( gradIn, [ numel( in ) nDimsIn ] );
 
-  out = 0;
-  for dimIndx = 1 : nDimsIn
-    v = sqrt( ...
-      gradIn(:,dimIndx) .* conj( gradIn(:,dimIndx) ) ./ ...
-      gradIn(:,dimIndx)' * gradIn(:,dimIndx) );
+  denoms = transpose( diag( gradIn' * gradIn ) ) + minDenom;
 
-    out = out + -v' * log( v );
-  end
+  v = sqrt( bsxfun( @rdivide, gradIn .* conj( gradIn ), denoms ) );
 
+  out = sum( diag( -v' * log( v + minV ) ) );
 end
 
