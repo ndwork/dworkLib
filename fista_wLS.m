@@ -123,6 +123,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   if calculateObjectiveValues == true
     gx = g( x );
     hx = h( x );
+    objectiveValues(1) = gx + hx;
   end
   t = t0 / s;
   v = x;
