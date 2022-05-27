@@ -47,6 +47,7 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
   p.addParameter( 'h', [] );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
+  p.addParameter( 'tol', 1d-8, @(x) numel(x) == 0  ||  x >= 0 );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   g = p.Results.g;
@@ -54,6 +55,7 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
   N = p.Results.N;
   printEvery = p.Results.printEvery;  % display result printEvery iterations
   t = p.Results.t;  % t0 must be greater than 0
+  tol = p.Results.tol;
   verbose = p.Results.verbose;
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
@@ -69,7 +71,7 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
   end
 
   calculateRelDiffs = false;
-  if nargout > 2 || verbose == true
+  if nargout > 2 || verbose == true || numel( tol ) > 0
     relDiffs = zeros(N,1);
     calculateRelDiffs = true;
   end
@@ -78,7 +80,8 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
   w = x;
   z = x;
 
-  for k = 0:N-1
+  k = 0;
+  while k < N
 
     lastTheta = theta;
     if k < N-1
@@ -117,6 +120,11 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
       disp( verboseString );
     end
 
+    if numel( tol ) > 0  &&  tol < Inf  &&  relDiff < tol && k < N-1
+      k = N-1;
+    else
+      k = k + 1;
+    end
   end
 
   xStar = x;
