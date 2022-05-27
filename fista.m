@@ -42,7 +42,7 @@ function [xStar,objectiveValues,relDiffs] = fista( x, gGrad, proxth, varargin )
   p.addParameter( 'N', defaultN, @(x) ispositive(x) || numel(x)==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 't', 1, @isnumeric );
-  p.addParameter( 'tol', 1d-4, @(x) numel(x) == 0  ||  x >= 0 );
+  p.addParameter( 'tol', 1d-8, @(x) numel(x) == 0  ||  x >= 0 );
   p.addParameter( 'verbose', 0, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   g = p.Results.g;

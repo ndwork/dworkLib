@@ -75,7 +75,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   p.addParameter( 's', 1.25, @ispositive );
   p.addParameter( 'subIterThresh', defaultSubIterThresh, @ispositive );
   p.addParameter( 't0', 1, @ispositive );
-  p.addParameter( 'tol', [], @(x) x >= 0 );
+  p.addParameter( 'tol', 1d-8, @(x) x >= 0 );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   gradNorm = p.Results.gradNorm;
