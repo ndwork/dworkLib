@@ -243,8 +243,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   end
 
   %img0 = zeros( size( samples ) );
-  img0 = fftshift( fftshift( uifft2( ifftshift( ifftshift( samples, 1 ), 2 ) ), 1 ), 2 );
-disp( '/nick fix this' );
+  img0 = fftshift( fftshift( ifft2( ifftshift( ifftshift( samples, 1 ), 2 ) ), 1 ), 2 );
   PsiImg0 = sparsifier( img0 );  % Psi is the sparsifying transformation
   PsiImg0 = PsiImg0 / norm( PsiImg0(:) ) * norm( img0(:) );
   nPsi = numel( PsiImg0 );
