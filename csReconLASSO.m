@@ -244,6 +244,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
 
   %img0 = zeros( size( samples ) );
   img0 = fftshift( fftshift( uifft2( ifftshift( ifftshift( samples, 1 ), 2 ) ), 1 ), 2 );
+disp( '/nick fix this' );
   PsiImg0 = sparsifier( img0 );  % Psi is the sparsifying transformation
   PsiImg0 = PsiImg0 / norm( PsiImg0(:) ) * norm( img0(:) );
   nPsi = numel( PsiImg0 );
@@ -271,7 +272,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
 
     if reweightIter > 1
       PsiImg0 = xStar;
-      lambda = nPsi / ( abs( xStar(:) ) + reweightEpsilon );
+      lambda = nPsi ./ ( abs( PsiImg0(:) ) + reweightEpsilon );
     end
 
     t = stepSize;
