@@ -2,13 +2,15 @@
 function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   % recon = csReconFISTA( samples, lambda [, 'nIter', nIter, 'nReweightIter', nReweightIter, ...
   %   'printEvery', printEvery, 'transformType', transformType, 'verbose', verbose, ...
-  %   'wavSplit', wavSpit ] )
+  %   'w', w, 'wavSplit', wavSpit ] )
   %
   % This routine uses proximal gradient methods to minimize
-  %   0.5 * || A y - b ||_2^2 + lambda || y ||_1
+  %   0.5 * || A y - b ||_2^2 + lambda || y ||_{w,1}
   %   where A is sampleMask * Fourier Transform * adjoint( Psi ).
   %   Here, Psi is either a wavelet or curvelet transform.
   %   The reconstruction returned is adjoint( Psi ) * y.
+  %
+  % Note that || y ||_{w,1} = w1 |y1| + w2 |y2| + ... + wN |yN|
   %
   % Iterative reweighting is done according to "Enhancing sparsity by reweighted L1
   %   minimization" by Candes, Watkin, and Boyd with the nReweightIter optional parameter.
@@ -52,6 +54,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   p.addParameter( 'stepSize', [], @ispositive );
   p.addParameter( 'transformType', 'wavCurv', @(x) true );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
+  p.addParameter( 'w', 1, @isnumeric );
   p.addParameter( 'waveletType', [], @(x) true );
   p.addParameter( 'wavSplit', wavSplit, @isnumeric );
   p.parse( varargin{:} );
@@ -64,6 +67,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   stepSize = p.Results.stepSize;
   transformType = p.Results.transformType;
   verbose = p.Results.verbose;
+  w = p.Results.w;
   waveletType = p.Results.waveletType;
   wavSplit = p.Results.wavSplit;
 
@@ -251,10 +255,10 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
     lambda = nPsi ./ ( abs( PsiImg0 ) + reweightEpsilon );
   end
 
-  proxth = @(x,t) proxL1Complex( x, ( t / nPsi ) * lambda );
+  proxth = @(x,t) proxL1Complex( x, ( t .* w / nPsi ) * lambda );
 
   function out = h( x )
-    out = sum( abs( x(:) .* lambda(:) ) ) / nPsi;
+    out = sum( abs( x(:) .* lambda(:) .* w(:) ) ) / nPsi;
   end
 
   if numel( stepSize ) == 0
