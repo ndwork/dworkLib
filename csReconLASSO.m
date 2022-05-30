@@ -255,7 +255,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
     lambda = nPsi ./ ( abs( PsiImg0 ) + reweightEpsilon );
   end
 
-  proxth = @(x,t) proxL1Complex( x, ( t .* w / nPsi ) * lambda );
+  proxth = @(x,t) proxL1Complex( x, ( t / nPsi ) * ( w .* lambda ) );
 
   function out = h( x )
     out = sum( abs( x(:) .* lambda(:) .* w(:) ) ) / nPsi;
