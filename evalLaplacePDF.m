@@ -9,7 +9,7 @@ function out = evalLaplacePDF( x, varargin )
   %
   % Optional Inputs:
   % LMean - a 1D array or scalar specifying the mean of the distribution
-  % LSig - a 1D array or scalar specifyign the standard deviation of the distribution
+  % LSig - a 1D array or scalar specifying the standard deviation of the distribution
   %   Note that this is slightly slower than using gVar
   % LVar - a 1D array or scalar specifying the variance of the distribution
   %

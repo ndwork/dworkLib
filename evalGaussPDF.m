@@ -9,7 +9,7 @@ function out = evalGaussPDF( x, varargin )
   %
   % Optional Inputs:
   % gMean - a 1D array or scalar specifying the mean of the distribution
-  % gSig - a 1D array or scalar specifyign the standard deviation of the distribution
+  % gSig - a 1D array or scalar specifying the standard deviation of the distribution
   %   Note that this is slightly slower than using gVar
   % gVar - a 1D array or scalar specifying the variance of the distribution
   %

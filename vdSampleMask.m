@@ -7,6 +7,8 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
   % Inputs:
   % sMask - the size of the mask (a 1D array corresponding to the number
   %   of elements in each dimension)
+  % sigmas - a 1D array or scalar specifying the standard deviations of the distribution
+  %   in each dimension
   %
   % Optional Inputs:
   % maskType - string specifying mask type; can be 'Laplacian' or 'Gaussian'
