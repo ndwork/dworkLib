@@ -2,6 +2,8 @@
 function out = wavScale( wt, wavSplit, varargin )
   % out = wavScale( wt, wavSplit [, 'range', range ] );
   %
+  % Applies scaleImg to each bin of the wavelet transform individually.
+  %
   % Written by Nicholas Dwork - Copyright 2019
   %
   % https://github.com/ndwork/dworkLib.git
