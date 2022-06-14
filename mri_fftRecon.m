@@ -1,5 +1,7 @@
 
 function recons = mri_fftRecon( kData, varargin )
+  % recons = mri_fftRecon( kData [, 'multiSlice', true/false ] )
+  %
   % Performs an inverse FFT of each coil
   %
   % Inputs:
