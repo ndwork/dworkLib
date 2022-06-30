@@ -1,5 +1,5 @@
 
-function [kC,C,c] = makeKbKernel( G, N, varargin )
+function [kC,C,c] = makeKbKernel( G, varargin )
   % [kc,C,c] = makeKbKernel( G, [, N,  'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % This function makes the Kaiser Bessel kernel; this kernel is a
@@ -39,10 +39,12 @@ function [kC,C,c] = makeKbKernel( G, N, varargin )
   p.addParameter( 'W', 8, checknum );
   p.addParameter( 'nC', 500, checknum );
   p.parse( varargin{:} );
+  N = p.Results.N;
   alpha = p.Results.alpha;
   W = p.Results.W;
   nC = p.Results.nC;
 
+  if numel( N ) == 0, N = G; end
   if numel( alpha ) == 0, alpha = defaultAlpha; end
   if numel( W ) == 0, W = defaultW; end
   if numel( nC ) == 0, nC = defaultNc; end
