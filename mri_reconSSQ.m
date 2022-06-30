@@ -29,7 +29,7 @@ function recon = mri_reconSSQ( kData, varargin )
     return;
   end
 
-  coilRecons = mri_fftRecon( kData, varargin{:} );
+  coilRecons = mri_ifftRecon( kData, varargin{:} );
 
   tmpReconSq = coilRecons .* conj( coilRecons );
 

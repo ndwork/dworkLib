@@ -39,7 +39,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   sigma = p.Results.sigma;
   verbose = p.Results.verbose;
 
-  coilRecons = mri_fftRecon( kData );
+  coilRecons = mri_ifftRecon( kData );
   sCoilRecons = size( coilRecons );
   ssqRecon = norms( coilRecons, 2, 4 );
 
