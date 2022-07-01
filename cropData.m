@@ -11,7 +11,7 @@ function out = cropData( data, N )
   %   If N is an array of size equal to the number of dimensions of data, 
   %     then the final size is [N(1) N(2) .. N(D)]
   %
-  % Written by Nicholas Dwork
+  % Written by Nicholas Dwork - Copyright 2017
   %
   % https://github.com/ndwork/dworkLib.git
   %
