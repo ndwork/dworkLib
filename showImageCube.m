@@ -70,8 +70,8 @@ function imH = showImageCube( cube, varargin )
   if scale <= 0, error('scale must be positive'); end
   
   if scale ~= 1
-    newCube = zeros( scale * sCube(1), scale * sCube(2), sCube(3) );
-    for imgIndx = 1 : sCube(3)
+    newCube = zeros( scale * sCube(1), scale * sCube(2), nImgs );
+    for imgIndx = 1 : nImgs
       newCube(:,:,imgIndx) = imresize( cube(:,:,imgIndx), scale, 'nearest' );
     end
     varargin{1} = 1;
