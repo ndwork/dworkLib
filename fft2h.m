@@ -19,5 +19,5 @@ function out = fft2h( in )
     FHin = ifft( ifft( in, [], 1 ), [], 2 );
   end
 
-  out = size(in,1) * size(in,2) * FHin;
+  out = ( size(in,1) * size(in,2) ) * FHin;
 end
