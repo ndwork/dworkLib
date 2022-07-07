@@ -603,6 +603,19 @@ function testDworkLib
   axis( [ -0.5 0.5 -0.5 0.5 ] );  axis equal;
   colorbarnice;  titlenice( 'Estimate' );
 
+  err = abs( F - F_hat );
+  figure;  scatterIntensity( kTraj(:,1), kTraj(:,2), abs( err ) );
+  axis( [ -0.5 0.5 -0.5 0.5 ] );  axis equal;
+  colorbarnice;  titlenice( '|err|' );
+
+  relErr = norm( F(:) - F_hat(:) ) / norm( F(:) );
+  disp( relErr );
+  if relErr >= 0.2
+    error([ 'iGrid_2D failed with relative err: ', num2str(relErr) ]);
+  else
+    disp( 'iGrid_2D passed' );
+  end
+
 
   %% Make sure iGrid_2D and iGridT_2D are adjoints
   sizeX = [ 256 256 ];
