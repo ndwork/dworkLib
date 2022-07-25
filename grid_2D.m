@@ -17,7 +17,7 @@ function recon = grid_2D( F, kTraj, N, varargin )
   %   weights is a 1D array; it is the pre-density compensation weights and
   %     can be generated using makePrecompWeights_2D.  Alternatively, they
   %     can be determined analytically for some sequences.
-  %     By default, weights are all 1
+  %     By default, weights are determined with makePrecompWeights_2D.
   %   alpha is the oversampling factor > 1
   %   W is the window width in pixels
   %   nC is the number of points to sample the convolution kernel
@@ -51,7 +51,11 @@ function recon = grid_2D( F, kTraj, N, varargin )
   nC = p.Results.nC;
   W = p.Results.W;
 
-  if numel( weights ) > 0, F = bsxfun( @times, F, weights ); end
+  if numel( weights ) == 0, weights = makePrecompWeights_2D( kTraj ); end
+
+  if numel( weights ) > 1 || weight ~= 1
+    F = bsxfun( @times, F, weights );
+  end
 
   recon = iGridT_2D( F, kTraj, N, 'alpha', alpha, 'W', W, 'nC', nC );
 end
