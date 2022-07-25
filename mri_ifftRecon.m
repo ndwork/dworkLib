@@ -36,7 +36,7 @@ function recons = mri_ifftRecon( kData, varargin )
   kData = fftshift2( ifft2( ifftshift2( kData ) ) );
 
   if ~ismatrix( kData ) && multiSlice == false
-    recons = fftshift( ifft( ifftshift( recons, 3 ), [], 3 ), 3 );
+    recons = fftshift( ifft( ifftshift( kData, 3 ), [], 3 ), 3 );
   end
 
 end
