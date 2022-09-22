@@ -134,6 +134,18 @@ function testDworkLib
   plotTriangles( triangles );
 
   %% circConv
+  a = rand( 64, 128 );
+  k = rand( 6, 7 );
+  out1 = cropData( conv2( a, k, 'same' ), size(k) );
+  out2 = cropData( circConv( k, a ), size(k) );
+  circConvErr = norm( out1(:) - out2(:) ) / norm( out1(:) );
+  if circConvErr < 1d-8
+    disp( 'circConv test passed' );
+  else
+    error([ 'circConv test failed with err: ', num2str(circConvErr) ]);
+  end
+
+  %% circConv adjoint
   img = rand( 64, 128 );
   filt = rand( 6, 7 );
 
@@ -142,7 +154,7 @@ function testDworkLib
 
   [blurCheck,checkErr] = checkAdjoint( img, blur, 'fAdj', blurT );
   if blurCheck == false
-    error([ 'circConv test failed with error: ', num2str( checkErr ) ]);
+    error([ 'circConv adjoint test failed with error: ', num2str( checkErr ) ]);
   end
   disp( 'circConv test passed' );
 
@@ -235,7 +247,16 @@ function testDworkLib
   else
     error([ 'evlautePoly2 failed with error, ', num2str(err) ]);
   end
-  
+
+  %% fftnh
+  x = rand( 5, 7, 6, 9 );
+  [fftnCheckOut,fftnCheckErr] = checkAdjoint( x, @fftn, @fftnh );
+  if fftnCheckOut == true
+    disp( 'fftnh check passed' );
+  else
+    disp([ 'fftn check failed with error: ', num2str(fftnCheckErr) ]);
+  end
+
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2019b.app/toolbox/images/imdata/moon.tif';
   img = double( imread( imgFile ) );
