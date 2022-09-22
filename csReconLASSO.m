@@ -1,8 +1,8 @@
 
 function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
-  % recon = csReconFISTA( samples, lambda [, 'nIter', nIter, 'nReweightIter', nReweightIter, ...
+  % recon = csReconLASSO( samples [, 'lambda', lambda, 'nIter', nIter, 'nReweightIter', nReweightIter, ...
   %   'printEvery', printEvery, 'transformType', transformType, 'verbose', verbose, ...
-  %   'w', w, 'wavSplit', wavSpit ] )
+  %   'waveletType', waveletType, 'w', w, 'wavSplit', wavSpit ] )
   %
   % This routine uses proximal gradient methods to minimize
   %   0.5 * || A y - b ||_2^2 + lambda || y ||_{w,1}
