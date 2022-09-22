@@ -85,7 +85,7 @@ function padded = padData( data, N, varargin )
         ' minIndxs( ', indx2str(dimIndx,nDimsData), ...
           ' ) : minIndxs( ', indx2str(dimIndx,nDimsData), ...
         ' ) + sData( ', indx2str(dimIndx,nDimsData), ' ) - 1' ];   %#ok<AGROW>
-      if dimIndx < nDimsData, str2eval = [ str2eval, ',' ]; end
+      if dimIndx < nDimsData, str2eval = [ str2eval, ',' ]; end   %#ok<AGROW> 
     end
     str2eval = [ str2eval, ') = data;' ];
     eval( str2eval );
