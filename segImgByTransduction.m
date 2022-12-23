@@ -7,7 +7,7 @@ function out = segImgByTransduction( img, ins, outs, varargin )
   % Inputs:
   % img - an array
   % ins - a 1D array of indices into img for pixels that are within the segmented region
-  % ins - a 1D array of indices into img for pixels that are outside of the segmented region
+  % outs - a 1D array of indices into img for pixels that are outside of the segmented region
   %
   % Optional Inputs:
   % nbhdSize - the neighborhood size for those pixels that are considered local
@@ -108,15 +108,8 @@ function out = segImgByTransduction( img, ins, outs, varargin )
   A = sparse( aRows, aCols, aVals, max(aRows), nImg );
 
   out = A \ b;
-  out = reshape( out, sImg(1:2) );
+  out = reshape( out > 0, sImg(1:2) );
 end
-
-
-
-
-
-
-
 
 
 
