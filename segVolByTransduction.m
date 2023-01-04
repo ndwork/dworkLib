@@ -123,11 +123,10 @@ function out = segVolByTransduction( vol, ins, outs, varargin )
 
   A = sparse( aRows, aCols, aVals, max(aRows), nVol );
 
-  out = A \ b;
+  out = lsqr( A, b, [], 50 );
+  %out = A \ b;
   out = reshape( out > 0, sVol );
 end
-
-
 
 
 
