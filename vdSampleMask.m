@@ -11,7 +11,7 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
   %   in each dimension
   %
   % Optional Inputs:
-  % maskType - string specifying mask type; can be 'Laplacian' or 'Gaussian'
+  % maskType - string specifying mask type; can be 'Laplacian' (default) or 'Gaussian'
   %
   % Output:
   % samples - a matrix specifying the sample for each dimension
