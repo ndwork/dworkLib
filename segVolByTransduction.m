@@ -37,6 +37,8 @@ function out = segVolByTransduction( vol, ins, outs, varargin )
   sVol = size( vol );
   nVol = numel( vol );
 
+  vol = ( vol - mean(vol(:)) ) / std( vol(:) );
+
   knownMask = zeros( size( vol, 1 ), size( vol, 2 ), size( vol, 3 ) );
   knownMask(ins) = 1;
   knownMask(outs) = -1;
@@ -50,12 +52,11 @@ function out = segVolByTransduction( vol, ins, outs, varargin )
 
   % Find the spatial distance weights for those points in the local neighborhood
   nbhdCoords = size2imgCoordinates( nbhdSize );
-  nbhdYs = nbhdCoords{1};
-  nbhdXs = nbhdCoords{2};
-  nbhdZs = nbhdCoords{3};
-  [ nbhdYsTmp, nbhdXsTmp, nbhdZsTmp ] = ndgrid( nbhdYs, nbhdXs, nbhdZs );
-  nbhdDists = sqrt( nbhdYsTmp.^2 + nbhdXsTmp.^2 + nbhdZsTmp.^2 );
-  dWeights = exp( -lambda * nbhdDists );  %distance Weights
+  nbhdYs = nbhdCoords{1};  sdevY = std( size2imgCoordinates(size(vol,1) ) );  %nbhdYs = nbhdYs / std( size2imgCoordinates(size(vol,1) ) );
+  nbhdXs = nbhdCoords{2};  sdevX = std( size2imgCoordinates(size(vol,2) ) );  %nbhdXs = nbhdXs / std( size2imgCoordinates(size(vol,2) ) );
+  nbhdZs = nbhdCoords{3};  sdevZ = std( size2imgCoordinates(size(vol,3) ) );  %nbhdZs = nbhdZs / std( size2imgCoordinates(size(vol,3) ) );
+  [ nbhdYsTmp, nbhdXsTmp, nbhdZsTmp ] = ndgrid( nbhdYs / sdevY, nbhdXs / sdevX, nbhdZs / sdevZ );
+  nbhdDistsSq = nbhdYsTmp.^2 + nbhdXsTmp.^2 + nbhdZsTmp.^2;
   clear nbhdYsTmp nbhdYsTmp nbhdZsTmp
 
   aIndx = 1;
@@ -88,15 +89,15 @@ function out = segVolByTransduction( vol, ins, outs, varargin )
               if kNbhd == 0 && jNbhd == 0 && iNbhd == 0, continue; end
               kIndxD = kNbhd - min(nbhdZs(:)) + 1;
   
-  
-              cImg = vol(j,i,k);
-              cNbhd = vol(j+jNbhd,i+iNbhd,k+kNbhd);
-              w = dWeights(jIndxD,iIndxD,kIndxD) * exp( -norm( cImg(:) - cNbhd(:) ) );
+              cImg = vol( j, i, k );
+              cNbhd = vol( j+jNbhd, i+iNbhd, k+kNbhd );
+              cDistsSq = norm( cImg(:) - cNbhd(:) );
+              w = exp( -lambda * ( nbhdDistsSq(jIndxD,iIndxD,kIndxD) + cDistsSq ) );
     
-              if knownMask(j+jNbhd,i+iNbhd,k+kNbhd) ~= 0
+              if knownMask( j+jNbhd, i+iNbhd, k+kNbhd ) ~= 0
                 aRows(aIndx) = aRowIndx;  aCols(aIndx) = sub2ind(sVol,j,i,k);
                 aVals(aIndx) = w;
-                b(aRowIndx) = w * knownMask(j+jNbhd,i+iNbhd,k+kNbhd);
+                b(aRowIndx) = w * knownMask( j+jNbhd, i+iNbhd, k+kNbhd);
                 aIndx = aIndx + 1;
               else
                 aRows( aIndx ) = aRowIndx;
