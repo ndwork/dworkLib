@@ -33,7 +33,13 @@ function out = segImgByTransduction( img, ins, outs, varargin )
   nbhdSize = p.Results.nbhdSize;
 
   if numel( nbhdSize ) == 1, nbhdSize = [ nbhdSize nbhdSize ]; end
+
+  for dim = 1 : size( img, 3 )
+    dimImg = img(:,:,dim);
+    img(:,:,dim) = ( dimImg - mean( dimImg(:) ) ) / std( dimImg(:) );
+  end
   if ismatrix(img), img = repmat( img, [ 1 1 3 ] ); end  % convert into gray color image
+
   sImg = size( img );
   nImg = sImg(1) * sImg(2);
 
@@ -50,11 +56,10 @@ function out = segImgByTransduction( img, ins, outs, varargin )
 
   % Find the spatial distance weights for those points in the local neighborhood
   nbhdCoords = size2imgCoordinates( nbhdSize );
-  nbhdYs = nbhdCoords{1};
-  nbhdXs = nbhdCoords{2};
-  [ nbhdYsTmp, nbhdXsTmp ] = ndgrid( nbhdYs, nbhdXs );
-  nbhdDists = sqrt( nbhdYsTmp.*nbhdYsTmp + nbhdXsTmp.*nbhdXsTmp );
-  dWeights = exp( -lambda * nbhdDists );  %distance Weights
+  nbhdYs = nbhdCoords{1};  sdevY = std( size2imgCoordinates( size(img,1) ) );
+  nbhdXs = nbhdCoords{2};  sdevX = std( size2imgCoordinates( size(img,2) ) );
+  [ nbhdYsTmp, nbhdXsTmp ] = ndgrid( nbhdYs / sdevY, nbhdXs / sdevX );
+  nbhdDistsSq = nbhdYsTmp .* nbhdYsTmp + nbhdXsTmp .* nbhdXsTmp;
   clear nbhdYsTmp nbhdYsTmp
 
   aIndx = 1;
@@ -70,6 +75,8 @@ function out = segImgByTransduction( img, ins, outs, varargin )
         continue;
       end
 
+      cImg = img(j,i,:);
+
       for iNbhd = nbhdXs(:)'
         if i + iNbhd < 1 || i + iNbhd > sImg(2), continue; end
         iIndxD = iNbhd - min(nbhdXs(:)) + 1;
@@ -79,9 +86,10 @@ function out = segImgByTransduction( img, ins, outs, varargin )
           if iNbhd == 0 && jNbhd == 0, continue; end
           jIndxD = jNbhd - min(nbhdYs(:)) + 1;
 
-          cImg = img(j,i,:);
-          cNbhd = img(j+jNbhd,i+iNbhd,:);
-          w = dWeights(jIndxD,iIndxD) * exp( -norm( cImg(:) - cNbhd(:) ) );
+          nbhdDistSq = nbhdDistsSq( jIndxD, iIndxD );
+          cNbhd = img( j+jNbhd, i+iNbhd, : );
+          cDistSq = norm( cImg(:) - cNbhd(:) )^2;
+          w = exp( -lambda * sqrt( nbhdDistSq + cDistSq ) );
 
           if knownMask(j+jNbhd,i+iNbhd) ~= 0
             aRows(aIndx) = aRowIndx;  aCols(aIndx) = sub2ind(sImg(1:2),j,i);
