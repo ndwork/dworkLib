@@ -13,6 +13,7 @@ function out = ffth( in, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  p = inputParser;
   p.addOptional( 'nFFT', [], @ispositive );
   p.addOptional( 'dim', [], @ispositive );
   p.parse( varargin{:} );
