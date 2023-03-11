@@ -112,12 +112,9 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   end
 
   calculateRelDiffs = false;
-  if nargout > 2
+  if ( numel( tol ) ~= 0 && tol > 0 ) || nargout > 2
     calculateRelDiffs = true;
     relDiffs = zeros( N, 1 );
-  end
-  if numel( tol ) ~= 0 && tol > 0
-    calculateRelDiffs = true;
   end
 
   if calculateObjectiveValues == true
