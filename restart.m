@@ -50,6 +50,9 @@ function restart( varargin )
   % which is what is done here:
   pressShiftF5;
   evalin( 'base', 'clear all' );
+
+  myCluster = parcluster('local');
+  if numel( myCluster.Jobs ) > 0, delete( myCluster.Jobs ); end
 end
 
 
