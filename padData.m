@@ -76,7 +76,7 @@ function padded = padData( data, N, varargin )
   else
     padded = zeros( N(:)' );
     sData = size( data );
-    minIndxs = zeros( numel(N) );
+    minIndxs = zeros( numel(N), 1 );
     str2eval = ' padded ( ';
     nDimsData = ndims( data );
     for dimIndx = 1 : nDimsData
