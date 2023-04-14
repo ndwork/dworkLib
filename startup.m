@@ -1,3 +1,0 @@
-
-beep off
-
