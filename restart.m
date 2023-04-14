@@ -45,27 +45,8 @@ function restart( varargin )
 
   close all;  clc;  clear;  clear global;
 
-  % I would like to be able to call 'dbquit' here, but Matlab
-  % prevents it.  So instead, I must simulate keyboard commands,
-  % which is what is done here:
-  pressShiftF5;
   evalin( 'base', 'clear all' );
 
   myCluster = parcluster('local');
   if numel( myCluster.Jobs ) > 0, delete( myCluster.Jobs ); end
 end
-
-
-function pressShiftF5
-  import java.awt.Robot;
-  import java.awt.event.KeyEvent;
-
-  rob = Robot;  %Create a Robot-object to do the key-pressing
-  rob.keyPress( KeyEvent.VK_SHIFT );
-  rob.keyPress( KeyEvent.VK_F5 );
-  pause( 0.02 );
-  rob.keyRelease( KeyEvent.VK_F5 );
-  rob.keyRelease( KeyEvent.VK_SHIFT );
-end
-
-
