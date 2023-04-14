@@ -31,8 +31,10 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
 
   p = inputParser;
   p.addParameter( 'maskType', 'Laplacian', @(x) true );
+  p.addParameter( 'maxIter', 30, @ispositive );
   p.parse( varargin{:} );
   maskType = p.Results.maskType;
+  maxIter = p.Results.maxIter;
 
   if numel( sigmas ) == 1, sigmas = sigmas * ones( numel(sMask), 1 ); end
 
@@ -44,25 +46,32 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
     nDims = 1;
   end
 
-  dimSamples = cell( 1, nDims );
-  for dimIndx = 1 : nDims
-    theseCoordinates = maskCoordinates{ dimIndx };
-
-    if strcmp( maskType, 'Laplacian' )
-      samplePDF = evalLaplacePDF( theseCoordinates, 'LSig', sigmas(dimIndx) );
-    elseif strcmp( maskType, 'Gaussian' )
-      samplePDF = evalGaussPDF( theseCoordinates, 'gSig', sigmas(dimIndx) );
-    else
-      error( 'Unrecognized mask type' );
-    end
-
-    theseSamples = samplesFromPMF( samplePDF, theseCoordinates, nSamples );
-    dimSamples{dimIndx} = theseSamples - min( theseCoordinates ) + 1;
-  end
-
-  samples1D = sub2ind( sMask, dimSamples{:} );
-
   mask = zeros( sMask );
-  mask( samples1D ) = 1;
+
+  for sampleIter = 1 : maxIter
+
+    samples2Add = nSamples - sum( mask(:) );
+
+    dimSamples = cell( 1, nDims );
+    for dimIndx = 1 : nDims
+      theseCoordinates = maskCoordinates{ dimIndx };
+  
+      if strcmp( maskType, 'Laplacian' )
+        samplePDF = evalLaplacePDF( theseCoordinates, 'LSig', sigmas(dimIndx) );
+      elseif strcmp( maskType, 'Gaussian' )
+        samplePDF = evalGaussPDF( theseCoordinates, 'gSig', sigmas(dimIndx) );
+      else
+        error( 'Unrecognized mask type' );
+      end
+  
+      theseSamples = samplesFromPMF( samplePDF, theseCoordinates, samples2Add );
+      dimSamples{dimIndx} = theseSamples - min( theseCoordinates ) + 1;
+    end
+  
+    samples1D = sub2ind( sMask, dimSamples{:} );
+  
+    mask( samples1D ) = 1;
+    if sum( mask(:) ) == nSamples, break; end
+  end
 end
 
