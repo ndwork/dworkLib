@@ -31,7 +31,7 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
 
   p = inputParser;
   p.addParameter( 'maskType', 'Laplacian', @(x) true );
-  p.addParameter( 'maxIter', 30, @ispositive );
+  p.addParameter( 'maxIter', 100, @ispositive );
   p.parse( varargin{:} );
   maskType = p.Results.maskType;
   maxIter = p.Results.maxIter;
