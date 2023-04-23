@@ -30,9 +30,9 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   %   Options are:  'curvlet', 'wavelet', or 'wavCurv'.
   %     curvelet - Discrete curvelet transform (requires CurveLab; see curvelet.org)
   %     wavelet - Wavelet transform (type specified by waveletType parameter)
-  %     wavCurv - Redundant dictionary of wavelet and curvelet
+  %     wavCurv - Redundant dictionary of wavelet and curvelet (default)
   % verbose - if true, prints informative statements
-  % waveletType - either 'Daubechies-4' for Daubechies-4 (default) or 'Haar'
+  % waveletType - either 'Daubechies-4' (default) or 'Haar'
   %
   % Written by Nicholas Dwork - Copyright 2017
   %
@@ -87,11 +87,11 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   nImg = prod( sImg );
 
   function out = F( x )
-    out = fftshift( fftshift( fft2( ifftshift( ifftshift( x, 1 ), 2 ) ), 1 ), 2 );
+    out = fftshift2( fft2( ifftshift2( x ) ) );
   end
 
   function out = FH( y )
-    out = fftshift( fftshift( fft2h( ifftshift( ifftshift( y, 1 ), 2 ) ), 1 ), 2 );
+    out = fftshift2( fft2h( ifftshift2( y ) ) );
   end
 
   function out = findCellSizes( in )
@@ -247,7 +247,7 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
   end
 
   %img0 = zeros( size( samples ) );
-  img0 = fftshift( fftshift( ifft2( ifftshift( ifftshift( samples, 1 ), 2 ) ), 1 ), 2 );
+  img0 = fftshift2( ifft2( ifftshift2( samples ) ) );
   PsiImg0 = sparsifier( img0 );  % Psi is the sparsifying transformation
   PsiImg0 = PsiImg0 / norm( PsiImg0(:) ) * norm( img0(:) );
   nPsi = numel( PsiImg0 );
@@ -282,14 +282,14 @@ function [recon,oValues,lambda] = csReconLASSO( samples, varargin )
     if nargout > 1
       if strcmp( alg, 'pogm' )
         [xStar,oValues] = pogm( PsiImg0, @gGrad, proxth, nIter, 'g', @g, 'h', @h, 't', t, ...
-          'tol', 1d-8, 'verbose', false, 'printEvery', printEvery );
+          'tol', 1d-8, 'verbose', verbose, 'printEvery', printEvery );
       elseif strcmp( alg, 'fista' )
         [xStar,oValues] = fista( PsiImg0, @gGrad, proxth, 'N', nIter, 'g', @g, 'h', @h, 't', t, ...
-          'tol', 1d-8, 'verbose', false, 'printEvery', printEvery );
+          'tol', 1d-8, 'verbose', verbose, 'printEvery', printEvery );
       elseif strcmp( alg, 'fista_wLS' )
         t = t * 10;
         [xStar,oValues] = fista_wLS( PsiImg0, @g, @gGrad, proxth, 'h', @h, ...
-          't0', t, 'tol', 1d-8, 'N', nIter, 'verbose', false, 'printEvery', printEvery );
+          't0', t, 'tol', 1d-8, 'N', nIter, 'verbose', verbose, 'printEvery', printEvery );
       else
         error( 'Unrecognized algorithm' );
       end
