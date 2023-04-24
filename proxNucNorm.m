@@ -20,9 +20,9 @@ function out = proxNucNorm( in, thresh )
     return;
   end
 
-  [u,s,v] = svd( in, 'econ' );
+  [u,s,v] = svd( in, 'econ', 'vector' );
 
-  s = softThresh( diag(s), thresh );  % Singular values are always real
+  s = softThresh( s, thresh );  % Singular values are always real
 
   out = u * diag(s) * v';
 
