@@ -107,7 +107,7 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
       relDiffs(k+1) = relDiff;
     end
 
-    if verbose>0 && mod( k, printEvery ) == 0
+    if verbose>0 && mod( k+1, printEvery ) == 1
       formatString = ['%', num2str(ceil(log10(N))), '.', num2str(ceil(log10(N))), 'i' ];
       verboseString = [ 'POGM Iteration: ', num2str(k,formatString), ' of ', num2str(N) ];
       if calculateObjectiveValues > 0
