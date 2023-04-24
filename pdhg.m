@@ -92,15 +92,16 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     applyAT = @(x) A( x, 'transp' );
   end
 
+  if nargout > 1,  objValues = zeros( N, 1 ); end
+  if nargout > 2,  relDiffs = zeros( N, 1 ); end
+
   if numel( sigma ) == 0  && numel( A ) > 0
     if numel( normA ) == 0
       error( 'If an A is supplied, you must supply sigma or normA' );
     end
+    if normA == 0, return; end
     sigma = ( 0.99 / normA^2 ) / tau;
   end
-
-  if nargout > 1,  objValues = zeros( N, 1 ); end
-  if nargout > 2,  relDiffs = zeros( N, 1 ); end
 
   calculateRelDiffs = false;
   if nargout > 2  ||  ( numel( tol ) > 0  &&  tol < Inf )
