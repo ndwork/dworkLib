@@ -63,11 +63,13 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
 
   if numel( w ) == 0
     %c = lsqminnorm( A, z(:) );
-    c = pinv(A) * z(:);
+    %c = pinv(A) * z(:);
+    c = A \ z(:);
   else
     W = sparse( 1:numel(w), 1:numel(w), w(:) ); 
     %c = lsqminnorm( diag(w(:)) * A, w(:) .* z(:) );
-    c = pinv( W * A ) * ( w(:) .* z(:) );
+    %c = pinv( W * A ) * ( w(:) .* z(:) );
+    c = ( W * A ) \ ( w(:) .* z(:) );
   end
 
   c = reshape( c, [yOrder+1 xOrder+1] );
