@@ -2,7 +2,8 @@
 function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'sigma', sigma, ...
-  %    'lambda', lambda, 'theta', theta, 'tol', tol, 'verbose', verbose, 'z', z ] )
+  %    'lambda', lambda, 'printEvery', printEvery, 'theta', theta, ...
+  %    'tol', tol, 'verbose', verbose, 'z', z ] )
   %
   % Implements the Primal Dual Hybrid Gradient (Chambolle-Pock) method that
   % solves problems of the form:  minimize f( x ) + g( A x )
@@ -42,7 +43,8 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     disp( 'Usage;  ' );
     disp( '  [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ... ');
     disp( '  ''A'', A, ''f'', f, ''g'', g, ''N'', N, ''normA'', normA, ''sigma'', sigma, ...' );
-    disp( '  ''lambda'', lambda, ''theta'', theta, ''tol'', tol, ''verbose'', verbose, ''z'', z ] )' );
+    disp( '  ''lambda'', lambda, ''printEvery'', printEvery, ''theta'', theta, ...' );
+    disp( '  ''tol'', tol, ''verbose'', verbose, ''z'', z ] )' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objValues = []; end
     return;
