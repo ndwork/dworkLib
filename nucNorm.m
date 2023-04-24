@@ -14,7 +14,7 @@ function out = nucNorm( in )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  [~,s,~] = svd( in, 'econ' );
-  out = sum( diag( s ) );
+  [~,s,~] = svd( in, 'econ', 'vector' );
+  out = sum( s );
 end
 
