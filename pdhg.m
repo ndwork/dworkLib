@@ -57,7 +57,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @ispositive );
-  p.addParameter( 'normA', [], @ispositive );
+  p.addParameter( 'normA', [], @(x) x>0 );
   p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 1 );
   p.addParameter( 'tol', defaultTol, @(x) numel(x) == 0 || ispositive(x) );
