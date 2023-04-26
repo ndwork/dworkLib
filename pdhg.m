@@ -141,7 +141,17 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
       objValues( optIter ) = f( x ) + g( applyA( x ) );
     end
     if calculateRelDiffs == true
-      relDiff = norm( x(:) - lastX(:) ) / norm( lastX(:) );
+      normLastX = norm( lastX(:) );
+      normDiffX = norm( x(:) - lastX(:) );
+      if normLastX == 0
+        if normDiffX == 0
+          relDiff = 0;
+        else
+          relDiff = normDiffX / norm( x(:) );
+        end
+      else
+        relDiff = normDiffX / normLastX;
+      end
     end
     if nargout > 2, relDiffs( optIter ) = relDiff; end
 
