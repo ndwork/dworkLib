@@ -154,7 +154,7 @@ function sMaps = jsense_findSMaps( kData, img, polyOrder )
   doCheckAdjoint = false;
   if doCheckAdjoint == true
     [checkA,errA] = checkAdjoint( rand(324,8), @applyA );
-    if checkA ~= true, errro( 'Adjoint check failed' ); end
+    if checkA ~= true, error([ 'Adjoint check failed with error: ', num2str(errA) ]); end
   end
 
   polyCoeffs = lsqr( @applyA, kData( abs(kData) ~= 0 ), [], 100, [] );
