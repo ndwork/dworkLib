@@ -1,7 +1,7 @@
 
 function mask = mri_makeIntensityMask( kData, varargin )
   % mask = mri_makeIntensityMask( kData [, 'thresh', thresh, ...
-  %   'm', m, 'morphScale', morphScale ] )
+  %   'm', m, 'morphScale', morphScale, 'noiseCoords', noiseCoords' ] )
   %
   % Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
   % Pruessmann et al., 1999
@@ -15,6 +15,7 @@ function mask = mri_makeIntensityMask( kData, varargin )
   %   (default is 0.06)
   % m - the size of the minimum neighborhood filter
   %   (default is 5 )
+  % noiseCoords - [ yMin yMax xMin xMax ] coordinates for region of image with noise
   %
   % Written by Nicholas Dwork - Copyright 2019
   %
@@ -26,16 +27,26 @@ function mask = mri_makeIntensityMask( kData, varargin )
   % purpose.
 
   p = inputParser;
-  p.addParameter( 'morphScale', 0, @(x) x >= 0 );
-  p.addParameter( 'thresh', 0.04, @ispositive );
   p.addParameter( 'm', 2, @ispositive );
+  p.addParameter( 'morphScale', 0, @(x) x >= 0 );
+  p.addParameter( 'noiseCoords', [], @ispositive );
+  p.addParameter( 'thresh', 0.04, @ispositive );
   p.parse( varargin{:} );
-  morphScale = p.Results.morphScale;
-  thresh = p.Results.thresh;
   m = p.Results.m;
+  morphScale = p.Results.morphScale;
+  noiseCoords = p.Results.noiseCoords;
+  thresh = p.Results.thresh;
 
   ssqRecon = mri_reconSSQ( kData );
   ssqRecon = ssqRecon / max( ssqRecon(:) );
+
+  if numel( noiseCoords ) > 0
+    noiseRegion = ssqRecon( noiseCoords(1):noiseCoords(2), noiseCoords(3):noiseCoords(4) );
+    meanNoise = mean( noiseRegion(:) );
+    stdNoise  = std( noiseRegion(:) );
+    thresh = meanNoise + 3 * stdNoise;
+  end
+
   mask = ssqRecon > thresh;
 
   if m > 0
