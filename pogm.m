@@ -41,8 +41,10 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultN = 100;
+
   p = inputParser;
-  p.addOptional( 'N', 100, @ispositive );
+  p.addOptional( 'N', defaultN, @ispositive );
   p.addParameter( 'g', [] );
   p.addParameter( 'h', [] );
   p.addParameter( 'printEvery', 1, @ispositive );
@@ -57,6 +59,8 @@ function [xStar,objectiveValues,relDiffs] = pogm( x, gGrad, proxth, varargin )
   t = p.Results.t;  % t0 must be greater than 0
   tol = p.Results.tol;
   verbose = p.Results.verbose;
+
+  if numel( N ) == 0, N = defaultN; end
 
   if t <= 0, error('fista: t0 must be greater than 0'); end
 
