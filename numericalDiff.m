@@ -1,6 +1,6 @@
 
-function out = numDiff( g, x, varargin )
-  % out = numDiff( g, x [, 'dx', dx ] );
+function out = numericalDiff( g, x, varargin )
+  % out = numericalDiff( g, x [, 'dx', dx ] );
   %
   % Numerically estimates the gradient of function g
   %
@@ -18,6 +18,12 @@ function out = numDiff( g, x, varargin )
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
+
+  if nargin < 2
+    disp( 'Usage:  out = numericalDiff( g, x [, ''dx'', dx ] );')
+    out = [];
+    return;
+  end
 
   p = inputParser;
   p.addParameter( 'dx', 0.01, @ispositive );
