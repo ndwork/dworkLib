@@ -20,6 +20,7 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %     FP_slow - uses less memory but processes much slower
   %     GP - gradient projection algorithm
   %     GP_sparse - sparse matrix approximation of GP algorithm
+  %     JACKSON - one iteration of FP method
   %     LSQR - least squares on trajectory points
   %     SAMSANOV - Constrainted Least Squares on grid points
   %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
@@ -62,7 +63,7 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
 
   if ~isreal( kTraj ), kTraj = [ real( kTraj(:) ) imag( kTraj(:) ) ]; end
 
-  defaultAlg = 'VORONOI';
+  defaultAlg = 'JACKSON';
   p = inputParser;
   p.addParameter( 'alpha', [], @isnumeric );
   p.addParameter( 'gamma', [], @isnumeric );
@@ -89,6 +90,10 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   if numel( alg ) == 0, alg = defaultAlg; end
   if numel( sImg ) == 1, sImg = [ sImg sImg ]; end
   if numel( subAlg ) == 0  &&  strcmp( alg, 'GP' ), subAlg = 'proxGrad_wExtrap'; end
+
+  if strcmp( alg, 'JACKSON' ) && numel( sImg ) == 0
+    error( 'JACKSON algorithm requires sImg' );
+  end
 
   nOptIter = 1;
   flag = 0;
