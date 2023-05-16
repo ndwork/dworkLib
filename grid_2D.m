@@ -35,7 +35,7 @@ function recon = grid_2D( F, kTraj, N, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  recon = grid_2D( F, kTraj, N, weights, [ ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
+    disp( 'Usage:  recon = grid_2D( F, kTraj, N, [ weights, ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
     if nargout > 0, recon = []; end
     return
   end
