@@ -51,7 +51,9 @@ function recon = grid_2D( F, kTraj, N, varargin )
   nC = p.Results.nC;
   W = p.Results.W;
 
-  if numel( weights ) == 0, weights = makePrecompWeights_2D( kTraj ); end
+  if numel( weights ) == 0
+    weights = makePrecompWeights_2D( kTraj, 'alpha', alpha, 'W', W, 'nC', nC, 'sImg', N );
+  end
 
   if numel( weights ) > 1 || weight ~= 1
     F = bsxfun( @times, F, weights );
