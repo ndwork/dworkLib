@@ -62,7 +62,7 @@ function [kC,C,c] = makeKbKernel( G, varargin )
 
   if nargout > 2
     x = size2imgCoordinates( ceil( alpha * N ) );
-    tmp = sqrt( pi * pi * kw * kw * x .* x - beta * beta );
+    tmp = sqrt( ( pi * pi * kw * kw ) * ( x .* x ) - ( beta * beta ) );
     c = sinc( tmp / pi );
     c = c ./ maxC;
   end
