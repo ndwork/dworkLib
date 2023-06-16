@@ -1,12 +1,15 @@
 
 function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
-  % [recon,sMaps] = mri_reconRoemer( coilRecons )
+  % [recon,sMaps] = mri_reconRoemer( coilRecons [, 'sMaps', sMaps ] )
   %
   % Perform an optimal coil combination according to equation [32] of
-  % "NMR Phased Array" by Roemer et al.
+  %   "NMR Phased Array" by Roemer et al.
   %
   % Inputs:
   % coilRecons is an array of size ( Ny, Nx, ..., nCoils ) of kSpace values
+  %
+  % Optional Inputs:
+  % sMaps - array of sensitivity maps
   %
   % Output:
   % recon is the reconstructed image
