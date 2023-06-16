@@ -63,8 +63,8 @@ function imH = showImageCube( cube, varargin )
     nImgs = sCube(3);
   end
   if numel( nImgsPerRow ) == 0
-    ar = 0.6;  % desired aspect ratio
-    nImgsPerRow = ceil( sqrt( nImgs / ar ) );
+    ar = 1.5;  % desired aspect ratio
+    nImgsPerRow = ceil( sqrt( nImgs * sCube(1) * ar / sCube(2) ) );
   end
 
   if scale <= 0, error('scale must be positive'); end
