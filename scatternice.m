@@ -8,7 +8,7 @@ function out = scatternice( in1, in2, varargin )
   %
   % Optional Inputs:
   %   ax - the axis to plot onto (used with subplot)
-  %   options - all optional arguments that plot accepts
+  %   options - all optional arguments that scatter accepts
   %
   % Written by Nicholas - Copyright 2016
   %
