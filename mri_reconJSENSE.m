@@ -1,5 +1,7 @@
 
 function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
+  % [ img, sMaps ] = mri_reconJSENSE( kData [, 'maxIter', maxIter, 'polyOrder', polyOrder,
+  %   'relDiffThresh', relDiffThresh ] );
   %
   % Inputs:
   % kData - a two dimensional array of complex values; uncollected data have values of 0
@@ -9,6 +11,7 @@ function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
   % maxIter - a scalar reprenting the maximum number of iterations
   % polyOrder - either a scalar representing the order in both dimensions or
   %             a two element array representing [ yOrder xOrder ]
+  % relDiffThresh - dynamic stopping criteria for joint estimation iterations
   %
   % Outputs:
   % img - a two dimensional complex array that is the reconstructed image
@@ -24,6 +27,14 @@ function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 1
+    disp([ 'Usage: [ img, sMaps ] = mri_reconJSENSE( kData [, ''maxIter'', maxIter, ', ...
+      '''polyOrder'', polyOrder ] ); ' ]);
+    if nargout > 0, img=[]; end
+    if nargout > 1, sMaps=[]; end
+    return
+  end
 
   p = inputParser;
   p.addParameter( 'maxIter', 10, @(x) ispositive(x) && mod(x,1)==0 );
