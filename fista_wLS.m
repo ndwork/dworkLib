@@ -161,7 +161,8 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       else
         a = lastT;  b = t*lastTheta*lastTheta;  c = -b;
         %theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
-        [theta,~] = quadRoots( a, b, c );  % Numerically stable solution to quadratic
+        [root1,root2] = quadRoots( a, b, c );  % Numerically stable solution to quadratic
+        theta = max( root1, root2 );
       end
       y = (1-theta) * lastX + theta * v;
 
@@ -208,8 +209,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       end
     end
 
-
-    if restart == true && k > 0 && innerProd( Dgy, x - lastX ) > 0
+    if restart == true && innerProd( Dgy, x - lastX ) > 0
       % Restart (kill momentum) when trajectory and -gradient form oblique angles
       k = 0;
       v = x;
