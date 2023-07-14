@@ -160,7 +160,8 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
         theta = 1;
       else
         a = lastT;  b = t*lastTheta*lastTheta;  c = -b;
-        theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
+        %theta = ( -b + sqrt( b*b - 4*a*c ) ) / ( 2*a );
+        [theta,~] = quadRoots( a, b, c );  % Numerically stable solution to quadratic
       end
       y = (1-theta) * lastX + theta * v;
 
