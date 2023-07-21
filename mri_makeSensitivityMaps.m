@@ -28,6 +28,13 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp([ 'Usage:  senseMaps = mri_makeSensitivityMaps( kData [, ''L'', L, ''mask'', mask, ', ...
+      '''sigma'', sigma, ''verbose'', true/false ] ) ' ]);
+    if nargout > 0, senseMaps=[]; end
+    return
+  end
+
   p = inputParser;
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
