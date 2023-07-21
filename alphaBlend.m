@@ -35,3 +35,4 @@ function fused = alphaBlend( img1, img2, alpha )
 
   fused = alpha * img1 + (1-alpha) * img2;
 end
+

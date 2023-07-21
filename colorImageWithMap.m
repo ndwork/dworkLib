@@ -27,3 +27,4 @@ function colorImg = colorImageWithMap( img, varargin )
   str2eval = [ 'colorImg = ind2rgb( scaledImg, ', mapName, '(256) );' ];
   eval( str2eval );
 end
+
