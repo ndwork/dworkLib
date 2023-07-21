@@ -1,6 +1,6 @@
 
-function recons = mri_ifftRecon( kData, varargin )
-  % recons = mri_ifftRecon( kData [, 'multiSlice', true/false ] )
+function recons = mri_reconIFFT( kData, varargin )
+  % recons = mri_reconIFFT( kData [, 'multiSlice', true/false ] )
   %
   % Performs an inverse FFT of each coil
   %
@@ -23,7 +23,7 @@ function recons = mri_ifftRecon( kData, varargin )
   % purpose.
 
   if nargin < 1
-    disp('Usage:  recons = mri_ifftRecon( kData [, ''multiSlice'', true/false );' );
+    disp('Usage:  recons = mri_reconIFFT( kData [, ''multiSlice'', true/false );' );
     if nargout > 0, recons = []; end
     return;
   end
