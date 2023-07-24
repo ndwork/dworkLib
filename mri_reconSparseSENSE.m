@@ -1,6 +1,6 @@
 
 function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
-  % recon = mri_reconSparseSENSE( kData, sMaps[, 'img0', img0, 'nIter', nIter, ...
+  % recon = mri_reconSparseSENSE( kData, sMaps, lambda, [, 'img0', img0, 'nIter', nIter, ...
   %   'noiseCov', noiseCov ] )
   %
   % Inputs:
