@@ -45,7 +45,9 @@ function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
   polyOrder = p.Results.polyOrder;
   relDiffThresh = p.Results.relDiffThresh;
 
-  img = mri_reconSSQ( kData );
+  %img = mri_reconSSQ( kData );
+  coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+  img = mri_reconRoemer( coilRecons );
 
   for iter = 1 : maxIter
     disp([ 'Working on JSENSE iteration ', num2str(iter) ]);
