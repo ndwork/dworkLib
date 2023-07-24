@@ -1,10 +1,16 @@
 
 function senseMaps = mri_makeSensitivityMaps( kData, varargin )
-  % senseMaps = mri_makeSensitivityMaps( kData [, 'L', L, ...
-  %   'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
+  % Either
+  %   senseMaps = mri_makeSensitivityMaps( kData [, 'L', L, ...
+  %     'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
+  % or
+  %   senseMaps = mri_makeSensitivityMaps( kData, img [, polyOrder ], 'verbose', true/false );
   %
-  % Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
-  % Pruessmann et al., 1999
+  % Options are to either use the method of (1) or (2, default)
+  % 1) Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
+  %    Pruessmann et al., 1999
+  % 2) Created using the method of "Joint image reconstruction and sensitivity estimation "
+  %    in SENSE (JSENSE)" by Ying et al.
   %
   % Inputs:
   % kData - the k-space data collected from the MRI machine ( kx, ky, slice, coil )
@@ -28,7 +34,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2
+  if nargin < 1
     disp([ 'Usage:  senseMaps = mri_makeSensitivityMaps( kData [, ''L'', L, ''mask'', mask, ', ...
       '''sigma'', sigma, ''verbose'', true/false ] ) ' ]);
     if nargout > 0, senseMaps=[]; end
@@ -36,15 +42,34 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   end
 
   p = inputParser;
+  p.addOptional( 'img', [] );
+  p.addParameter( 'alg', 'ying', @(x) true );
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
+  p.addParameter( 'polyOrder', 17, @ispositive );
   p.addParameter( 'sigma', 3, @ispositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
+  alg = p.Results.alg;
+  img = p.Results.img;
   L = p.Results.L;
   mask = p.Results.mask;
+  polyOrder = p.Results.polyOrder;
   sigma = p.Results.sigma;
   verbose = p.Results.verbose;
+
+  switch alg
+    case 'pruessman'
+      senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, verbose );
+    case 'ying'
+      senseMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder );
+    otherwise
+      error( 'Unrecognized algorithm' );
+  end
+
+end
+
+function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, verbose )
 
   coilRecons = mri_reconIFFT( kData );
   sCoilRecons = size( coilRecons );
@@ -135,3 +160,61 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   end
   if verbose == true, pfObj.clean; end
 end
+
+
+
+function sMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder )
+
+  if numel( polyOrder ) == 1, polyOrder = [ polyOrder polyOrder ]; end
+
+  sKData = size( kData );
+  nPixels = prod( sKData(1:2) );
+  nCoils = sKData( 3 );
+  coords = size2imgCoordinates( sKData(1:2) );
+  [ ys, xs ] = ndgrid( coords{1} / max(coords{1}), coords{2} / max( coords{2} ) );
+
+  kMask = max( abs( kData ), [], 3 ) ~= 0;
+
+  % Make the 2D Vandermonde matrix
+  V = zeros( sKData(1), sKData(2), prod( polyOrder+1 ) );
+  orderIndx = 0;
+  for xOrder = 0 : polyOrder(2)
+    for yOrder = 0 : polyOrder(1)
+      orderIndx = orderIndx + 1;
+      V(:,:,orderIndx) = ( xs.^xOrder ) .* ( ys.^yOrder );
+    end
+  end
+  Vmat = reshape( V, nPixels, [] );
+
+  function out = applyA( in, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      in = reshape( in, size( V, 3 ), [] );
+      Vin = reshape( Vmat * in, sKData );
+      imgVin = bsxfun( @times, Vin, img );
+      out = fftshift2( fft2( ifftshift2( imgVin ) ) );
+      out = reshape( out, nPixels, [] );
+      out = out( kMask ~= 0, : );
+    else
+      kIn = zeros( sKData );
+      kIn( abs( kData ) ~= 0 ) = in;
+      FhkIn = fftshift2( fft2h( ifftshift2( kIn ) ) );
+      imgFhkIn = bsxfun( @times, FhkIn, conj(img) );
+      out = Vmat' * reshape( imgFhkIn, nPixels, [] );
+    end
+    out = out(:);
+  end
+
+  doCheckAdjoint = false;
+  if doCheckAdjoint == true
+    [checkA,errA] = checkAdjoint( rand(324,8), @applyA );
+    if checkA ~= true, error([ 'Adjoint check failed with error: ', num2str(errA) ]); end
+  end
+
+  polyCoeffs = lsqr( @applyA, kData( abs(kData) ~= 0 ), [], 100, [] );
+  polyCoeffs = reshape( polyCoeffs, [], nCoils );
+
+  sMaps = tensorprod( V, polyCoeffs, 3, 1 );
+end
+
+
+
