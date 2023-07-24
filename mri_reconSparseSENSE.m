@@ -183,12 +183,12 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   end
 
   function out = proxth( x, t )
-    out = wavAdj( softThresh( wavOp(x), t*lambda ) );
+    out = wavAdj( softThresh( wavOp(x), t * lambda ) );
   end
 
   function out = h( x )
     Wx = wavOp(x);
-    out = lambda * sum( abs( Wx(:) ) );
+    out = lambda .* sum( abs( Wx(:) ) );
   end
 
   normATA = powerIteration( applyATA, rand( size( img0 ) ), 'symmetric', true );
