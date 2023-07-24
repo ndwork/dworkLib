@@ -4,7 +4,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   %   senseMaps = mri_makeSensitivityMaps( kData [, 'L', L, ...
   %     'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
   % or
-  %   senseMaps = mri_makeSensitivityMaps( kData, img [, polyOrder ], 'verbose', true/false );
+  %   senseMaps = mri_makeSensitivityMaps( kData, img [, 'polyOrder', polyOrder, 'verbose', true/false );
   %
   % Options are to either use the method of (1) or (2, default)
   % 1) Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
@@ -41,12 +41,14 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
     return
   end
 
+  defaultPolyOrder = 17;
+
   p = inputParser;
   p.addOptional( 'img', [] );
   p.addParameter( 'alg', 'ying', @(x) true );
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
-  p.addParameter( 'polyOrder', 17, @ispositive );
+  p.addParameter( 'polyOrder', defaultPolyOrder, @ispositive );
   p.addParameter( 'sigma', 3, @ispositive );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
@@ -57,6 +59,8 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   polyOrder = p.Results.polyOrder;
   sigma = p.Results.sigma;
   verbose = p.Results.verbose;
+
+  if numel( polyOrder ) == 0, polyOrder = defaultPolyOrder; end
 
   switch alg
     case 'pruessman'
