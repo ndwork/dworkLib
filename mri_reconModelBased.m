@@ -1,5 +1,15 @@
 
-function img = mri_reconModelBased( kData, sMaps )
+function [img,relRes] = mri_reconModelBased( kData, sMaps )
+  % [img,relRes] = mri_reconModelBased( kData, sMaps )
+  %
+  % Written by Nicholas Dwork, Copyright 2023
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular
+  % purpose.
 
   coilRecons = mri_reconIFFT( kData );
   img0 = mri_reconRoemer( coilRecons );
@@ -55,7 +65,7 @@ function img = mri_reconModelBased( kData, sMaps )
     if checkE ~= 1, error( 'Adjoint check failed' ); end
   end
 
-  img = lsqr( @applyE, kData( dataMask == 1 ), [], 100, [], [], img0(:) );
+  [img,lsqrFlag,relRes] = lsqr( @applyE, kData( dataMask == 1 ), [], 100, [], [], img0(:) ); %#ok<ASGLU>
   img = reshape( img, sKData(1:2) );
 
 end
