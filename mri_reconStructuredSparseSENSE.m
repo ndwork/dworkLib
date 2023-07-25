@@ -17,20 +17,17 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  sImg = [ size( kData, 1 ) size( kData, 2 ) ];
+  p = inputParser;
+  p.addParameter( 'noiseCov', [], @isnumeric );
+  p.addParameter( 'transformType', 'wavelet', @(x) true );
+  p.addParameter( 'waveletType', 'Daubechies-4', @(x) true );
+  p.addParameter( 'wavSplit', [], @isnumeric );
+  p.parse( varargin{:} );
+  noiseCov = p.Results.noiseCov;
+  transformType = p.Results.transformType;
+  waveletType = p.Results.waveletType;
+  wavSplit = p.Results.wavSplit;
 
-  wavSplit = [];
-  transformType = [];
-  for vIndx = 1 : numel( varargin )-1
-    if strcmp( varargin{vIndx}, 'wavSplit' )
-      wavSplit = varargin{ vIndx + 1 };
-    end
-    if strcmp( varargin{vIndx}, 'transformType' )
-      transformType = varargin{ vIndx + 1 };
-    end
-  end
-
-  if numel( wavSplit ) == 0, wavSplit = makeWavSplit( sImg ); end
   if numel( transformType ) == 0, transformType = 'wavelet'; end
 
   sImg = [ size( kData, 1 ) size( kData, 2 ) ];
@@ -53,11 +50,13 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
   beta = kData - acrK;
   beta( kData == 0 ) = 0;
 
-  reconH = mri_reconSparseSENSE( beta, sMaps, lambda );
+  reconH = mri_reconSparseSENSE( beta, sMaps, lambda, 'noiseCov', noiseCov, ...
+    'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
 
   kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
   kOut = kH + acrK;
 
+  % could alternatively do Model Based recon with acceleration factor of 1 here
   coilReconsOut = mri_reconIFFT( kOut );
   recon = mri_reconRoemer( coilReconsOut );
 end
@@ -110,32 +109,4 @@ function acr = makeWavAutoCalRegion( sImg, wavSplit, varargin )
   acr = circshift( acr, [ -floor(lastY * 0.5) -floor(lastX * 0.5) ] );
   acr = fftshift( acr );
 end
-
-
-function wavSplit = makeWavSplit( sImg )
-
-  minSplit = 8;
-
-  yTmp = sImg(1);
-  ySplitSize = 1;
-  while ( mod( yTmp, 1 ) == 0 )
-    ySplitSize = ySplitSize * 2;
-    yTmp = yTmp / 2;
-  end
-  ySplitSize = ySplitSize / 4;
-  ySplitSize = min( ySplitSize, minSplit );
-
-  xTmp = sImg(2);
-  xSplitSize = 1;
-  while ( mod( xTmp, 1 ) == 0 )
-    xSplitSize = xSplitSize * 2;
-    xTmp = xTmp / 2;
-  end
-  xSplitSize = xSplitSize / 4;
-  xSplitSize = min( xSplitSize, minSplit );
-
-  wavSplit = zeros( [ ySplitSize xSplitSize ] );
-  wavSplit(1) = 1;
-end
-
 
