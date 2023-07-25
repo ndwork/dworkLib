@@ -3,6 +3,13 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   % recon = mri_reconSparseSENSE( kData, sMaps, lambda, [, 'img0', img0, 'nIter', nIter, ...
   %   'noiseCov', noiseCov ] )
   %
+  % This routine uses proximal gradient methods to minimize
+  %   0.5 * || A y - b ||_2^2 + lambda || Psi y ||_{w,1}
+  %   where A is sampleMask * Fourier Transform.  Here, Psi is either a wavelet or curvelet
+  %   transform.  The reconstruction returned is adjoint( Psi ) * y.
+  %
+  % Note that || y ||_{w,1} = w1 |y1| + w2 |y2| + ... + wN |yN|
+  %
   % Inputs:
   % kData - an array of size Ny x Nx x nCoils
   %
