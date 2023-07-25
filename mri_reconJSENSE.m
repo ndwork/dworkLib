@@ -1,6 +1,6 @@
 
-function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
-  % [ img, sMaps ] = mri_reconJSENSE( kData [, 'maxIter', maxIter, 'polyOrder', polyOrder,
+function [ recon, sMaps ] = mri_reconJSENSE( kData, varargin )
+  % [ recon, sMaps ] = mri_reconJSENSE( kData [, 'maxIter', maxIter, 'polyOrder', polyOrder,
   %   'relDiffThresh', relDiffThresh ] );
   %
   % Inputs:
@@ -14,7 +14,7 @@ function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
   % relDiffThresh - dynamic stopping criteria for joint estimation iterations
   %
   % Outputs:
-  % img - a two dimensional complex array that is the reconstructed image
+  % recon - a two dimensional complex array that is the reconstructed image
   %
   % Optional Outputs:
   % sMaps - a three dimensional complex array of the sensitivity maps
@@ -29,9 +29,9 @@ function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
   % purpose.
 
   if nargin < 1
-    disp([ 'Usage: [ img, sMaps ] = mri_reconJSENSE( kData [, ''maxIter'', maxIter, ', ...
+    disp([ 'Usage: [ recon, sMaps ] = mri_reconJSENSE( kData [, ''maxIter'', maxIter, ', ...
       '''polyOrder'', polyOrder ] ); ' ]);
-    if nargout > 0, img=[]; end
+    if nargout > 0, recon=[]; end
     if nargout > 1, sMaps=[]; end
     return
   end
@@ -47,16 +47,17 @@ function [ img, sMaps ] = mri_reconJSENSE( kData, varargin )
 
   %img = mri_reconSSQ( kData );
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
-  img = mri_reconRoemer( coilRecons );
+  recon = mri_reconRoemer( coilRecons );
 
   for iter = 1 : maxIter
     disp([ 'Working on JSENSE iteration ', num2str(iter) ]);
 
-    sMaps = mri_makeSensitivityMaps( kData, img, 'polyOrder', polyOrder, 'alg', 'ying' );
+    sMaps = mri_makeSensitivityMaps( kData, recon, 'polyOrder', polyOrder, 'alg', 'ying' );
 
-    img = mri_reconModelBased( kData, sMaps );
+    recon = mri_reconModelBased( kData, sMaps );
 
     if relDiffThresh > 0
+      error( 'This feature is not yet implemented' );
       objDiff = ( objValue - lastObjValue ) / lastObjValue;
       if objDiff < relDiffThresh
         break;
