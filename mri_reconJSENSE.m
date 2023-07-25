@@ -50,10 +50,10 @@ function [ recon, sMaps ] = mri_reconJSENSE( kData, varargin )
   recon = mri_reconRoemer( coilRecons );
 
   if relDiffThresh > 0
+    objValue = [];
     normKData = norm( kData( kData ~= 0 ) );
   end
 
-  objValue = [];
   for iter = 1 : maxIter
     disp([ 'Working on JSENSE iteration ', num2str(iter) ]);
 
