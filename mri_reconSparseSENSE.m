@@ -35,8 +35,9 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   p.addParameter( 'noiseCov', [], @isnumeric );
   p.addParameter( 'optAlg', 'fista_wLS', @(x) true );
   p.addParameter( 'printEvery', 10, @ispositive );
+  p.addParameter( 'transformType', 'wavelet', @(x) true );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
-  p.addParameter( 'waveletType', 'Daubechies', @(x) true );
+  p.addParameter( 'waveletType', 'Daubechies-4', @(x) true );
   p.parse( kData, sMaps, lambda, varargin{:} );
   checkAdjoints = p.Results.checkAdjoints;
   debug = p.Results.debug;
@@ -45,8 +46,11 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   noiseCov = p.Results.noiseCov;
   optAlg = p.Results.optAlg;
   printEvery = p.Results.printEvery;
+  transformType = p.Results.transformType;
   waveletType = p.Results.waveletType;
   verbose = p.Results.verbose;
+
+  if ~strcmp(transformType, 'wavelet'), error('This feature is not yet implemented'); end
 
   if numel( nIter ) == 0
     if debug == true
@@ -156,23 +160,64 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     end
   end
 
-
   if numel( img0 ) == 0
     coilRecons = mri_reconIFFT( kData );
     img0 = mri_reconRoemer( coilRecons );
   end
-  split = makeWavSplit( size( img0 ) );
+  wavSplit = makeWavSplit( size( img0 ) );
 
-  if strcmp( waveletType, 'Daubechies' )
-    wavOp = @(x) wtDaubechies2( x, split );
-    wavAdj = @(y) iwtDaubechies2( y, split );
+  function out = curvelet( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      curvCells = fdct_wrapping( x, false );
+      out = curvCell2Vec( curvCells );
+    else
+      curvCells = vec2CurvCell( x, curvCellSizes );
+      out = ifdct_wrapping( curvCells, false );
+    end
+  end
 
+  if strcmp( waveletType, 'Daubechies-4' )
+    wavTrans = @(x) wtDaubechies2( x, wavSplit );
+    wavTransH = @(y) iwtDaubechies2( y, wavSplit );
   elseif strcmp( waveletType, 'Haar' )
-    wavOp = @(x) wtHaar2( x, split );
-    wavAdj = @(y) iwtHaar2( y, split );
-
+    wavTrans = @(x) wtHaar2( x, wavSplit );
+    wavTransH = @(y) iwtHaar2( y, wavSplit );
   else
     error( 'Unrecognized wavelet type' );
+  end
+
+  function out = wavCurv( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      x = reshape( x, sImg );
+      wx = wavTrans( x );
+      cx = curvelet( x );
+      out = [ wx(:); cx(:); ];
+    elseif strcmp( type, 'transp' )
+      x1 = reshape( x( 1 : nImg ), sImg );
+      x2 = x( nImg + 1 : end );
+      out = wavTransH( x1 ) + curvelet( x2, 'transp' );
+      out = out(:);
+    end
+  end
+
+  if strcmp( transformType, 'curvelet' ) || strcmp( transformType, 'wavCurv' )
+    tmp = fdct_wrapping( FH( samples ), false );
+    curvCellSizes = findCellSizes( tmp );
+
+    if strcmp( transformType, 'wavCurv' )
+      sparsifier = @(x) wavCurv( x );
+      sparsifierH = @(x) wavCurv( x, 'transp' );
+    else
+      sparsifier = @(x) curvelet( x );
+      sparsifierH = @(x) curvelet( x, 'transp' );
+    end
+
+  elseif strcmp( transformType, 'wavelet' )
+    sparsifier = wavTrans;
+    sparsifierH = wavTransH;
+
+  else
+    error( 'Unrecognized transform type' );
   end
 
   if checkAdjoints == true
@@ -185,16 +230,18 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     if checkSF ~= 1, error( ['Adjoint of SF failed with error ', num2str(errSF) ]); end
     [checkA,errA] = checkAdjoint( img0, @applyA, 'innerProd', innerProd );
     if checkA ~= 1, error( ['Adjoint of A failed with error ', num2str(errA) ]); end
-    if checkAdjoint( imgRand, wavOp, wavAdj ) ~= true, error( 'WT is not the transpose of W' ); end
+    [checkW,errW] = checkAdjoint( imgRand, wavTrans, wavTransH );
     if checkW ~= 1, error( ['Adjoint of wavOp failed with error ', num2str(errW) ]); end
+    [checkS,errS] = checkAdjoint( imgRand, sparsifier, sparsifierH );
+    if checkS ~= 1, error( ['Adjoint of sparsifier failed with error ', num2str(errS) ]); end
   end
 
   function out = proxth( x, t )
-    out = wavAdj( softThresh( wavOp(x), t * lambda ) );
+    out = wavTransH( softThresh( wavTrans(x), t * lambda ) );
   end
 
   function out = h( x )
-    Wx = wavOp(x);
+    Wx = wavTrans(x);
     out = lambda .* sum( abs( Wx(:) ) );
   end
 
@@ -239,6 +286,57 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   end
 end
 
+
+function out = findCellSizes( in )
+  if iscell( in )
+    out = cell( size(in) );
+    for indx = 1 : numel( in )
+      theseCellSizes = findCellSizes( in{ indx } );
+      out{ indx } = theseCellSizes;
+    end
+  else
+    out = size( in );
+  end
+end
+
+function nTotal = sumCurvCellSizes( cellSizes )
+  nTotal = 0;
+  if iscell( cellSizes )
+    for indx = 1 : numel( cellSizes )
+      thisCell = cellSizes{ indx };  
+      nTotal = nTotal + sumCurvCellSizes( thisCell );
+    end
+  else
+    nTotal = nTotal + prod( cellSizes );
+  end
+end
+
+function out = curvCell2Vec( cx )
+  if iscell( cx )
+    out = cell( numel( cx ), 1 );
+    for indx = 1 : numel( cx )
+      out{ indx } = curvCell2Vec( cx{ indx } );
+    end
+    out = cell2mat( out );
+  else
+    out = cx(:);
+  end
+end
+
+function out = vec2CurvCell( v, curvCellSizes )
+  if iscell( curvCellSizes )
+    out = cell( size( curvCellSizes ) );
+    thisIndx = 1;
+    for indx = 1 : numel( curvCellSizes )
+      nSubVec = sumCurvCellSizes( curvCellSizes{ indx } );
+      subVec = v( thisIndx : thisIndx + nSubVec - 1 );
+      out{ indx } = vec2CurvCell( subVec, curvCellSizes{ indx } );
+      thisIndx = thisIndx + nSubVec;
+    end
+  else
+    out = reshape( v, curvCellSizes );
+  end
+end
 
 
 function wavSplit = makeWavSplit( sImg )
