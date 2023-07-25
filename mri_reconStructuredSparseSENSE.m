@@ -33,7 +33,7 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
   if numel( wavSplit ) == 0, wavSplit = makeWavSplit( sImg ); end
   if numel( transformType ) == 0, transformType = 'wavelet'; end
 
-  sImg = size( kData );
+  sImg = [ size( kData, 1 ) size( kData, 2 ) ];
   if strcmp( transformType, 'curvelet' )
     acr = makeCurvAutoCalRegion( sImg );
 
@@ -49,16 +49,17 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
     error( 'Unrecognized transform type' );
   end
 
-  acrDataL = bsxfun( @times, acr, kData );
-  beta = kData - acrDataL;
+  acrK = bsxfun( @times, kData, acr );
+  beta = kData - acrK;
   beta( kData == 0 ) = 0;
-
-  coilReconsL = mri_reconIFFT( acrDataL, 'multiSlice', true );
-  reconL = mri_reconRoemer( coilReconsL );
 
   reconH = mri_reconSparseSENSE( beta, sMaps, lambda );
 
-  recon = reconH + reconL;
+  kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
+  kOut = kH + acrK;
+
+  coilReconsOut = mri_reconIFFT( kOut );
+  recon = mri_reconRoemer( coilReconsOut );
 end
 
 
