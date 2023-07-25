@@ -4,8 +4,8 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   %   'noiseCov', noiseCov ] )
   %
   % This routine uses proximal gradient methods to minimize
-  %   0.5 * || A y - b ||_2^2 + lambda || Psi y ||_{w,1}
-  %   where A is sampleMask * Fourier Transform.  Here, Psi is either a wavelet or curvelet
+  %   0.5 * || A y - b ||_2^2 + lambda || y ||_{w,1}
+  %   where A is sampleMask * Fourier Transform * adjoint( Psi ).  Here, Psi is either a wavelet or curvelet
   %   transform.  The reconstruction returned is adjoint( Psi ) * y.
   %
   % Note that || y ||_{w,1} = w1 |y1| + w2 |y2| + ... + wN |yN|
@@ -35,9 +35,11 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   p.addParameter( 'noiseCov', [], @isnumeric );
   p.addParameter( 'optAlg', 'fista_wLS', @(x) true );
   p.addParameter( 'printEvery', 10, @ispositive );
+  p.addParameter( 't', [], @ispositive );
   p.addParameter( 'transformType', 'wavelet', @(x) true );
   p.addParameter( 'verbose', false, @(x) isnumeric(x) || islogical(x) );
   p.addParameter( 'waveletType', 'Daubechies-4', @(x) true );
+  p.addParameter( 'wavSplit', [], @isnumeric );
   p.parse( kData, sMaps, lambda, varargin{:} );
   checkAdjoints = p.Results.checkAdjoints;
   debug = p.Results.debug;
@@ -46,11 +48,14 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   noiseCov = p.Results.noiseCov;
   optAlg = p.Results.optAlg;
   printEvery = p.Results.printEvery;
+  t = p.Results.t;
   transformType = p.Results.transformType;
   waveletType = p.Results.waveletType;
+  wavSplit = p.Results.wavSplit;
   verbose = p.Results.verbose;
 
-  if ~strcmp(transformType, 'wavelet'), error('This feature is not yet implemented'); end
+  if numel( transformType ) == 0, transformType = 'wavelet'; end
+  if numel( waveletType ) == 0, waveletType = 'Daubechies-4'; end
 
   if numel( nIter ) == 0
     if debug == true
@@ -58,6 +63,71 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     else
       nIter = 100;
     end
+  end
+
+  sKData = size( kData );
+  sImg = sKData(1:2);
+
+  if numel( img0 ) == 0
+    coilRecons = mri_reconIFFT( kData );
+    img0 = mri_reconRoemer( coilRecons );
+  end
+  if numel( wavSplit ) == 0
+    wavSplit = makeWavSplit( sImg );
+  end
+
+  function out = curvelet( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      curvCells = fdct_wrapping( x, false );
+      out = curvCell2Vec( curvCells );
+    else
+      curvCells = vec2CurvCell( x, curvCellSizes );
+      out = ifdct_wrapping( curvCells, false );
+    end
+  end
+
+  if strcmp( waveletType, 'Daubechies-4' )
+    wavTrans = @(x) wtDaubechies2( x, wavSplit );
+    wavTransH = @(y) iwtDaubechies2( y, wavSplit );
+  elseif strcmp( waveletType, 'Haar' )
+    wavTrans = @(x) wtHaar2( x, wavSplit );
+    wavTransH = @(y) iwtHaar2( y, wavSplit );
+  else
+    error( 'Unrecognized wavelet type' );
+  end
+
+  function out = wavCurv( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      x = reshape( x, sImg );
+      wx = wavTrans( x );
+      cx = curvelet( x );
+      out = [ wx(:); cx(:); ];
+    elseif strcmp( type, 'transp' )
+      x1 = reshape( x( 1 : nImg ), sImg );
+      x2 = x( nImg + 1 : end );
+      out = wavTransH( x1 ) + curvelet( x2, 'transp' );
+      out = out(:);
+    end
+  end
+
+  if strcmp( transformType, 'curvelet' ) || strcmp( transformType, 'wavCurv' )
+    tmp = fdct_wrapping( FH( samples ), false );
+    curvCellSizes = findCellSizes( tmp );
+
+    if strcmp( transformType, 'wavCurv' )
+      sparsifier = @(x) wavCurv( x );
+      sparsifierH = @(x) wavCurv( x, 'transp' );
+    else
+      sparsifier = @(x) curvelet( x );
+      sparsifierH = @(x) curvelet( x, 'transp' );
+    end
+
+  elseif strcmp( transformType, 'wavelet' )
+    sparsifier = wavTrans;
+    sparsifierH = wavTransH;
+
+  else
+    error( 'Unrecognized transform type' );
   end
 
   function out = applyS( in, type )
@@ -84,19 +154,19 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     end
   end
 
-  sKData = size( kData );
   dataMask = ( abs(kData) ~= 0 );
   function out = applyA( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
-      in = reshape( in, sKData(1:2) );
-      out = applyF( applyS( in ) );
+      PsiHin = sparsifierH( in );
+      out = applySF( PsiHin );
       out = out( dataMask == 1 );
     else
       tmp = zeros( sKData );
       tmp( dataMask == 1 ) = in;
       in = tmp;  clear tmp;
       in = reshape( in, sKData );
-      out = applyS( applyF( in .* dataMask, 'transp' ), 'transp' );
+      SFin = applySF( in .* dataMask, 'transp' );
+      out = sparsifier( SFin );
     end
   end
 
@@ -160,66 +230,6 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     end
   end
 
-  if numel( img0 ) == 0
-    coilRecons = mri_reconIFFT( kData );
-    img0 = mri_reconRoemer( coilRecons );
-  end
-  wavSplit = makeWavSplit( size( img0 ) );
-
-  function out = curvelet( x, type )
-    if nargin < 2 || strcmp( type, 'notransp' )
-      curvCells = fdct_wrapping( x, false );
-      out = curvCell2Vec( curvCells );
-    else
-      curvCells = vec2CurvCell( x, curvCellSizes );
-      out = ifdct_wrapping( curvCells, false );
-    end
-  end
-
-  if strcmp( waveletType, 'Daubechies-4' )
-    wavTrans = @(x) wtDaubechies2( x, wavSplit );
-    wavTransH = @(y) iwtDaubechies2( y, wavSplit );
-  elseif strcmp( waveletType, 'Haar' )
-    wavTrans = @(x) wtHaar2( x, wavSplit );
-    wavTransH = @(y) iwtHaar2( y, wavSplit );
-  else
-    error( 'Unrecognized wavelet type' );
-  end
-
-  function out = wavCurv( x, type )
-    if nargin < 2 || strcmp( type, 'notransp' )
-      x = reshape( x, sImg );
-      wx = wavTrans( x );
-      cx = curvelet( x );
-      out = [ wx(:); cx(:); ];
-    elseif strcmp( type, 'transp' )
-      x1 = reshape( x( 1 : nImg ), sImg );
-      x2 = x( nImg + 1 : end );
-      out = wavTransH( x1 ) + curvelet( x2, 'transp' );
-      out = out(:);
-    end
-  end
-
-  if strcmp( transformType, 'curvelet' ) || strcmp( transformType, 'wavCurv' )
-    tmp = fdct_wrapping( FH( samples ), false );
-    curvCellSizes = findCellSizes( tmp );
-
-    if strcmp( transformType, 'wavCurv' )
-      sparsifier = @(x) wavCurv( x );
-      sparsifierH = @(x) wavCurv( x, 'transp' );
-    else
-      sparsifier = @(x) curvelet( x );
-      sparsifierH = @(x) curvelet( x, 'transp' );
-    end
-
-  elseif strcmp( transformType, 'wavelet' )
-    sparsifier = wavTrans;
-    sparsifierH = wavTransH;
-
-  else
-    error( 'Unrecognized transform type' );
-  end
-
   if checkAdjoints == true
     innerProd = @(x,y) real( dotP( x, y ) );
     [checkS,errS] = checkAdjoint( img0, @applyS, 'innerProd', innerProd );
@@ -236,54 +246,63 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     if checkS ~= 1, error( ['Adjoint of sparsifier failed with error ', num2str(errS) ]); end
   end
 
+  if numel( lambda ) == 0
+    psiRecon0 = sparsifier( img0 );
+    lambda = 1 ./ ( abs( psiRecon0 ) + 1d-8 * max( abs( kData(:) ) ) );
+  end
+
   function out = proxth( x, t )
-    out = wavTransH( softThresh( wavTrans(x), t * lambda ) );
+    out = softThresh( x, t * lambda );
   end
 
   function out = h( x )
-    Wx = wavTrans(x);
-    out = lambda .* sum( abs( Wx(:) ) );
+    Wx = sparsifier(x);
+    out = sum( lambda .* abs( Wx(:) ) );
   end
 
-  normATA = powerIteration( applyATA, rand( size( img0 ) ), 'symmetric', true );
+  if numel( t ) == 0
+    normATA = powerIteration( applyATA, rand( size( img0 ) ), 'symmetric', true );
+    if normATA == 0
+      % A just sets everything to 0
+      recon = zeros( size( img0 ) );
+      oValues = g( recon ) * ones( nIter, 1 );   %#ok<NASGU>
+      return;
+    end
 
-  if normATA == 0
-    % A just sets everything to 0
-    recon = zeros( size( img0 ) );
-    oValues = g( recon ) * ones( nIter, 1 );   %#ok<NASGU>
-    return;
+    t = 0.99 / normATA;
   end
 
-  t = 0.99 / normATA;
 
   if debug
     if strcmp( optAlg, 'fista' )
-      [recon,oValues,relDiffs] = fista( img0, @gGrad, @proxth, 't', t, ...
+      [psiRecon,oValues,relDiffs] = fista( img0, @gGrad, @proxth, 't', t, ...
         'g', @g, 'h', @h, 'printEvery', printEvery, 'verbose', verbose );   %#ok<ASGLU>
     elseif strcmp( optAlg, 'fista_wLS' )
       t = t * 10;
-      [recon,oValues] = fista_wLS( img0, @g, @gGrad, @proxth, 'h', @h, ...
+      [psiRecon,oValues] = fista_wLS( img0, @g, @gGrad, @proxth, 'h', @h, ...
         't0', t, 'N', nIter, 'restart', true, 'verbose', true, 'printEvery', printEvery );   %#ok<ASGLU>
     elseif strcmp( optAlg, 'pogm' )
-      [recon,oValues] = pogm( img0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
+      [psiRecon,oValues] = pogm( img0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
         'printEvery', printEvery, 'verbose', true );   %#ok<ASGLU>
     else
       error([ 'Unrecognized optAlg: ', optAlg ]);
     end
   else
     if strcmp( optAlg, 'fista' )
-      recon = fista( img0, @gGrad, @proxth, 't', t, 'printEvery', printEvery, 'verbose', true );
+      psiRecon = fista( img0, @gGrad, @proxth, 't', t, 'printEvery', printEvery, 'verbose', true );
     elseif strcmp( optAlg, 'fista_wLS' )
       t = t * 10;
-      recon = fista_wLS( img0, @g, @gGrad, @proxth, 't0', t, 'N', nIter, ...
+      psiRecon = fista_wLS( img0, @g, @gGrad, @proxth, 't0', t, 'N', nIter, ...
         'restart', true, 'verbose', verbose, 'printEvery', printEvery );
     elseif strcmp( optAlg, 'pogm' )
-      recon = pogm( img0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
+      psiRecon = pogm( img0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
         'printEvery', printEvery, 'verbose', verbose );
     else
       error([ 'Unrecognized optAlg: ', optAlg ]);
     end
   end
+
+  recon = reshape( sparsifierH( psiRecon ), sImg );
 end
 
 
