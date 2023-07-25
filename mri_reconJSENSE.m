@@ -49,6 +49,11 @@ function [ recon, sMaps ] = mri_reconJSENSE( kData, varargin )
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
   recon = mri_reconRoemer( coilRecons );
 
+  if relDiffThresh > 0
+    normKData = norm( kData( kData ~= 0 ) );
+  end
+
+  objValue = [];
   for iter = 1 : maxIter
     disp([ 'Working on JSENSE iteration ', num2str(iter) ]);
 
@@ -57,10 +62,14 @@ function [ recon, sMaps ] = mri_reconJSENSE( kData, varargin )
     recon = mri_reconModelBased( kData, sMaps );
 
     if relDiffThresh > 0
-      error( 'This feature is not yet implemented' );
-      objDiff = ( objValue - lastObjValue ) / lastObjValue;
-      if objDiff < relDiffThresh
-        break;
+      lastObjValue = objValue;
+      fftRecon = fftshift2( fft2( ifftshift2( recon ) ) );
+      SFRecon = bsxfun( @times, sMaps, fftRecon );
+      objValue = norm( SFRecon( kData ~= 0 ) - kData( kData ~= 0 ) ) / normKData;
+
+      if iter > 1
+        objDiff = ( objValue - lastObjValue ) / lastObjValue;
+        if objDiff < relDiffThresh, break; end
       end
     end
   end
