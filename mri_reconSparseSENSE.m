@@ -33,6 +33,7 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   p.addParameter( 'img0', [], @isnumeric );
   p.addParameter( 'nIter', [], @ispositive );
   p.addParameter( 'noiseCov', [], @isnumeric );
+  p.addParameter( 'reweightEpsilon', 10, @ispositive );
   p.addParameter( 'optAlg', 'fista_wLS', @(x) true );
   p.addParameter( 'printEvery', 10, @ispositive );
   p.addParameter( 't', [], @ispositive );
@@ -48,12 +49,14 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   noiseCov = p.Results.noiseCov;
   optAlg = p.Results.optAlg;
   printEvery = p.Results.printEvery;
+  reweightEpsilon = p.Results.reweightEpsilon;
   t = p.Results.t;
   transformType = p.Results.transformType;
   waveletType = p.Results.waveletType;
   wavSplit = p.Results.wavSplit;
   verbose = p.Results.verbose;
 
+  if numel( reweightEpsilon ) == 0, reweightEpsilon = 10; end
   if numel( transformType ) == 0, transformType = 'wavelet'; end
   if numel( waveletType ) == 0, waveletType = 'Daubechies-4'; end
 
@@ -240,24 +243,10 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     if checkSF ~= 1, error( ['Adjoint of SF failed with error ', num2str(errSF) ]); end
     [checkA,errA] = checkAdjoint( img0, @applyA, 'innerProd', innerProd );
     if checkA ~= 1, error( ['Adjoint of A failed with error ', num2str(errA) ]); end
-    [checkW,errW] = checkAdjoint( imgRand, wavTrans, wavTransH );
+    [checkW,errW] = checkAdjoint( img0, wavTrans, wavTransH );
     if checkW ~= 1, error( ['Adjoint of wavOp failed with error ', num2str(errW) ]); end
-    [checkS,errS] = checkAdjoint( imgRand, sparsifier, sparsifierH );
+    [checkS,errS] = checkAdjoint( img0, sparsifier, sparsifierH );
     if checkS ~= 1, error( ['Adjoint of sparsifier failed with error ', num2str(errS) ]); end
-  end
-
-  if numel( lambda ) == 0
-    psiRecon0 = sparsifier( img0 );
-    lambda = 1 ./ ( abs( psiRecon0 ) + 1d-8 * max( abs( kData(:) ) ) );
-  end
-
-  function out = proxth( x, t )
-    out = softThresh( x, t * lambda );
-  end
-
-  function out = h( x )
-    Wx = sparsifier(x);
-    out = sum( lambda .* abs( Wx(:) ) );
   end
 
   if numel( t ) == 0
@@ -272,30 +261,43 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     t = 0.99 / normATA;
   end
 
+  psiImg0 = sparsifier( img0 );
+  if numel( lambda ) == 0
+    lambda = 1 ./ ( abs( psiImg0 ) + reweightEpsilon );
+  end
+
+  function out = proxth( x, t )
+    out = softThresh( x, t * lambda );
+  end
+
+  function out = h( x )
+    Wx = sparsifier(x);
+    out = sum( lambda(:) .* abs( Wx(:) ) );
+  end
 
   if debug
     if strcmp( optAlg, 'fista' )
-      [psiRecon,oValues,relDiffs] = fista( img0, @gGrad, @proxth, 't', t, ...
+      [psiRecon,oValues,relDiffs] = fista( psiImg0, @gGrad, @proxth, 't', t, ...
         'g', @g, 'h', @h, 'printEvery', printEvery, 'verbose', verbose );   %#ok<ASGLU>
     elseif strcmp( optAlg, 'fista_wLS' )
       t = t * 10;
-      [psiRecon,oValues] = fista_wLS( img0, @g, @gGrad, @proxth, 'h', @h, ...
+      [psiRecon,oValues] = fista_wLS( psiImg0, @g, @gGrad, @proxth, 'h', @h, ...
         't0', t, 'N', nIter, 'restart', true, 'verbose', true, 'printEvery', printEvery );   %#ok<ASGLU>
     elseif strcmp( optAlg, 'pogm' )
-      [psiRecon,oValues] = pogm( img0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
+      [psiRecon,oValues] = pogm( psiImg0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
         'printEvery', printEvery, 'verbose', true );   %#ok<ASGLU>
     else
       error([ 'Unrecognized optAlg: ', optAlg ]);
     end
   else
     if strcmp( optAlg, 'fista' )
-      psiRecon = fista( img0, @gGrad, @proxth, 't', t, 'printEvery', printEvery, 'verbose', true );
+      psiRecon = fista( psiImg0, @gGrad, @proxth, 't', t, 'N', nIter, 'printEvery', printEvery, 'verbose', true );
     elseif strcmp( optAlg, 'fista_wLS' )
       t = t * 10;
-      psiRecon = fista_wLS( img0, @g, @gGrad, @proxth, 't0', t, 'N', nIter, ...
+      psiRecon = fista_wLS( psiImg0, @g, @gGrad, @proxth, 't0', t, 'N', nIter, ...
         'restart', true, 'verbose', verbose, 'printEvery', printEvery );
     elseif strcmp( optAlg, 'pogm' )
-      psiRecon = pogm( img0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
+      psiRecon = pogm( psiImg0, @gGrad, @proxth, nIter, 't', t, 'g', @g, 'h', @h, ...
         'printEvery', printEvery, 'verbose', verbose );
     else
       error([ 'Unrecognized optAlg: ', optAlg ]);

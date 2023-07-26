@@ -18,12 +18,20 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
   % implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
+  p.addParameter( 'img0', [], @isnumeric );
   p.addParameter( 'noiseCov', [], @isnumeric );
+  p.addParameter( 'optAlg', [], @(x) true );
+  p.addParameter( 'reweightEpsilon', [], @ispositive );
+  p.addParameter( 't', [], @ispositive );
   p.addParameter( 'transformType', 'wavelet', @(x) true );
   p.addParameter( 'waveletType', 'Daubechies-4', @(x) true );
   p.addParameter( 'wavSplit', [], @isnumeric );
   p.parse( varargin{:} );
+  img0 = p.Results.img0;
   noiseCov = p.Results.noiseCov;
+  optAlg = p.Results.optAlg;
+  reweightEpsilon = p.Results.reweightEpsilon;
+  t = p.Results.t;
   transformType = p.Results.transformType;
   waveletType = p.Results.waveletType;
   wavSplit = p.Results.wavSplit;
@@ -50,8 +58,9 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
   beta = kData - acrK;
   beta( kData == 0 ) = 0;
 
-  reconH = mri_reconSparseSENSE( beta, sMaps, lambda, 'noiseCov', noiseCov, ...
-    'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
+  reconH = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0, 'noiseCov', noiseCov, ...
+    'optAlg', optAlg, 'reweightEpsilon', reweightEpsilon, 't', t, 'transformType', transformType, ...
+    'waveletType', waveletType, 'wavSplit', wavSplit );
 
   kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
   kOut = kH + acrK;
