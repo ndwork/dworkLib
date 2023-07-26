@@ -30,7 +30,7 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
 
   if nargin < 1
     disp([ 'Usage: [ img, sMaps ] = mri_reconJSS( kData [, ''nOuterIter'', nOuterIter, ', ...
-      '''noiseCov'', noiseCov, ''polyOrder'', polyOrder,']);
+      '''noiseCov'', noiseCov, ''nReweightIter'', nReweightIter, ''polyOrder'', polyOrder,']);
     disp('         ''relDiffThresh'', relDiffThresh, ''verbose'', verbose ] );' )
     if nargout > 0, recon=[]; end
     if nargout > 1, sMaps=[]; end
@@ -40,7 +40,7 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
   p = inputParser;
   p.addParameter( 'lambda', [], @isnumeric );
   p.addParameter( 'noiseCov', [], @isnumeric );
-  p.addParameter( 'nOuterIter', 5, @(x) ispositive(x) && mod(x,1)==0 );
+  p.addParameter( 'nReweightIter', 5, @(x) ispositive(x) && mod(x,1)==0 );
   p.addParameter( 'polyOrder', [], @(x) isnonnegative(x) && isinteger(x) );
   p.addParameter( 'relDiffThresh', 0 );
   p.addParameter( 'reweightEpsilon', [], @ispositive );
@@ -52,7 +52,7 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
   p.parse( varargin{:} );
   lambda = p.Results.lambda;
   noiseCov = p.Results.noiseCov;
-  nOuterIter = p.Results.nOuterIter;
+  nReweightIter = p.Results.nReweightIter;
   polyOrder = p.Results.polyOrder;
   relDiffThresh = p.Results.relDiffThresh;
   reweightEpsilon = p.Results.reweightEpsilon;
@@ -71,7 +71,7 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
     normKData = norm( kData( kData ~= 0 ) );
   end
 
-  for iter = 1 : nOuterIter
+  for iter = 1 : nReweightIter
     if verbose == true
       disp([ 'Working on Joint Structured Sparsity iteration ', num2str(iter) ]);
     end
@@ -83,7 +83,7 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
       'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
 
     if ~exist( './out', 'dir' ), mkdir( './out' ); end
-    imwrite( abs( recon ) / max( abs( recon(:) ) ), ['./out/img_',indx2str(iter,nOuterIter), '.jpg'] );
+    imwrite( abs( recon ) / max( abs( recon(:) ) ), ['./out/img_',indx2str(iter,nReweightIter), '.jpg'] );
 
     if relDiffThresh > 0
       lastObjValue = objValue;
