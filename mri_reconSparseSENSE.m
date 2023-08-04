@@ -79,16 +79,6 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     wavSplit = makeWavSplit( sImg );
   end
 
-  function out = curvelet( x, type )
-    if nargin < 2 || strcmp( type, 'notransp' )
-      curvCells = fdct_wrapping( x, false );
-      out = curvCell2Vec( curvCells );
-    else
-      curvCells = vec2CurvCell( x, curvCellSizes );
-      out = ifdct_wrapping( curvCells, false );
-    end
-  end
-
   if strcmp( waveletType, 'Daubechies-4' )
     wavTrans = @(x) wtDaubechies2( x, wavSplit );
     wavTransH = @(y) iwtDaubechies2( y, wavSplit );
@@ -99,6 +89,7 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     error( 'Unrecognized wavelet type' );
   end
 
+  nImg = prod( sImg );
   function out = wavCurv( x, type )
     if nargin < 2 || strcmp( type, 'notransp' )
       x = reshape( x, sImg );
@@ -114,8 +105,8 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   end
 
   if strcmp( transformType, 'curvelet' ) || strcmp( transformType, 'wavCurv' )
-    tmp = curvelet( applyF( kData, 'transp' ), false );
-    curvCellSizes = findCellSizes( tmp );
+    curvCells = fdct_wrapping( applyF( kData, 'transp' ), false );
+    curvCellSizes = findCellSizes( curvCells );
 
     if strcmp( transformType, 'wavCurv' )
       sparsifier = @(x) wavCurv( x );
@@ -131,6 +122,16 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
 
   else
     error( 'Unrecognized transform type' );
+  end
+
+  function out = curvelet( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      curvCells = fdct_wrapping( x, false );
+      out = curvCell2Vec( curvCells );
+    else
+      curvCells = vec2CurvCell( x, curvCellSizes );
+      out = ifdct_wrapping( curvCells, false );
+    end
   end
 
   function out = applyS( in, type )
