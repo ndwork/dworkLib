@@ -114,7 +114,7 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   end
 
   if strcmp( transformType, 'curvelet' ) || strcmp( transformType, 'wavCurv' )
-    tmp = curvelet( FH( kData ), false );
+    tmp = curvelet( applyF( kData, 'transp' ), false );
     curvCellSizes = findCellSizes( tmp );
 
     if strcmp( transformType, 'wavCurv' )
