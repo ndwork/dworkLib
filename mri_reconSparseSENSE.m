@@ -100,12 +100,11 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
       x1 = reshape( x( 1 : nImg ), sImg );
       x2 = x( nImg + 1 : end );
       out = wavTransH( x1 ) + curvelet( x2, 'transp' );
-      out = out(:);
     end
   end
 
   if strcmp( transformType, 'curvelet' ) || strcmp( transformType, 'wavCurv' )
-    curvCells = fdct_wrapping( applyF( kData, 'transp' ), false );
+    curvCells = fdct_wrapping( img0, false );
     curvCellSizes = findCellSizes( curvCells );
 
     if strcmp( transformType, 'wavCurv' )
@@ -251,7 +250,9 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   end
 
   if numel( t ) == 0
-    normATA = powerIteration( applyATA, rand( size( img0 ) ), 'symmetric', true );
+    tmp = rand( size( sparsifier( img0 ) ) );
+    normATA = powerIteration( applyATA, tmp, 'symmetric', true );
+    clear tmp;
     if normATA == 0
       % A just sets everything to 0
       recon = zeros( size( img0 ) );
