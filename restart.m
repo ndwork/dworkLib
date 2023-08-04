@@ -32,6 +32,9 @@ function restart( varargin )
       delete( parforFiles(fileIndx).name );
     end
 
+    myCluster = parcluster('local');
+    if numel( myCluster.Jobs ) > 0, delete( myCluster.Jobs ); end
+
   elseif numel( type ) == 0
     pid = feature('getpid');
     parforProgressFile = ['parforProgress_', num2str(pid), '.txt'];
@@ -46,7 +49,4 @@ function restart( varargin )
   close all;  clc;  clear;  clear global;
 
   evalin( 'base', 'clear all' );
-
-  myCluster = parcluster('local');
-  if numel( myCluster.Jobs ) > 0, delete( myCluster.Jobs ); end
 end
