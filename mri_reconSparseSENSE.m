@@ -388,7 +388,7 @@ function wavSplit = makeWavSplit( sData, varargin )
   if nDims == 1
     wavSplit = zeros( 2^(nPows-1), 1 );
   else
-    wavSplit = zeros( 2^(nPows-1) );
+    wavSplit = zeros( 2^.(nPows-1) );
   end
   wavSplit(1) = 1;
 end
