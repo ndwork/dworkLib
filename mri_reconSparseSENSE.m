@@ -371,30 +371,42 @@ function out = vec2CurvCell( v, curvCellSizes )
 end
 
 
-function wavSplit = makeWavSplit( sImg )
+function wavSplit = makeWavSplit( sData, varargin )
+  % Make the wav split to be used with the wavelet transforms
 
-  minSplit = 8;
+  p = inputParser;
+  p.addOptional( 'minSplitSize', 8, @ispositive );
+  p.parse( varargin{:} );
+  minSplitSize = p.Results.minSplitSize;
 
-  yTmp = sImg(1);
-  ySplitSize = 1;
-  while ( mod( yTmp, 1 ) == 0 )
-    ySplitSize = ySplitSize * 2;
-    yTmp = yTmp / 2;
+  nDims = numel( sData );
+  nPows = zeros( 1, nDims );
+  for dimIndx = 1 : nDims
+    nPows( dimIndx ) = findNPows( sData( dimIndx ), minSplitSize );
   end
-  ySplitSize = ySplitSize / 4;
-  ySplitSize = min( ySplitSize, minSplit );
 
-  xTmp = sImg(2);
-  xSplitSize = 1;
-  while ( mod( xTmp, 1 ) == 0 )
-    xSplitSize = xSplitSize * 2;
-    xTmp = xTmp / 2;
+  if nDims == 1
+    wavSplit = zeros( 2^(nPows-1), 1 );
+  else
+    wavSplit = zeros( 2^(nPows-1) );
   end
-  xSplitSize = xSplitSize / 4;
-  xSplitSize = min( xSplitSize, minSplit );
-
-  wavSplit = zeros( [ ySplitSize xSplitSize ] );
   wavSplit(1) = 1;
+end
+
+
+function nPow = findNPows( sizeDim, minSplitSize )
+  binPow = logBase( sizeDim, 2 );
+
+  nPow = 0;
+  for powIndx = 1 : floor( binPow )
+    if mod( sizeDim, 2 ) == 0 && sizeDim/2 > minSplitSize
+      nPow = nPow + 1;
+      sizeDim = sizeDim / 2;
+    else
+      break
+    end
+  end
+
 end
 
 
