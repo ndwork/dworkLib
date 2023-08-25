@@ -1,10 +1,13 @@
 
 function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % Either
-  %   senseMaps = mri_makeSensitivityMaps( kData [, 'L', L, ...
+  %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'pruessman', [, 'L', L, ...
   %     'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
   % or
-  %   senseMaps = mri_makeSensitivityMaps( kData, img [, 'polyOrder', polyOrder, 'verbose', true/false );
+  %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple' [, 'epsilon', epsilon ] );
+  % or
+  %   senseMaps = mri_makeSensitivityMaps( kData, img, 'alg', 'ying' [, 'polyOrder', polyOrder, ...
+  %     'verbose', true/false );
   %
   % Options are to either use the method of (1) or (2, default)
   % 1) Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
@@ -46,6 +49,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   p = inputParser;
   p.addOptional( 'img', [] );
   p.addParameter( 'alg', 'ying', @(x) true );
+  p.addParameter( 'epsilon', 0, @ispositive );
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
   p.addParameter( 'polyOrder', defaultPolyOrder, @ispositive );
@@ -53,6 +57,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alg = p.Results.alg;
+  epsilon = p.Results.epsilon;
   img = p.Results.img;
   L = p.Results.L;
   mask = p.Results.mask;
@@ -65,6 +70,8 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   switch alg
     case 'pruessman'
       senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, verbose );
+    case 'simple'
+      senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
     case 'ying'
       senseMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder );
     otherwise
@@ -165,6 +172,12 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, v
   if verbose == true, pfObj.clean; end
 end
 
+
+function senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon )
+  coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+  reconSSQ = sqrt( sum( coilRecons .* conj( coilRecons ), ndims( kData ) ) );
+  senseMaps = bsxfun( @rdivide, coilRecons, ( reconSSQ + epsilon ) );
+end
 
 
 function sMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder )
