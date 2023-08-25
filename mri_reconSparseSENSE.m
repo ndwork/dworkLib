@@ -1,7 +1,7 @@
 
-function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
+function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   % recon = mri_reconSparseSENSE( kData, sMaps, lambda, [, 'img0', img0, 'nIter', nIter, ...
-  %   'noiseCov', noiseCov ] )
+  %   'reweightEpsilon', reweightEpsilon, 'noiseCov', noiseCov ] )
   %
   % This routine uses proximal gradient methods to minimize
   %   0.5 * || A y - b ||_2^2 + lambda || y ||_{w,1}
@@ -10,8 +10,17 @@ function recon = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   %
   % Note that || y ||_{w,1} = w1 |y1| + w2 |y2| + ... + wN |yN|
   %
+  % Iterative reweighting is implemented according to "Enhancing Sparsity by Reweighted 1
+  %   Minimization" by Candes et al.
+  %
   % Inputs:
   % kData - an array of size Ny x Nx x nCoils
+  %
+  % Optional Inputs:
+  % reweightEpsilon - if a numeric value, then this is the epsilon used for iterative
+  %   reweighting.
+  %   If empty, then a golden section search is used to find the epsilon that yields the
+  %     image that is most in focus.
   %
   % Outputs:
   % recon - a 2D complex array that is the image

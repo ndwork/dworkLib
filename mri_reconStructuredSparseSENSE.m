@@ -1,5 +1,5 @@
 
-function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin )
+function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin )
   % recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, [, 'img0', img0, 'nIter', nIter, ...
   %   'noiseCov', noiseCov, 'transformType', transformType, 'wavSplit', wavSplit ] )
   %
@@ -58,7 +58,7 @@ function recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, varargin 
   beta = kData - acrK;
   beta( kData == 0 ) = 0;
 
-  reconH = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0, 'noiseCov', noiseCov, ...
+  [reconH,lambda] = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0, 'noiseCov', noiseCov, ...
     'optAlg', optAlg, 'reweightEpsilon', reweightEpsilon, 't', t, 'transformType', transformType, ...
     'waveletType', waveletType, 'wavSplit', wavSplit );
 

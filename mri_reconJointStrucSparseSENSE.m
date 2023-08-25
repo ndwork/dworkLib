@@ -1,7 +1,7 @@
 
-function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
-  % [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData [, 'nOuterIter', nOuterIter, 'noiseCov', noiseCov, 
-  %   'polyOrder', polyOrder, 'relDiffThresh', relDiffThresh ] );
+function [ recon, sMaps, lambda ] = mri_reconJointStrucSparseSENSE( kData, varargin )
+  % [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData [, 'nOuterIter', nOuterIter, 
+  %   'noiseCov', noiseCov, 'polyOrder', polyOrder, 'relDiffThresh', relDiffThresh ] );
   %
   % Inputs:
   % kData - a two dimensional array of complex values; uncollected data have values of 0
@@ -29,8 +29,9 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
   % purpose.
 
   if nargin < 1
-    disp([ 'Usage: [ img, sMaps ] = mri_reconJSS( kData [, ''nOuterIter'', nOuterIter, ', ...
-      '''noiseCov'', noiseCov, ''nReweightIter'', nReweightIter, ''polyOrder'', polyOrder,']);
+    disp([ 'Usage: [ img, sMaps ] = mri_reconJointStrucSparseSENSE( kData [, ''nOuterIter'', nOuterIter, ', ...
+      '''noiseCov'', noiseCov, ''reweightEpsilon'', reweightEpsilon, ''nReweightIter'', nReweightIter, ...' ...
+      '''polyOrder'', polyOrder,']);
     disp('         ''relDiffThresh'', relDiffThresh, ''verbose'', verbose ] );' )
     if nargout > 0, recon=[]; end
     if nargout > 1, sMaps=[]; end
@@ -78,9 +79,15 @@ function [ recon, sMaps ] = mri_reconJointStrucSparseSENSE( kData, varargin )
 
     sMaps = mri_makeSensitivityMaps( kData, recon, 'polyOrder', polyOrder, 'alg', 'ying' );
 
-    recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', recon, 'noiseCov', noiseCov, ...
-      'optAlg', 'fista_wLS', 'reweightEpsilon', reweightEpsilon, 't', t, ...
-      'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
+    if nargout > 1 && iter == nReweightIter
+      [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', recon, 'noiseCov', noiseCov, ...
+        'optAlg', 'fista_wLS', 'reweightEpsilon', reweightEpsilon, 't', t, ...
+        'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
+    else
+      recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', recon, 'noiseCov', noiseCov, ...
+        'optAlg', 'fista_wLS', 'reweightEpsilon', reweightEpsilon, 't', t, ...
+        'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
+    end
 
     if ~exist( './out', 'dir' ), mkdir( './out' ); end
     imwrite( abs( recon ) / max( abs( recon(:) ) ), ['./out/img_',indx2str(iter,nReweightIter), '.jpg'] );
