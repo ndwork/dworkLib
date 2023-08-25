@@ -1,11 +1,12 @@
 
 function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
   % [out,iterationIndx] = goldenSectionSearch( f, LB, UB [, ...
-  %   'tol', tol, 'nMax', nMax ] )
+  %   'tol', tol, 'nMax', nMax, 'verbose', true/false ] )
   %
   % finds the minimal point of the function f using a binary search
   % Written according to the notes written by Wotao Yin at
   % http://www.math.ucla.edu/~wotaoyin/math273a/slides/Lec3a_1d_search_273a_2015_f.pdf
+  % Another reference:  https://xdze2.github.io/goldsearch.html
   %
   % Inputs:
   % f - function handle
@@ -43,8 +44,21 @@ function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
 
   a0 = LB;  b0 = UB;
   D = R * ( b0 - a0 );
-  a1 = b0 - D;  fa = f( a1 );
-  b1 = a0 + D;  fb = f( b1 );
+  a1 = b0 - D;  
+  b1 = a0 + D; 
+
+  fValues = cell(2,1);
+  parfor i = 1 : 2
+    if i == 1
+      fValues{i} = f( a1 );   %#ok<PFBNS>
+    else
+      fValues{i} = f( b1 );
+    end
+  end
+  fa = fValues{1};
+  fb = fValues{2};
+  %fb = f( b1 );
+  %fa = f( a1 );
 
   iterationIndx = 1;  % 1 iteration already done above
   while iterationIndx <= nMax
