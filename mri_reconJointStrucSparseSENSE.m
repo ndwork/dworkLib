@@ -77,7 +77,7 @@ function [ recon, sMaps, lambda ] = mri_reconJointStrucSparseSENSE( kData, varar
       disp([ 'Working on Joint Structured Sparsity iteration ', num2str(iter) ]);
     end
 
-    sMaps = mri_makeSensitivityMaps( kData, recon, 'polyOrder', polyOrder, 'alg', 'ying' );
+    sMaps = mri_makeSensitivityMaps( kData, recon, 'polyOrder', polyOrder, 'alg', 'simple' );
 
     if nargout > 1 && iter == nReweightIter
       [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', recon, 'noiseCov', noiseCov, ...
