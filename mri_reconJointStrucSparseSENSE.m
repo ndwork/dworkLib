@@ -89,9 +89,6 @@ function [ recon, sMaps, lambda ] = mri_reconJointStrucSparseSENSE( kData, varar
         'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
     end
 
-    if ~exist( './out', 'dir' ), mkdir( './out' ); end
-    imwrite( abs( recon ) / max( abs( recon(:) ) ), ['./out/img_',indx2str(iter,nReweightIter), '.jpg'] );
-
     if relDiffThresh > 0
       lastObjValue = objValue;
       fftRecon = fftshift2( fft2( ifftshift2( recon ) ) );
