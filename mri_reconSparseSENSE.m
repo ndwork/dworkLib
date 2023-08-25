@@ -188,7 +188,6 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     invNoiseCov = inv( noiseCov );
     [~,s,~] = svd( invNoiseCov, 'econ' );
     invNoiseCov = invNoiseCov ./ s(1);
-    L = chol( invNoiseCov, 'lower' );
   end
   function out = applyInvNoiseCov( in, type )
     if numel( noiseCov ) == 0, out = in; return; end
@@ -202,21 +201,6 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
       out = transpose( invNoiseCov * transpose( reshaped ) );
     else
       out = transpose( invNoiseCov' * transpose( reshaped ) );
-    end
-    out = reshape( out, sIn );
-  end
-  function out = applyL( in, type )
-    if numel( noiseCov ) == 0, out = in; return; end
-
-    % Assumes last dimension is coil dimension
-    if nargin < 2, type = 'notransp'; end
-
-    sIn = size( in );
-    reshaped = reshape( in, [ prod( sIn(1:end-1) ) sIn(end) ] );
-    if strcmp( type, 'notransp' )
-      out = transpose( L * transpose( reshaped ) );
-    else
-      out = transpose( L' * transpose( reshaped ) );
     end
     out = reshape( out, sIn );
   end
