@@ -25,11 +25,12 @@ function mask = makeLowFreqWavMask( sImg, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  defaultSplit = 1;
+  defaultSplit = makeWavSplit( sImg );
   p = inputParser;
   p.addOptional( 'split', defaultSplit );
   p.parse( varargin{:} );
   split = p.Results.split;
+  if numel( split ) == 0, split = defaultSplit; end
 
   mask = zeros( sImg );
   mask = wavMask( mask, split );
@@ -61,4 +62,41 @@ function out = wavMask( mask, split )
   out = mask;
   out( 1 : sMask(1)/2, 1 : sMask(2)/2 ) = m11;
 end
+
+
+function wavSplit = makeWavSplit( sData )
+  % Make the wav split to be used with the wavelet transforms
+
+  nDims = numel( sData );
+  twoPows = zeros( 1, nDims );
+  for dimIndx = 1 : nDims
+    twoPows( dimIndx ) = findTwoPow( sData( dimIndx ) );
+  end
+
+  if nDims == 1
+    wavSplit = zeros( 2^twoPows, 1 );
+  else
+    wavSplit = zeros( 2.^twoPows );
+  end
+  wavSplit(1) = 1;
+end
+
+
+function nPow = findTwoPow( sizeDim )
+  binPow = logBase( sizeDim, 2 );
+
+  nPow = 1;
+  for powIndx = 1 : floor( binPow )
+    if mod( sizeDim, 2 ) == 0 && sizeDim > 32
+      nPow = nPow + 1;
+      sizeDim = sizeDim / 2;
+    else
+      break
+    end
+  end
+
+  nPow = floor( logBase( nPow, 2 ) );
+end
+
+
 
