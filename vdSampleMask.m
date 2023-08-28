@@ -36,7 +36,7 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
   maskType = p.Results.maskType;
   maxIter = p.Results.maxIter;
 
-  if numel( maskType ) == 0, maskType = Laplacian; end
+  if numel( maskType ) == 0, maskType = 'Laplacian'; end
 
   if numel( sigmas ) == 1, sigmas = sigmas * ones( numel(sMask), 1 ); end
 

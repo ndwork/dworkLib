@@ -17,15 +17,15 @@ function mask = mri_makeSampleMask( sMask, nSamples, vdSig, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nSamples > prod(sMask), error( 'Too many samples requested.' ); end
-  if sum( startMask(:) ) > nSamples, error( 'Too many samples in start mask.' ); end
-
   p = inputParser;
   p.addParameter( 'maskType', [], @(x) true );
-  p.addParameter( 'startMask', zeros( sMask ), @isnumeric );
+  p.addParameter( 'startMask', zeros( sMask ), @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   maskType = p.Results.maskType;
   startMask = p.Results.startMask;
+
+  if nSamples > prod(sMask), error( 'Too many samples requested.' ); end
+  if sum( startMask(:) ) > nSamples, error( 'Too many samples in start mask.' ); end
 
   mask = startMask;
 
