@@ -7,7 +7,7 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
   % Biot-Savart law at 3 Tesla" by Esin and Alpaslan
   %
   % Inputs:
-  % segs - The coil is specified as a 2D array that correspond to a set of 3D
+  % segs - The coil is specified as a 2D array that corresponds to a set of 3D
   %   coordinates (x,y,z).  The array is size Nx3, where N is the number of pieces
   %   of metal in the coils.  It is assumed that the coil is made of N-1 straight, 
   %   and that each piece are connected by coordinates one row in the array and its
