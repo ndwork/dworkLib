@@ -39,6 +39,7 @@ function out = softThresh( in, thresh )
     magIn = abs( in );
     magOut = max( ( magIn - thresh ), 0 );
     out = in ./ magIn .* magOut;
+    out( magIn == 0 ) = 0;
 
   end
 
