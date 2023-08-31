@@ -66,6 +66,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   sigma = p.Results.sigma;
   verbose = p.Results.verbose;
 
+  if numel( epsilon ) == 0, epsilon = 0; end
   if numel( polyOrder ) == 0, polyOrder = defaultPolyOrder; end
 
   switch alg
@@ -73,6 +74,8 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
       senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, verbose );
     case 'simple'
       senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
+    case 'sortaSimple'
+      senseMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon );
     case 'ying'
       senseMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder );
     otherwise
@@ -173,6 +176,30 @@ function senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon )
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
   reconSSQ = sqrt( sum( coilRecons .* conj( coilRecons ), ndims( kData ) ) );
   senseMaps = bsxfun( @rdivide, coilRecons, ( reconSSQ + epsilon ) );
+end
+
+
+function sMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon )
+
+  nCoils = size( kData, 3 );
+  mask = mri_makeIntensityMask( kData, 'noiseCoords', [1 25 1 25], 'sigmaScalar', 5 );
+  sMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
+  sMaps = bsxfun( @times, sMaps, mask );
+  
+  [ rMaskedIn,  cMaskedIn  ] = find( mask == 1 );
+  [ rMaskedOut, cMaskedOut ] = find( mask == 0 );
+  sMask = size( mask );
+  theseIndxs = sub2ind( sMask, rMaskedIn, cMaskedIn );
+  thoseIndxs = sub2ind( sMask, rMaskedOut, cMaskedOut );
+
+  for coilIndx = 1 : nCoils
+    maskedSenseMap = sMaps( :, :, coilIndx );
+    theseSensed = maskedSenseMap( theseIndxs );
+    SI = scatteredInterpolant( cMaskedIn, rMaskedIn, theseSensed, 'natural', 'nearest' );     
+    maskedSenseMap( thoseIndxs ) = SI( cMaskedOut, rMaskedOut );
+    sMap = smoothImg( maskedSenseMap, 'gaussian', 5 );
+    sMaps( :, :, coilIndx ) = sMap;
+  end
 end
 
 
