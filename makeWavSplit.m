@@ -4,7 +4,7 @@ function wavSplit = makeWavSplit( sData, varargin )
   % Make the wav split to be used with the wavelet transforms
 
   p = inputParser;
-  p.addOptional( 'minSplitSize', 8, @ispositive );
+  p.addOptional( 'minSplitSize', 16, @ispositive );
   p.parse( varargin{:} );
   minSplitSize = p.Results.minSplitSize;
 
