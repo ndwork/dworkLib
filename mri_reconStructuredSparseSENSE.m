@@ -65,9 +65,11 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
   kOut = kH + acrK;
 
+  recon = mri_reconModelBased( kOut, sMaps );
+
   % could alternatively do Model Based recon with acceleration factor of 1 here
-  coilReconsOut = mri_reconIFFT( kOut );
-  recon = mri_reconRoemer( coilReconsOut );
+  %coilReconsOut = mri_reconIFFT( kOut );
+  %recon = mri_reconRoemer( coilReconsOut );
 end
 
 
