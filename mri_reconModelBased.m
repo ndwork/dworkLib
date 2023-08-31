@@ -2,6 +2,12 @@
 function [img,relRes] = mri_reconModelBased( kData, sMaps )
   % [img,relRes] = mri_reconModelBased( kData, sMaps )
   %
+  % img is the argmin of || F S x - b ||_2
+  %
+  % Inputs:
+  % kData - a 3D array of size M x N x nCoils representing the kSpace data
+  % sMaps - a 3D array of size M x N x nCoils representing the sensitivity maps
+  %
   % Written by Nicholas Dwork, Copyright 2023
   %
   % https://github.com/ndwork/dworkLib.git
