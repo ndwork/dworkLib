@@ -30,11 +30,13 @@ function mask = mri_makeIntensityMask( kData, varargin )
   p.addParameter( 'm', 2, @ispositive );
   p.addParameter( 'morphScale', 0, @(x) x >= 0 );
   p.addParameter( 'noiseCoords', [], @ispositive );
+  p.addParameter( 'sigmaScalar', 3, @isnonnegative );
   p.addParameter( 'thresh', 0.04, @ispositive );
   p.parse( varargin{:} );
   m = p.Results.m;
   morphScale = p.Results.morphScale;
   noiseCoords = p.Results.noiseCoords;
+  sigmaScalar = p.Results.sigmaScalar;
   thresh = p.Results.thresh;
 
   ssqRecon = mri_reconSSQ( kData );
@@ -44,7 +46,7 @@ function mask = mri_makeIntensityMask( kData, varargin )
     noiseRegion = ssqRecon( noiseCoords(1):noiseCoords(2), noiseCoords(3):noiseCoords(4) );
     meanNoise = mean( noiseRegion(:) );
     stdNoise  = std( noiseRegion(:) );
-    thresh = meanNoise + 3 * stdNoise;
+    thresh = meanNoise + sigmaScalar * stdNoise;
   end
 
   mask = ssqRecon > thresh;
