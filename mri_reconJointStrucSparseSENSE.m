@@ -63,9 +63,9 @@ function [ recon, sMaps, lambda ] = mri_reconJointStrucSparseSENSE( kData, varar
   waveletType = p.Results.waveletType;
   verbose = p.Results.verbose;
 
-
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
-  recon = mri_reconRoemer( coilRecons );
+  roemerRecon = mri_reconRoemer( coilRecons );
+  recon = roemerRecon;
 
   if relDiffThresh > 0
     objValue = [];
@@ -77,23 +77,23 @@ function [ recon, sMaps, lambda ] = mri_reconJointStrucSparseSENSE( kData, varar
       disp([ 'Working on Joint Structured Sparsity iteration ', num2str(iter) ]);
     end
 
-    sMaps = mri_makeSensitivityMaps( kData, recon, 'polyOrder', polyOrder, 'alg', 'simple' );
+    sMaps = mri_makeSensitivityMaps( kData, 'alg', 'sortaSimple' );
 
     if nargout > 1 && iter == nReweightIter
-      [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', recon, 'noiseCov', noiseCov, ...
+      [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', roemerRecon, 'noiseCov', noiseCov, ...
         'optAlg', 'fista_wLS', 'reweightEpsilon', reweightEpsilon, 't', t, ...
         'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
     else
-      recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', recon, 'noiseCov', noiseCov, ...
+      recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 'img0', roemerRecon, 'noiseCov', noiseCov, ...
         'optAlg', 'fista_wLS', 'reweightEpsilon', reweightEpsilon, 't', t, ...
         'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
     end
 
     if relDiffThresh > 0
       lastObjValue = objValue;
-      fftRecon = fftshift2( fft2( ifftshift2( recon ) ) );
-      SFRecon = bsxfun( @times, sMaps, fftRecon );
-      objValue = norm( SFRecon( kData ~= 0 ) - kData( kData ~= 0 ) ) / normKData;
+      sRecons = bsxfun( @times, sMaps, recon );
+      fftRecons = fftshift2( fft2( ifftshift2( sRecons ) ) );
+      objValue = norm( fftRecons( kData ~= 0 ) - kData( kData ~= 0 ) ) / normKData;
 
       if iter > 1
         objDiff = ( objValue - lastObjValue ) / lastObjValue;
@@ -103,4 +103,3 @@ function [ recon, sMaps, lambda ] = mri_reconJointStrucSparseSENSE( kData, varar
   end
 
 end
-
