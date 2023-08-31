@@ -20,6 +20,7 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   p = inputParser;
   p.addParameter( 'img0', [], @isnumeric );
   p.addParameter( 'noiseCov', [], @isnumeric );
+  p.addParameter( 'nReweightIter', [], @ispositive );
   p.addParameter( 'optAlg', [], @(x) true );
   p.addParameter( 'reweightEpsilon', [], @ispositive );
   p.addParameter( 't', [], @ispositive );
@@ -29,6 +30,7 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   p.parse( varargin{:} );
   img0 = p.Results.img0;
   noiseCov = p.Results.noiseCov;
+  nReweightIter = p.Results.nReweightIter;
   optAlg = p.Results.optAlg;
   reweightEpsilon = p.Results.reweightEpsilon;
   t = p.Results.t;
@@ -54,13 +56,18 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
     error( 'Unrecognized transform type' );
   end
 
+  if numel( img0 ) == 0
+    coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+    img0 = mri_reconRoemer( coilRecons, 'sMaps', sMaps );
+  end
+
   acrK = bsxfun( @times, kData, acr );
   beta = kData - acrK;
   beta( kData == 0 ) = 0;
 
   [reconH,lambda] = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0, 'noiseCov', noiseCov, ...
-    'optAlg', optAlg, 'reweightEpsilon', reweightEpsilon, 't', t, 'transformType', transformType, ...
-    'waveletType', waveletType, 'wavSplit', wavSplit );
+    'nReweightIter', nReweightIter, 'optAlg', optAlg, 'reweightEpsilon', reweightEpsilon, 't', t, ...
+    'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
 
   kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
   kOut = kH + acrK;
