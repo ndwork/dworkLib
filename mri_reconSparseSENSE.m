@@ -232,12 +232,12 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     Aadjb = applyA( b, 'transp' );
   end
   function out = gGrad( x )
+    Ax = applyA( x );
     if numel( noiseCov ) > 0
-      Ax = applyA( x );
       NInvAx = applyInvNoiseCov( reshape( Ax, [ nM nCoils ] ) );
       out = applyA( NInvAx(:), 'transp' ) - AadjMb;
     else
-      out = applyA( applyA( x ), 'transp' ) - Aadjb;
+      out = applyA( Ax, 'transp' ) - Aadjb;
     end
   end
 
