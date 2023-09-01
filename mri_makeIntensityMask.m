@@ -39,7 +39,7 @@ function mask = mri_makeIntensityMask( kData, varargin )
   sigmaScalar = p.Results.sigmaScalar;
   thresh = p.Results.thresh;
 
-  ssqRecon = mri_reconSSQ( kData );
+  ssqRecon = mri_reconSSQ( kData, 'multiSlice', true );
   ssqRecon = ssqRecon / max( ssqRecon(:) );
 
   if numel( noiseCoords ) > 0
