@@ -38,10 +38,14 @@ function out = scaleImg( img, varargin )
 
   p = inputParser;
   p.addOptional( 'outMinMax', defaultOutMinMax );
-  p.addOptional( 'inMinMax', defaultInMinMax );
+  p.addOptional( 'inMinMax', defaultInMinMax, @(x) true );
   p.parse( varargin{:} );
   inMinMax = p.Results.inMinMax;
   outMinMax = p.Results.outMinMax;
+
+  if ~isnumeric( inMinMax ) && strcmp( inMinMax, 'nice' )
+    inMinMax = [ median( img(:) ) - 2 * std( img(:) ), median( img(:) ) + 2 * std( img(:) ) ];
+  end
 
   if numel( inMinMax ) == 0, inMinMax = defaultInMinMax; end
   if numel( outMinMax ) == 0, outMinMax = defaultOutMinMax; end
