@@ -1,15 +1,18 @@
 
-function [ out, phaseOut ] = mri_reconPartialFourier( in, sFSR, varargin )
-  % out = mri_reconPartialFourier( in, sFSR [, 'op', op ] )
+function out = mri_reconPartialFourier( in, sFSR, varargin )
+  % out = mri_reconPartialFourier( in, sFSR [, 'phases', phases, 'op', op ] )
   %
   % Written according to "Partial k-space Reconstruction" by John Pauly
   %
   % Inputs:
   % in - the input array of size Ny x Nx x nCoils representing the MRI data.
-  % sFSR - a scalar specifying the size of the fully sampled region: sFSR x Nx
+  % sFSR - Either a scalar or a two element array that specifies the size of the fully
+  %   sampled region, which is used to estimate the phase of the image.
+  %   If a scalar, then the size of the fully sampled region is sFSR x Nx.
+  %   If a two element array, then the size of the FSR is sFSR(1) x sFSR(2).
   %
   % Outputs:
-  % 
+  % out - an array of size Ny x Nx x nCoils that represents the coil images
   %
   % Written by Nicholas Dwork - Copyright 2023
   %
@@ -20,25 +23,68 @@ function [ out, phaseOut ] = mri_reconPartialFourier( in, sFSR, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  p = inputParser;
+  p.addParameter( 'op', 'notransp', @(x) true );
+  p.addParameter( 'phases', [], @isnumeric );
+  p.parse( varargin{:} );
+  phases = p.Results.phases;
+  op = p.Results.op;
+
   Ny = size( in, 1 );
   ys = size2imgCoordinates( Ny );
   centerIndx = find( ys == 0, 1 );
 
-  firstY = centerIndx - ceil( (sFSR-1) / 2 );
-  lastY = centerIndx + floor( (sFSR-1) / 2 );
+  if numel( sFSR ) == 1
+    sFSR = [ sFSR, size( in, 2 ) ];
+  end
+
+  firstX = centerIndx - ceil( ( sFSR(2) - 1 ) / 2 );
+  lastX = centerIndx + floor( ( sFSR(2) - 1 ) / 2 );
+
+  firstY = centerIndx - ceil( ( sFSR(1) - 1 ) / 2 );
+  lastY = centerIndx + floor( ( sFSR(1) - 1 ) / 2 );
   m = 2 / ( lastY - firstY );
   ramp = m * ys + 1.0;
   ramp( 1 : firstY ) = 0;
   ramp( lastY : end ) = 2;
 
-  inW = bsxfun( @times, in, 2-ramp );
-  imgW = fftshift2( ifft2( ifftshift2( inW ) ) );
+  if numel( phases ) == 0
+    if strcmp( op, 'transp' )
+      error( 'Cannot estimate image phase during transpose operation' );
+    end
+    inLF = in;  % Low-freq data
+    inLF( 1:firstY-1, :, : ) = 0;
+    inLF( :, 1:firstX-1, : ) = 0;
+    inLF( :, lastX+1:end, : ) = 0;
+    imgLF = fftshift2( ifft2( ifftshift2( inLF ) ) );
+    phases = angle( imgLF );
+  end
+  phaseImg = exp( 1i * phases );
 
-  inLF = in;  % Low-freq data
-  inLF(1:firstY-1,:,:) = 0;
-  imgLF = fftshift2( ifft2( ifftshift2( inLF ) ) );
-  phaseOut = exp( 1i * angle( imgLF ) );
+  if strcmp( op, 'notransp' )
+    %inW = bsxfun( @times, in, 2-ramp );
+    %imgW = fftshift2( ifft2( ifftshift2( inW ) ) );
+    %img = imgW .* conj( imgPhase );
+    %out = real( img ) .* imgPhase;
 
-  img = imgW .* conj( phaseOut );
-  out = real( img ) .* phaseOut;
+    inW = bsxfun( @times, in, 2-ramp );
+    imgW = fftshift2( ifft2( ifftshift2( inW ) ) );
+    out = imgW .* conj( phaseImg );
+    out = real( out ) .* phaseImg;
+
+  elseif strcmp( op, 'transp' )
+
+    in = real( in .* conj( phaseImg ) );
+    inWithPhase = in .* phaseImg;
+    ifft2hIn = fftshift2( ifft2h( ifftshift2( inWithPhase ) ) );
+    out = bsxfun( @times, ifft2hIn, 2-ramp );
+
+
+    %realIn = imgPhase .* real( in .* conj( imgPhase ) );
+    %ifft2hIn = fftshift2( ifft2h( ifftshift2( realIn ) ) );
+    %out = bsxfun( @times, ifft2hIn, 2-ramp );
+
+  else
+    error( 'Unrecognized operator' );
+  end
 end
