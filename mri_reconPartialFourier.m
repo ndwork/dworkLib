@@ -62,27 +62,16 @@ function out = mri_reconPartialFourier( in, sFSR, varargin )
   phaseImg = exp( 1i * phases );
 
   if strcmp( op, 'notransp' )
-    %inW = bsxfun( @times, in, 2-ramp );
-    %imgW = fftshift2( ifft2( ifftshift2( inW ) ) );
-    %img = imgW .* conj( imgPhase );
-    %out = real( img ) .* imgPhase;
-
     inW = bsxfun( @times, in, 2-ramp );
     imgW = fftshift2( ifft2( ifftshift2( inW ) ) );
     out = imgW .* conj( phaseImg );
     out = real( out ) .* phaseImg;
 
   elseif strcmp( op, 'transp' )
-
     in = real( in .* conj( phaseImg ) );
     inWithPhase = in .* phaseImg;
     ifft2hIn = fftshift2( ifft2h( ifftshift2( inWithPhase ) ) );
     out = bsxfun( @times, ifft2hIn, 2-ramp );
-
-
-    %realIn = imgPhase .* real( in .* conj( imgPhase ) );
-    %ifft2hIn = fftshift2( ifft2h( ifftshift2( realIn ) ) );
-    %out = bsxfun( @times, ifft2hIn, 2-ramp );
 
   else
     error( 'Unrecognized operator' );
