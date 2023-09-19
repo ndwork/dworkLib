@@ -85,4 +85,8 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   [img,lsqrFlag,relRes] = lsqr( @applyE, kData( dataMask == 1 ), [], 100, [], [], img0(:) ); %#ok<ASGLU>
   img = reshape( img, sKData(1:2) );
 
+  if numel( supportMask ) > 0
+    img = img .* supportMask;
+  end
+
 end
