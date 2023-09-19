@@ -1,5 +1,5 @@
 
-function [img,relRes] = mri_reconModelBased( kData, sMaps )
+function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   % [img,relRes] = mri_reconModelBased( kData, sMaps )
   %
   % img is the argmin of || F S x - b ||_2
@@ -16,6 +16,11 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  p = inputParser;
+  p.addParameter( 'supportMask', [], @(x) isnonnegative(x) || islogical(x) );
+  p.parse( varargin{:} );
+  supportMask = p.Results.supportMask;
 
   coilRecons = mri_reconIFFT( kData );
   img0 = mri_reconRoemer( coilRecons );
@@ -49,6 +54,9 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps )
   function out = applyE( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
       in = reshape( in, sKData(1:2) );
+      if numel( supportMask ) > 0
+        in = supportMask .* in;
+      end
       out = applyF( applyS( in ) );
       out = out( dataMask == 1 );
     else
@@ -57,6 +65,9 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps )
       in = tmp;  clear tmp;
       in = reshape( in, sKData );
       out = applyS( applyF( in .* dataMask, 'transp' ), 'transp' );
+      if numel( supportMask ) > 0
+        out = supportMask .* out;
+      end
     end
     out = out(:);
   end
