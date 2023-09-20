@@ -48,14 +48,22 @@ function out = mri_reconPartialFourier( in, sFSR, varargin )
   ramp( 1 : firstY ) = 0;
   ramp( lastY : end ) = 2;
 
+  nCoils = size( in, 3 );
+
   if numel( phases ) == 0
     if strcmp( op, 'transp' )
       error( 'Cannot estimate image phase during transpose operation' );
     end
     inLF = in;  % Low-freq data
-    inLF( 1:firstY-1, :, : ) = 0;
-    inLF( :, 1:firstX-1, : ) = 0;
-    inLF( :, lastX+1:end, : ) = 0;
+    if nCoils == 1
+      inLF( 1:firstY-1, : ) = 0;
+      inLF( :, 1:firstX-1 ) = 0;
+      inLF( :, lastX+1:end ) = 0;
+    else
+      inLF( 1:firstY-1, :, : ) = 0;
+      inLF( :, 1:firstX-1, : ) = 0;
+      inLF( :, lastX+1:end, : ) = 0;
+    end
     imgLF = fftshift2( ifft2( ifftshift2( inLF ) ) );
     phases = angle( imgLF );
   end
