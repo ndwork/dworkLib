@@ -10,8 +10,13 @@ function wavSplit = makeWavSplit( sData, varargin )
 
   nDims = numel( sData );
   nPows = zeros( 1, nDims );
+
+  if numel( minSplitSize ) == 1
+    minSplitSize = minSplitSize * ones( size( nDims ) );
+  end
+
   for dimIndx = 1 : nDims
-    nPows( dimIndx ) = findNPows( sData( dimIndx ), minSplitSize );
+    nPows( dimIndx ) = findNPows( sData( dimIndx ), minSplitSize( dimIndx ) );
   end
 
   if nDims == 1
