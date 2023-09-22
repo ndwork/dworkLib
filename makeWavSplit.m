@@ -12,7 +12,7 @@ function wavSplit = makeWavSplit( sData, varargin )
   nPows = zeros( 1, nDims );
 
   if numel( minSplitSize ) == 1
-    minSplitSize = minSplitSize * ones( size( nDims ) );
+    minSplitSize = minSplitSize * ones( nDims, 1 );
   end
 
   for dimIndx = 1 : nDims
