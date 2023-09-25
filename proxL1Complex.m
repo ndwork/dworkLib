@@ -34,6 +34,4 @@ function out = proxL1Complex( in, thresh, weights )
 
   out = zeros( size( in ) );
   out( magIn > thresh ) = in( magIn > thresh ) .* ( 1 - scalingFactors( magIn > thresh ) );
-  %projsOntoUnitMag = in .* scalingFactors;
-  %out = in - projsOntoUnitMag;
 end
