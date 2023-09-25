@@ -46,4 +46,6 @@ function out = proxConjL1( in, sigma, t )
     out( magIn > t ) = in( magIn > t ) .* scaling( magIn > t );
 
   end
+
+  % out = in - sigma * proxL1Complex( in / sigma, t / sigma );
 end
