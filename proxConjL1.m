@@ -29,6 +29,7 @@ function out = proxConjL1( in, sigma, t )
   if nargin < 3, t=1; end
 
   if sigma < 0, error( 'sigma must be non-negative' ); end
+
   if sigma == 0
     out = in;
     return
