@@ -903,8 +903,8 @@ function testDworkLib
   %% pdhg
   fprintf('\nTesting pdhg: \n');
   %minimize ||Ax - b||_2^2 + lambda ||x||
-  A = rand( 7, 3 ) * 10;
-  x = rand( 3, 1 ) * 1;
+  A = rand( 20, 5 ) * 1;
+  x = rand( 5, 1 ) * 1;
   x0 = rand( size( x ) );
   b = A * x;
   lambda = 0;
@@ -917,9 +917,10 @@ function testDworkLib
   normA = sqrt( s(1,1) );
   tau = 0.01 / s(1);
   [xStar,objValues,relDiffs] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
-    'N', 10000, 'f', f, 'g', g, 'printEvery', 1000, 'verbose', true );   %#ok<ASGLU>
-  xDiff = norm( x(:) - xStar(:) );
-  fprintf([ '\npdhg ran to completion with xDiff ', num2str(xDiff), '\n' ]);
+    'N', 100000, 'f', f, 'g', g, 'printEvery', 1000, 'tol', 1d-99, 'verbose', true );   %#ok<ASGLU>
+  mse = norm( x(:) - xStar(:) )^2 / numel( x );
+  disp( [ x xStar x-xStar ] );
+  fprintf([ '\npdhg ran to completion with MSE ', num2str(mse), '\n' ]);
 
   %% pdhgAdaptive
   fprintf('\nTesting pdhgAdaptive: \n');
