@@ -27,6 +27,8 @@ function showFeaturesOnImg( features, varargin )
   p.addOptional( 'img', [] );
   p.addParameter( 'connect', false, @(x) islogical(x) );
   p.addParameter( 'figH', [] );
+  p.addParameter( 'LineWidth', 2 );
+  p.addParameter( 'MarkerSize', 5 );
   p.addParameter( 'offset', [], @(x) isnumeric(x) && numel(x) == 2 );
   p.addParameter( 'range', [] );
   p.addParameter( 'scale', 1 );
@@ -35,6 +37,8 @@ function showFeaturesOnImg( features, varargin )
   img = p.Results.img;
   connect = p.Results.connect;
   figH = p.Results.figH;
+  LineWidth = p.Results.LineWidth;
+  MarkerSize = p.Results.MarkerSize;
   offset = p.Results.offset;
   scale = p.Results.scale;
   range = p.Results.range;
@@ -58,7 +62,7 @@ function showFeaturesOnImg( features, varargin )
   hold on;
   
   rFeatures = round( scale * ( features + offset ) );
-  plot( rFeatures(:,1), rFeatures(:,2), [color,'x']);
+  plot( rFeatures(:,1), rFeatures(:,2), [color,'x'], 'LineWidth', LineWidth, 'MarkerSize', MarkerSize );
   drawnow;
   
   if connect == true
