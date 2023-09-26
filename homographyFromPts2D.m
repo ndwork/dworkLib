@@ -19,6 +19,12 @@ function H = homographyFromPts2D( pts1, pts2 )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 2
+    disp( 'Usage: H = homographyFromPts2D( pts1, pts2 )' );
+    if nargout > 0, H = []; end
+    return;
+  end
+
   nPts = size( pts1, 1 );
 
   [newPts1,T1] = normalizePts2D( pts1 );
