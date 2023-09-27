@@ -1,8 +1,8 @@
 
-function out = proxL1Complex( in, thresh, weights )
+function out = proxL1Complex( in, thresh, weights, b )
   % out = proxL1Complex( in, thresh [, weights ] )
   %
-  % Returns the proximal operator of f(x) = thresh * L1( x ), where
+  % Returns the proximal operator of f(x) = thresh * L1( x - b ), where
   %   x is a complex vector.
   %
   % Inputs:
@@ -11,7 +11,7 @@ function out = proxL1Complex( in, thresh, weights )
   %
   % Optional Inputs:
   % weights - an array of size in specifying threshold scaling factor
-  %   for each component
+  %   for each component (for a weighted L1 norm)
   %
   % Written by Nicholas Dwork - Copyright 2019
   %
@@ -28,10 +28,12 @@ function out = proxL1Complex( in, thresh, weights )
   end
 
   if nargin > 2, thresh = thresh .* weights; end
+  if nargin < 4, b = 0; end
 
-  magIn = abs( in );
+  magIn = abs( in - b );
   scalingFactors = thresh ./ magIn;
 
   out = zeros( size( in ) );
   out( magIn > thresh ) = in( magIn > thresh ) .* ( 1 - scalingFactors( magIn > thresh ) );
+  out = out + b;
 end
