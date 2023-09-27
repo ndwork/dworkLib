@@ -1,5 +1,5 @@
 
-function out = mri_reconPartialFourier( in, sFSR, varargin )
+function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   % out = mri_reconPartialFourier( in, sFSR [, 'phases', phases, 'op', op ] )
   %
   % Written according to "Partial k-space Reconstruction" by John Pauly
