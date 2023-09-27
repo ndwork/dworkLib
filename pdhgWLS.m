@@ -132,7 +132,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
     subIter = 0;
     while true
       subIter = subIter + 1;
-      if verbose ~= false
+      if verbose ~= false && printEvery == 1
         disp([ '     sub iteration: ', num2str( subIter ), '  tau: ', num2str(tau) ]);
       end
 
