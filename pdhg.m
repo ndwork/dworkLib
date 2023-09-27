@@ -78,8 +78,6 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
   z = p.Results.z;
-
-  if numel( tol ) == 0, tol = defaultTol; end
   
   if numel( A ) == 0
     applyA = @(x) x;
@@ -109,38 +107,32 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   end
 
   maxAbsX = max( abs( x(:) ) );
+  xBar = zeros( size (x) );
+  if numel( z ) == 0, z = 0; end
   
   optIter = 0;
   relDiff = Inf;
   while optIter < N
     optIter = optIter + 1;
 
-    if optIter == 1 && numel( z ) == 0
-      % z == 0 => ATz=0 => tmp == x
-      z = 0;
-      tmp = x;
-    else
-      ATz = applyAT( z );
-      tmp = x - tau * ATz;
-    end
-    xBar = proxf( tmp, tau );
-
-    xTmp = xBar + theta * ( xBar - x );
-    AxTmp = applyA( xTmp );
-    tmp = z + sigma * AxTmp;
-    zBar = proxgConj( tmp, sigma );
+    zTmp = z + sigma * applyA( xBar );
+    z = proxgConj( zTmp, sigma );
 
     lastX = x;
     lastMaxAbsX = maxAbsX;
-    x = x + lambda * ( xBar - x );
-    z = z + lambda * ( zBar - z );
+
+    ATz = applyAT( z );
+    xTmp = x - tau * ATz;
+    x = proxf( xTmp, tau );
+
+    xBar = x + theta * ( x - lastX );
 
     maxAbsX = max( abs( x(:) ) );
 
     if nargout > 1
       objValues( optIter ) = f( x ) + g( applyA( x ) );
     end
-    if calculateRelDiffs == true
+    if calculateRelDiffs == true && optIter > 1
       normLastX = norm( lastX(:) );
       normDiffX = norm( x(:) - lastX(:) );
       if normLastX == 0
@@ -169,7 +161,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     if optIter > 1  &&  numel( tol ) > 0  &&  tol > 0  &&  tol < Inf
       if relDiff < tol, break; end
     end
-    if maxAbsX == 0  && lastMaxAbsX == 0
+    if maxAbsX == 0  && lastMaxAbsX == 0 && optIter > 1
       break;
     end
   end
