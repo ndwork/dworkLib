@@ -38,9 +38,6 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
     sFSR = [ sFSR, size( in, 2 ) ];
   end
 
-  firstX = centerIndx - ceil( ( sFSR(2) - 1 ) / 2 );
-  lastX = centerIndx + floor( ( sFSR(2) - 1 ) / 2 );
-
   firstY = centerIndx - ceil( ( sFSR(1) - 1 ) / 2 );
   lastY = centerIndx + floor( ( sFSR(1) - 1 ) / 2 );
   m = 2 / ( lastY - firstY );
@@ -54,6 +51,10 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
     if strcmp( op, 'transp' )
       error( 'Cannot estimate image phase during transpose operation' );
     end
+
+    firstX = centerIndx - ceil( ( sFSR(2) - 1 ) / 2 );
+    lastX = centerIndx + floor( ( sFSR(2) - 1 ) / 2 );
+
     inLF = in;  % Low-freq data
     if nCoils == 1
       inLF( 1:firstY-1, : ) = 0;
