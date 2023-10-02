@@ -41,6 +41,7 @@ function makeAGif( varargin )
   delayTime = p.Results.delayTime;
   loopCount = p.Results.loopCount;
 
+  if numel( outFile ) == 0, outFile = defaultOutFile; end
 
   imgs = dir( inDir );
   imgs = imgs(3:end);
