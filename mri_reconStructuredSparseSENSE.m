@@ -122,7 +122,6 @@ function acr = makeWavAutoCalRegion( sImg, wavSplit, varargin )
 
   acr = zeros( size( wavMask ) );
   acr(1:lastY,1:lastX) = kxs .* kys;
-  %acr(1:lastY,1:lastX) = 1;
 
   acr = circshift( acr, [ -floor(lastY * 0.5) -floor(lastX * 0.5) ] );
   acr = fftshift( acr );
