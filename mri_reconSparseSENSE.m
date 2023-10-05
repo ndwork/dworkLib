@@ -101,6 +101,16 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     error( 'Unrecognized wavelet type' );
   end
 
+  function out = curvelet( x, type )
+    if nargin < 2 || strcmp( type, 'notransp' )
+      curvCells = fdct_wrapping( x, false );
+      out = curvCell2Vec( curvCells );
+    else
+      curvCells = vec2CurvCell( x, curvCellSizes );
+      out = ifdct_wrapping( curvCells, false );
+    end
+  end
+
   nImg = prod( sImg );
   function out = wavCurv( x, type )
     if nargin < 2 || strcmp( type, 'notransp' )
@@ -133,16 +143,6 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
 
   else
     error( 'Unrecognized transform type' );
-  end
-
-  function out = curvelet( x, type )
-    if nargin < 2 || strcmp( type, 'notransp' )
-      curvCells = fdct_wrapping( x, false );
-      out = curvCell2Vec( curvCells );
-    else
-      curvCells = vec2CurvCell( x, curvCellSizes );
-      out = ifdct_wrapping( curvCells, false );
-    end
   end
 
   function out = applyS( in, type )
@@ -208,16 +208,10 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
     out = reshape( out, sIn );
   end
 
-  M = max( dataMask, [], 3 );
-  nM = sum( M(:) );
   nCoils = sKData( ndims( kData ) );
-  b = zeros( nM, nCoils );
-  for coilIndx = 1 : nCoils
-    coilSamples = kData( :, :, coilIndx );
-    b( :, coilIndx ) = coilSamples( M == 1 );
-  end
-  b = b(:);
- 
+  b = kData( dataMask == 1 );
+  M = max( dataMask, [], 3 );
+  nM = sum( M(:) ); 
   function out = g( x )
     diff = applyA( x ) - b;
     if numel( noiseCov ) > 0
