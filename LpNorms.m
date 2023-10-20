@@ -1,8 +1,8 @@
 
-function out = norms( A, p, dim )
+function out = LpNorms( A, p, dim )
   % out = norms( A [, p, dim ] )
   %
-  % Calculates the p norm of A along dimension dim
+  % Calculates the Lp norm of A along dimension dim
   %
   % Inputs:
   % A - a matrix of dimension <= dim
@@ -21,7 +21,7 @@ function out = norms( A, p, dim )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  out = norms( A [, p, dim ] )' );
+    disp( 'Usage:  out = LpNorms( A [, p, dim ] )' );
     return
   end
   
