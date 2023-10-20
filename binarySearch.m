@@ -1,6 +1,6 @@
 
 function out = binarySearch( f, LB, UB, varargin )
-  % out = binarySearch( f, LB, UB [, 'tol', tol, 'nMax', nMax ] )
+  % out = binarySearch( f, LB, UB [, 'tol', tol, 'nMax', nMax, 'verbose', verbose ] )
   %
   % finds the root of the function f using a binary search
   %
@@ -30,15 +30,20 @@ function out = binarySearch( f, LB, UB, varargin )
   p.addRequired( 'UB', @isfinite );
   p.addParameter( 'nMax', 1000, @ispositive );
   p.addParameter( 'tol', 1d-6, @ispositive );
+  p.addParameter( 'verbose', false, @(x) islogical(x) || isnueric(x) );
   p.parse( LB, UB, varargin{:} );
   nMax = p.Results.nMax;
   tol = p.Results.tol;
+  verbose = p.Results.verbose;
 
   thisLB = LB;  fLB = f( thisLB );
   thisUB = UB;  %fUB = f( thisUB );  % fUB is never used
 
   i = 0;
   while i < nMax
+    if verbose == true
+      disp([ 'binarySearch: Working on iteration ', num2str(i), ' of ', num2str(nMax) ' possible.' ]);
+    end
     mid = 0.5 * ( thisUB + thisLB );
     if thisUB - thisLB < tol, break; end
 
