@@ -5,8 +5,12 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   % img is the argmin of || F S x - b ||_2
   %
   % Inputs:
-  % kData - a 3D array of size M x N x nCoils representing the kSpace data
-  % sMaps - a 3D array of size M x N x nCoils representing the sensitivity maps
+  % For one slice,
+  %   kData - a 3D array of size M x N x nCoils representing the kSpace data
+  %   sMaps - a 3D array of size M x N x nCoils representing the sensitivity maps
+  % For multiple slices
+  %   kData - a 3D array of size M x N x S x nCoils representing the kSpace data
+  %   sMaps - a 3D array of size M x N x S x nCoils representing the sensitivity maps
   %
   % Written by Nicholas Dwork, Copyright 2023
   %
@@ -22,8 +26,9 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   p.parse( varargin{:} );
   supportMask = p.Results.supportMask;
 
-  coilRecons = mri_reconIFFT( kData );
+  coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
   img0 = mri_reconRoemer( coilRecons );
+  nSlices = size( img0, 3 );
 
   function out = applyS( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
@@ -53,7 +58,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   dataMask = ( abs(kData) ~= 0 );
   function out = applyE( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
-      in = reshape( in, sKData(1:2) );
+      in = reshape( in, [ sKData(1:2) nSlices ] );
       if numel( supportMask ) > 0
         in = supportMask .* in;
       end
@@ -83,7 +88,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   end
 
   [img,lsqrFlag,relRes] = lsqr( @applyE, kData( dataMask == 1 ), [], 100, [], [], img0(:) ); %#ok<ASGLU>
-  img = reshape( img, sKData(1:2) );
+  img = reshape( img, [ sKData(1:2) nSlices ] );
 
   if numel( supportMask ) > 0
     img = img .* supportMask;
