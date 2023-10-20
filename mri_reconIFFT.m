@@ -1,19 +1,18 @@
 
 function recons = mri_reconIFFT( kData, varargin )
-  % recons = mri_reconIFFT( kData [, 'multiSlice', true/false ] )
+  % recons = mri_reconIFFT( kData [, 'multiSlice', true/false, 'dims', dims ] )
   %
   % Performs an inverse FFT of each coil
   %
   % Inputs:
   % kData is an array of size ( Ny, Nx, nSlices, ..., nCoils )
   %
+  % Optional Inputs:
+  % dims - an array of the indices over which the IFFT should be taken
+  % multiSlice - if set to true, then only does an IFFT on the first two dimensions
+  %
   % Output:
   % recons is the reconstructed image, an array of the same size as the input
-  %
-  % Optional Inputs:
-  % multiSlice - if set to true, assumed that each slice contains its own Fourier data
-  %   Otherwise, assumed it's a 3D reconstruction (and a Fourier transform accross 3rd dimension
-  %   is necessary).
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
@@ -29,14 +28,25 @@ function recons = mri_reconIFFT( kData, varargin )
   end
 
   p = inputParser;
+  p.addParameter( 'dims', [], @isnumeric );
   p.addParameter( 'multiSlice', false, @islogical );
   p.parse( varargin{:} );
+  dims = p.Results.dims;
   multiSlice = p.Results.multiSlice;
 
-  recons = fftshift2( ifft2( ifftshift2( kData ) ) );
+  if numel( dims ) > 0
+    recons = kData;
+    for dimIndx = 1 : numel( dims )
+      dim = dims( dimIndx );
+      recons = fftshift( ifft( ifftshift( recons, dim ), [], dim ), dim );
+    end
+  else
 
-  if ~ismatrix( kData ) && multiSlice == false
-    recons = fftshift( ifft( ifftshift( recons, 3 ), [], 3 ), 3 );
+    recons = fftshift2( ifft2( ifftshift2( kData ) ) );
+  
+    if ~ismatrix( kData ) && multiSlice == false
+      recons = fftshift( ifft( ifftshift( recons, 3 ), [], 3 ), 3 );
+    end
   end
 
 end
