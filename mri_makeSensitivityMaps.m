@@ -183,6 +183,10 @@ function sMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon )
 
   nCoils = size( kData, 3 );
   mask = mri_makeIntensityMask( kData, 'noiseCoords', [1 25 1 25], 'sigmaScalar', 5 );
+  if max( mask(:) ) == 0
+    sMaps = zeros( kData );
+    return
+  end
   sMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
   sMaps = bsxfun( @times, sMaps, mask );
   
