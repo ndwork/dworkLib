@@ -16,7 +16,7 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
   %   If the coil locations are an Nx2 array, it is assumed that the coil is located
   %   in the z=0 plane.
   %
-  % locs - a 2D array of size Mx3 specifying the locations wherewe would like to
+  % locs - a 2D array of size Mx3 specifying the locations where we would like to
   %   compute the sensitivity.
   %
   % Outputs:
@@ -35,7 +35,6 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
   if nCoilSegs < 1, error( 'You did not specify enough coil segments' ); end
   if sCoil(2) == 2, segs = [ segs zeros( nCoilSegs ) ]; end
 
-  nLocs = size( locs, 1 );
   bs = cell( 1, 1, nCoilSegs );
 
   for segIndx = 1 : nCoilSegs
