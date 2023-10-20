@@ -1,6 +1,6 @@
 
-function mask = mri_makeSampleMask( sMask, nSamples, vdSig, varargin )
-  % mask = makeSampleMask( sMask, nSamples, vdSig [, 'maskType', maskType, 'startMask', startMask ] )
+function mask = mri_makeSampleMask( sMask, nSamples, varargin )
+  % mask = makeSampleMask( sMask, nSamples, vdSig [, vdSig, 'maskType', maskType, 'startMask', startMask ] )
   %
   % Inputs:
   % sMask - two element array specifying the size of the mask
@@ -18,9 +18,11 @@ function mask = mri_makeSampleMask( sMask, nSamples, vdSig, varargin )
   % purpose.
 
   p = inputParser;
+  p.addOptional( 'vdSig', [], @ispositive );
   p.addParameter( 'maskType', [], @(x) true );
   p.addParameter( 'startMask', zeros( sMask ), @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
+  vdSig = p.Results.vdSig;
   maskType = p.Results.maskType;
   startMask = p.Results.startMask;
 
@@ -29,14 +31,19 @@ function mask = mri_makeSampleMask( sMask, nSamples, vdSig, varargin )
 
   mask = startMask;
 
-  for i = 1 : 100
+  if strcmp( maskType, 'VDPD' )
+    mask = vdpdSampleMask( sMask, nSamples, 'startMask', startMask );
 
-    nSamples2Add = nSamples - sum( mask(:) );
-    if nSamples2Add <= 0, break; end
+  else
 
-    moreMask = vdSampleMask( sMask, vdSig, nSamples2Add, 'maskType', maskType );
+    for i = 1 : 100
+      nSamples2Add = nSamples - sum( mask(:) );
+      if nSamples2Add <= 0, break; end
 
-    mask = mask | moreMask;
+      moreMask = vdSampleMask( sMask, vdSig, nSamples2Add, 'maskType', maskType );
+      mask = mask | moreMask;
+
+    end
 
   end
 
