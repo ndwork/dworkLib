@@ -46,18 +46,18 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
     u = bsxfun( @plus, -locs, s2 );
     v = bsxfun( @minus, locs, s1 );
 
-    cosAlphas = ( u * sUnit ) ./ norms( u, 2, 2 );
-    cosBetas = ( v * sUnit ) ./ norms( v, 2, 2 );
+    cosAlphas = ( u * sUnit ) ./ LpNorms( u, 2, 2 );
+    cosBetas = ( v * sUnit ) ./ LpNorms( v, 2, 2 );
     sinBetas = sin( acos( cosBetas ) );
 
-    vNorms = norms( v, 2, 2 );
+    vNorms = LpNorms( v, 2, 2 );
     Rs = vNorms ./ sinBetas;
 
     sMags = ( cosAlphas + cosBetas ) ./ Rs;  % sensitivity magnitudes
 
     sCross = makeCrossProdMatrix( sUnit );
     sDirs = ( sCross * v' )';
-    sDirs = bsxfun( @times, sDirs, 1 ./ norms( sDirs, 2, 2 ) );
+    sDirs = bsxfun( @times, sDirs, 1 ./ LpNorms( sDirs, 2, 2 ) );
 
     bs{segIndx} = bsxfun( @times, sDirs, sMags );
   end
@@ -65,5 +65,5 @@ function sensitivities = mri_computeSensitivityBiotSavart( segs, locs )
 
   % By the principle of reciprocity, the sensitivity is proportional to the
   % magnitude of the emitted magnetic field at each location
-  sensitivities = norms( bs, 2, 2 );
+  sensitivities = LpNorms( bs, 2, 2 );
 end
