@@ -1,6 +1,6 @@
 
 function out = ssim( in1, in2, varargin )
-  % out = ssim( in1, in2 [, 'k1', k1, 'k2', k2, 'L', L ] )
+  % out = ssim( in1, in2 [, 'k1', k1, 'k2', k2, 'L', L, 'W', W ] )
   %
   % Computes the structural similarity metric between inputs 1 and 2 according
   % to "Image Quality Assessment: From Error Visibility to Structural
@@ -34,14 +34,36 @@ function out = ssim( in1, in2, varargin )
   p.addParameter( 'k1', 0.01, @isnumeric );
   p.addParameter( 'k2', 0.03, @isnumeric );
   p.addParameter( 'L', 1.0, @ispositive );
+  p.addParameter( 'W', 11, @(x) x > 3 && mod(x,2) == 1 );  % Must be odd
   p.parse( varargin{:} );
   k1 = p.Results.k1;
   k2 = p.Results.k2;
   L = p.Results.L;
+  W = p.Results.W;
 
-  mean1 = mean( in1(:) );
-  mean2 = mean( in2(:) );
-  cov12 = cov( in1(:), in2(:) );
+  h = fspecial( 'gaussian', W, 1.5 );
+
+  hW = floor( W / 2 );  % half W
+
+  sImg = size( in1 );
+  subSSIMs = zeros( sImg - W + 1 );
+  for x = hW + 1 : sImg(2) - hW - 1
+    for y = hW + 1 : sImg(1) - hW - 1
+      sub1 = in1( y - hW : y + hW, x - hW : x + hW );
+      sub2 = in1( y - hW : y + hW, x - hW : x + hW );
+      thisSSIM = subSSIM( sub1, sub2, h, k1, k2, L );
+      subSSIMs( y - hW, x - hW ) = thisSSIM;
+    end
+  end
+
+  out = mean( subSSIMs(:) );
+end
+
+
+function out = subSSIM( in1, in2, h, k1, k2, L )
+  mean1 = mean( in1(:) .* h(:) );
+  mean2 = mean( in2(:) .* h(:) );
+  cov12 = cov( sqrt( h(:) ) .* in1(:), sqrt( h(:) ) .* in2(:) );
   var1 = cov12(1,1);
   var2 = cov12(2,2);
   cov12 = cov12(1,2);
