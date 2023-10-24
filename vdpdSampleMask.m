@@ -1,6 +1,6 @@
 
 function mask = vdpdSampleMask( sMask, nSamples, varargin )
-  % mask = vdpdSampleMask( sMask, nSamples [, 'maskType', maskType, 'startMask', startMask ] )
+  % mask = vdpdSampleMask( sMask, nSamples [, 'Delta', Delta, 'maskType', maskType, 'startMask', startMask ] )
   %
   % Creates a variable density Poisson Disc sampling mask according to a seperable distribution
   %
@@ -26,10 +26,12 @@ function mask = vdpdSampleMask( sMask, nSamples, varargin )
   end
 
   p = inputParser;
+  p.addParameter( 'Delta', 0.3, @ispositive );
   p.addParameter( 'maxIter', 100, @ispositive );
   p.addParameter( 'startMask', zeros( sMask ) );
   p.addParameter( 'verbose', true );
   p.parse( varargin{:} );
+  Delta = p.Results.Delta;
   maxIter = p.Results.maxIter;
   startMask = p.Results.startMask;
   verbose = p.Results.verbose;
@@ -57,7 +59,7 @@ function mask = vdpdSampleMask( sMask, nSamples, varargin )
     nSamples2Add = nSamples - sum( mask(:) );
     if nSamples2Add <= 0, break; end
 
-    iterMask = makeSampleMask( m, sMask, startMask );
+    iterMask = makeSampleMask( m, sMask, startMask, Delta );
 
     uMask = mask | iterMask;  % union of masks
 
@@ -78,12 +80,12 @@ function mask = vdpdSampleMask( sMask, nSamples, varargin )
 end
 
 
-function out = makeSampleMask( m, sMask, startMask )
+function out = makeSampleMask( m, sMask, startMask, Delta )
 
   dks = 1 ./ ( sMask - 1 );
 
-  Delta = 0.15;
-  %r = @(x) max( ( ( norms( x, 2, 2 ) + 0.2 ) / 100 ), min_r );
+  Delta = 0.3;
+  %r = @(x) max( ( ( LpNorms( x, 2, 2 ) + 0.2 ) / 100 ), min_r );
   r = @(x) ( LpNorms( x, 2, 2 ) + Delta ) / m;
   min_r = Delta / m;
 
