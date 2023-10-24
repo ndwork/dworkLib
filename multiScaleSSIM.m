@@ -41,6 +41,10 @@ function out = multiScaleSSIM( in1, in2, varargin )
   L = p.Results.L;
   N = p.Results.N;
 
+  if max( [ in1(:); in2(:); ] ) - min( [ in1(:); in2(:); ] ) > L
+    error( 'L must be the dynamic range of the images' );
+  end
+
   h = fspecial( 'gaussian', 5, 0.75 );
 
   sScaled = size( in1 );
