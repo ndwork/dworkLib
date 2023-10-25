@@ -47,10 +47,10 @@ function out = ssim( in1, in2, varargin )
 
   sImg = size( in1 );
   subSSIMs = zeros( sImg - W + 1 );
-  for x = hW + 1 : sImg(2) - hW - 1
-    for y = hW + 1 : sImg(1) - hW - 1
+  for x = hW + 1 : sImg(2) - hW
+    for y = hW + 1 : sImg(1) - hW
       sub1 = in1( y - hW : y + hW, x - hW : x + hW );
-      sub2 = in1( y - hW : y + hW, x - hW : x + hW );
+      sub2 = in2( y - hW : y + hW, x - hW : x + hW );
       thisSSIM = subSSIM( sub1, sub2, h, k1, k2, L );
       subSSIMs( y - hW, x - hW ) = thisSSIM;
     end
