@@ -59,9 +59,9 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   if numel( img0 ) == 0
     coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
     img0 = mri_reconRoemer( coilRecons, 'sMaps', sMaps );
-    fftImg0 = fftshift2( fft2( ifftshift2( img0 ) ) );
-    filtImg0FFT = fftImg0 .* ( 1 - acr );
-    img0 = fftshift2( ifft2( ifftshift2( filtImg0FFT ) ) );
+    %fftImg0 = fftshift2( fft2( ifftshift2( img0 ) ) );
+    %filtImg0FFT = fftImg0 .* ( 1 - acr );
+    %img0 = fftshift2( ifft2( ifftshift2( filtImg0FFT ) ) );
   end
 
   acrK = bsxfun( @times, kData, acr );
@@ -75,11 +75,8 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
   kOut = kH + acrK;
 
-  recon = mri_reconModelBased( kOut, sMaps );
-
-  % could alternatively do Model Based recon with acceleration factor of 1 here
-  %coilReconsOut = mri_reconIFFT( kOut, 'multiSlice', true );
-  %recon = mri_reconRoemer( coilReconsOut );
+  coilReconsOut = mri_reconIFFT( kOut, 'multiSlice', true );
+  recon = mri_reconRoemer( coilReconsOut );
 end
 
 
