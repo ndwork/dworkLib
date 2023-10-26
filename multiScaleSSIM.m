@@ -33,7 +33,7 @@ function out = multiScaleSSIM( in1, in2, varargin )
   p = inputParser;
   p.addParameter( 'k1', 0.01, @isnumeric );
   p.addParameter( 'k2', 0.03, @isnumeric );
-  p.addParameter( 'L', 1.0, @ispositive );
+  p.addParameter( 'L', [], @ispositive );
   p.addParameter( 'N', 50, @ispositive );
   p.parse( varargin{:} );
   k1 = p.Results.k1;
@@ -41,27 +41,28 @@ function out = multiScaleSSIM( in1, in2, varargin )
   L = p.Results.L;
   N = p.Results.N;
 
-  if max( [ in1(:); in2(:); ] ) - min( [ in1(:); in2(:); ] ) > L
-    error( 'L must be the dynamic range of the images' );
-  end
+  dynamicRange = max( [ in1(:); in2(:); ] ) - min( [ in1(:); in2(:); ] );
+  if numel( L ) == 0, L = dynamicRange; end
 
   h = fspecial( 'gaussian', 5, 0.75 );
 
   sScaled = size( in1 );
-  ssims = zeros( ceil( log2( min( sScaled ) ) ), 1 );
+  cs = zeros( ceil( log2( min( sScaled ) ) ), 1 );
+  ss = zeros( ceil( log2( min( sScaled ) ) ), 1 );
 
   indxSSIM = 0;
   while min( sScaled ) > N
     indxSSIM = indxSSIM + 1;
-    ssims( indxSSIM ) = ssim( in1, in2, 'k1', k1, 'k2', k2, 'L', L );
+    [~,l,c,s] = ssim( in1, in2, 'k1', k1, 'k2', k2, 'L', L );
+    cs( indxSSIM ) = c;
+    ss( indxSSIM ) = s;
 
     in1 = imfilter( in1, h, 'circular', 'same' );  in1 = downsample2( in1, 2 );
     in2 = imfilter( in2, h, 'circular', 'same' );  in2 = downsample2( in2, 2 );
 
     sScaled = floor( sScaled / 2 );
   end
-  ssims = ssims( 1 : indxSSIM );
 
-  out = prod( ssims );
+  gamma = 1 / indxSSIM;
+  out = l^gamma * prod( c.^gamma .* s.^gamma );
 end
-
