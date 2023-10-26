@@ -43,7 +43,7 @@ function [out,l,c,s] = ssim( in1, in2, varargin )
 
   dynamicRange = max( [ in1(:); in2(:); ] ) - min( [ in1(:); in2(:); ] );
   if numel( L ) == 0, L = dynamicRange; end
-  if dynamicRange > L, error( 'L must be the dynamic range of the images' ); end
+  if L < dynamicRange, error( 'L must be the dynamic range of the images' ); end
 
   h = fspecial( 'gaussian', W, 1.5 );
 
