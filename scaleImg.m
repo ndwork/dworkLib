@@ -43,6 +43,10 @@ function out = scaleImg( img, varargin )
   inMinMax = p.Results.inMinMax;
   outMinMax = p.Results.outMinMax;
 
+  if numel( inMinMax ) == 0
+    inMinMax = defaultInMinMax;
+  end
+
   if ~isnumeric( inMinMax ) && strcmp( inMinMax, 'nice' )
     inMinMax = [ median( img(:) ) - 2 * std( img(:) ), median( img(:) ) + 2 * std( img(:) ) ];
   end
