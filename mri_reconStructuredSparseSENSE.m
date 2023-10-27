@@ -76,7 +76,7 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   kOut = kH + acrK;
 
   coilReconsOut = mri_reconIFFT( kOut, 'multiSlice', true );
-  recon = mri_reconRoemer( coilReconsOut );
+  recon = mri_reconRoemer( coilReconsOut, 'sMaps', sMaps );
 end
 
 
