@@ -170,17 +170,15 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   end
 
   dataMask = ( abs(kData) ~= 0 );
+  inPadded = zeros( sKData );
   function out = applyA( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
       PsiHin = sparsifierH( in );
       out = applySF( PsiHin );
       out = out( dataMask == 1 );
     else
-      tmp = zeros( sKData );
-      tmp( dataMask == 1 ) = in;
-      in = tmp;  clear tmp;
-      in = reshape( in, sKData );
-      SFin = applySF( in .* dataMask, 'transp' );
+      inPadded( dataMask == 1 ) = in;
+      SFin = applySF( inPadded, 'transp' );
       out = sparsifier( SFin );
     end
   end
