@@ -59,16 +59,17 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   if numel( img0 ) == 0
     coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
     img0 = mri_reconRoemer( coilRecons, 'sMaps', sMaps );
-    %fftImg0 = fftshift2( fft2( ifftshift2( img0 ) ) );
-    %filtImg0FFT = fftImg0 .* ( 1 - acr );
-    %img0 = fftshift2( ifft2( ifftshift2( filtImg0FFT ) ) );
   end
+
+  fftImg0 = fftshift2( fft2( ifftshift2( img0 ) ) );
+  fftImg0_H = fftImg0 .* ( 1 - acr );
+  img0_H = fftshift2( ifft2( ifftshift2( fftImg0_H ) ) );
 
   acrK = bsxfun( @times, kData, acr );
   beta = kData - acrK;
   beta( kData == 0 ) = 0;
 
-  [reconH,lambda] = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0, 'noiseCov', noiseCov, ...
+  [reconH,lambda] = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0_H, 'noiseCov', noiseCov, ...
     'nReweightIter', nReweightIter, 'optAlg', optAlg, 'reweightEpsilon', reweightEpsilon, 't', t, ...
     'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
 
