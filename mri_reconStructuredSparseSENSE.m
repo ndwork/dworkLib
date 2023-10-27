@@ -57,7 +57,7 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   end
 
   if numel( img0 ) == 0
-    coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+    coilRecons = fftshift2( ifft2( ifftshift2( kData ) ) );
     img0 = mri_reconRoemer( coilRecons, 'sMaps', sMaps );
   end
 
@@ -76,7 +76,7 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
   kOut = kH + acrK;
 
-  coilReconsOut = mri_reconIFFT( kOut, 'multiSlice', true );
+  coilReconsOut = fftshift2( ifft2( ifftshift2( kOut ) ) );
   recon = mri_reconRoemer( coilReconsOut, 'sMaps', sMaps );
 end
 
