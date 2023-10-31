@@ -66,18 +66,17 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   img0_H = fftshift2( ifft2( ifftshift2( fftImg0_H ) ) );
 
   acrK = bsxfun( @times, kData, acr );
+  reconLs = mri_reconIFFT( acrK, 'multiSlice', true );
+
   beta = kData - acrK;
   beta( kData == 0 ) = 0;
-
   [reconH,lambda] = mri_reconSparseSENSE( beta, sMaps, lambda, 'img0', img0_H, 'noiseCov', noiseCov, ...
     'nReweightIter', nReweightIter, 'optAlg', optAlg, 'reweightEpsilon', reweightEpsilon, 't', t, ...
     'transformType', transformType, 'waveletType', waveletType, 'wavSplit', wavSplit );
+  reconHs = bsxfun( @times, sMaps, reconH );
 
-  kH = fftshift2( fft2( ifftshift2( bsxfun( @times, sMaps, reconH ) ) ) );
-  kOut = kH + acrK;
-
-  coilReconsOut = fftshift2( ifft2( ifftshift2( kOut ) ) );
-  recon = mri_reconRoemer( coilReconsOut, 'sMaps', sMaps );
+  coilRecons = reconLs + reconHs;
+  recon = mri_reconRoemer( coilRecons );
 end
 
 
