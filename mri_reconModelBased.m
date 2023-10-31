@@ -26,10 +26,6 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   p.parse( varargin{:} );
   supportMask = p.Results.supportMask;
 
-  coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
-  img0 = mri_reconRoemer( coilRecons );
-  nSlices = size( img0, 3 );
-
   function out = applyS( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
       out = bsxfun( @times, sMaps, in );
@@ -55,6 +51,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   end
 
   sKData = size( kData );
+  nSlices = size( kData, 3 );
   dataMask = ( abs(kData) ~= 0 );
   function out = applyE( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
@@ -79,6 +76,8 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
 
   doCheckAdjoint = false;
   if doCheckAdjoint == true
+    coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+    img0 = mri_reconRoemer( coilRecons );
     innerProd = @(x,y) real( dotP( x, y ) );
     [checkS,errS] = checkAdjoint( img0, @applyS, 'innerProd', innerProd );   %#ok<ASGLU> 
     [checkF,errF] = checkAdjoint( repmat(img0,[1,1,8]), @applyF, 'innerProd', innerProd );   %#ok<ASGLU> 
@@ -87,7 +86,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
     if checkE ~= 1, error( 'Adjoint check failed' ); end
   end
 
-  [img,lsqrFlag,relRes] = lsqr( @applyE, kData( dataMask == 1 ), [], 100, [], [], img0(:) ); %#ok<ASGLU>
+  [img,lsqrFlag,relRes] = lsqr( @applyE, kData( dataMask == 1 ), [], 100, [], [], [] ); %#ok<ASGLU>
   img = reshape( img, [ sKData(1:2) nSlices ] );
 
   if numel( supportMask ) > 0
