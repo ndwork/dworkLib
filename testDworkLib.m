@@ -1175,6 +1175,13 @@ function testDworkLib
     error( [ 'ufft2 failed with an error of ', num2str( err ) ] );
   end
 
+  %% vol2obj
+  xs = 1 : 10;
+  ys = 1 : 10;
+  zs = 1 : 10;
+  vol = bsxfun( @times, xs' * ys, reshape( zs, [1 1 10] ) );
+  vol = vol / max( vol(:) );
+  vol2obj( vol );
 
   %% vecVolMatrixProd
   v = rand(1,5);
