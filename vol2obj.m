@@ -20,7 +20,7 @@ function vol2obj( vol, varargin )
     fprintf( mtlID, '  Ka 1.000 1.000 1.000\n' );
     fprintf( mtlID, '  Kd 1.000 1.000 1.000\n' );
     fprintf( mtlID, '  Ks 0.000 0.000 0.000\n' );
-    fprintf( mtlID, [ '  d ', num2str(1-t/nTransparencies), '\n' ] );
+    %fprintf( mtlID, [ '  d ', num2str(1-t/nTransparencies), '\n' ] );
     fprintf( mtlID, [ '  Tr ', num2str(t/nTransparencies), '\n\n' ] );
   end
 
@@ -28,9 +28,9 @@ function vol2obj( vol, varargin )
   faces = zeros( [ sVol 6 4 ] );
 
   fprintf( objID, '# vertices \n' );
+  fprintf( objID, '\nmtllib vol.mtl\n');
 
   nVol = numel( vol );
-nVol = 2
   for i = 1 : nVol
     [y,x,z] = ind2sub( sVol, i );
 
