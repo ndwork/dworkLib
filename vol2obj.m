@@ -32,14 +32,15 @@ function vol2obj( vol, varargin )
 
   % Create the MTL file with many transparencies
   for t = 0 : nTransparencies
-    value = 1 - t / nTransparencies;
-    vString = num2str( value );
+    vString = num2str( 1 - t / nTransparencies );
+    vStringC = num2str( t / nTransparencies );
     fprintf( mtlID, [ 'newmtl trans_', num2str(t), '\n' ] );
-    fprintf( mtlID, [ '  Ka ', vString, ' ', vString, ' ', vString, '\n' ] );
-    fprintf( mtlID, [ '  Kd ', vString, ' ', vString, ' ', vString, '\n' ] );
+    fprintf( mtlID, [ '  Ka ', vString, ' 0 ', vStringC, '\n' ] );
+    fprintf( mtlID, [ '  Kd ', vString, ' 0 ', vStringC, '\n' ] );
     fprintf( mtlID, '  Ks 0.000 0.000 0.000\n' );
     %fprintf( mtlID, [ '  d ', num2str(t/nTransparencies), '\n' ] );
-    fprintf( mtlID, [ '  Tr ', vString, '\n\n' ] );
+    %fprintf( mtlID, [ '  Tr ', vString, '\n\n' ] );
+    fprintf( mtlID, [ '  Tr 0.9 \n\n' ] );
   end
   
   sVol = size( vol );
