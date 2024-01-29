@@ -5,7 +5,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   %   'theta', theta, 'y', y, 'verbose', verbose ] )
   %
   % Implements Primal-Dual Hybrid graident method (Chambolle-Pock) with line search
-  % based on A First-Order Primal-Dual Algorithm with Linesearch by Malitsky and Pock
+  % based on "A First-Order Primal-Dual Algorithm with Linesearch" by Malitsky and Pock
   %
   % minimizes f( x ) + g( A x )
   %
