@@ -36,6 +36,7 @@ function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
   if numel( sMaps ) == 0
     ssqRecon = sqrt( sum( coilRecons .* conj( coilRecons ), ndims(coilRecons) ) );
     sMaps = bsxfun( @times, coilRecons, 1 ./ ssqRecon );
+    sMaps( ~isfinite( sMaps ) ) = 0;
   end
 
   recon = sum( bsxfun( @times, coilRecons, conj( sMaps ) ), ndims(coilRecons) );
