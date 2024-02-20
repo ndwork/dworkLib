@@ -33,7 +33,7 @@ function nPow = findNPows( sizeDim, minSplitSize )
 
   nPow = 0;
   for powIndx = 1 : floor( binPow )
-    if mod( sizeDim, 2 ) == 0 && sizeDim/2 > minSplitSize
+    if mod( sizeDim, 2 ) == 0 && sizeDim/2 >= minSplitSize
       nPow = nPow + 1;
       sizeDim = sizeDim / 2;
     else
