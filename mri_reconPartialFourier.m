@@ -26,9 +26,25 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   p = inputParser;
   p.addParameter( 'op', 'notransp', @(x) true );
   p.addParameter( 'phases', [], @isnumeric );
+  p.addParameter( 'traj', [], @isnumeric );
   p.parse( varargin{:} );
   phases = p.Results.phases;
   op = p.Results.op;
+  traj = p.Results.traj;
+
+  if numel( traj ) == 0
+    % Cartesian sampling
+    [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op );
+
+  else
+    % Non-Cartesian sampling
+    [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, traj, op );
+  end
+
+end
+
+
+function [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op )
 
   Ny = size( in, 1 );
   ys = size2imgCoordinates( Ny );
@@ -44,6 +60,7 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   ramp = m * ys + 1.0;
   ramp( 1 : firstY ) = 0;
   ramp( lastY : end ) = 2;
+  ramp = 2 - ramp;
 
   nCoils = size( in, 3 );
 
@@ -71,7 +88,7 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   phaseImg = exp( 1i * phases );
 
   if strcmp( op, 'notransp' )
-    inW = bsxfun( @times, in, 2-ramp );
+    inW = bsxfun( @times, in, ramp );
     imgW = fftshift2( ifft2( ifftshift2( inW ) ) );
     out = imgW .* conj( phaseImg );
     out = real( out ) .* phaseImg;
@@ -80,9 +97,15 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
     in = real( in .* conj( phaseImg ) );
     inWithPhase = in .* phaseImg;
     ifft2hIn = fftshift2( ifft2h( ifftshift2( inWithPhase ) ) );
-    out = bsxfun( @times, ifft2hIn, 2-ramp );
+    out = bsxfun( @times, ifft2hIn, ramp );
 
   else
     error( 'Unrecognized operator' );
   end
+end
+
+
+
+function [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, op, traj )
+  error( 'I still need to implement this' )
 end
