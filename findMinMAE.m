@@ -22,7 +22,7 @@ function out = findMinMAE( recon, trueRecon, varargin )
   p.parse( varargin{:} );
   verbose = p.Results.verbose;
 
-  f = @(k) mse( k*recon, trueRecon );
+  f = @(k) mae( k*recon, trueRecon );
 
   LB = 0;
   UB = max( recon(:) ) / mean( trueRecon(:) ) * 10;
