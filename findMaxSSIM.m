@@ -27,7 +27,7 @@ function [out,k] = findMaxSSIM( est, truth, varargin )
 
   p = inputParser;
   p.addParameter( 'tol', [] );
-  p.addParameter( 'verbose', true );
+  p.addParameter( 'verbose', false );
   p.parse( varargin{:} );
   tol = p.Results.tol;
   verbose = p.Results.verbose;

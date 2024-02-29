@@ -18,7 +18,7 @@ function out = findMinRelErr( est, truth, varargin )
   end
 
   p = inputParser;
-  p.addParameter( 'verbose', true );
+  p.addParameter( 'verbose', false );
   p.parse( varargin{:} );
   verbose = p.Results.verbose;
 
