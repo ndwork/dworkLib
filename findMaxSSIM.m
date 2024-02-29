@@ -1,8 +1,16 @@
 
-function [out,k] = findMaxSSIM( recon, trueRecon, varargin )
-  % Result is max_k ssim( k * recon - trueRecon )
+function [out,k] = findMaxSSIM( est, truth, varargin )
+  % Result is max_k ssim( k * est - truth )
   %
-  % out = findMaxSSIM( recon, trueRecon [, 'tol', tol, 'verbose', true/false ] )
+  % out = findMaxSSIM( est, truth [, 'tol', tol, 'verbose', true/false ] )
+  %
+  % Inputs:
+  % est - the estimate array
+  % truth - the truth array
+  %
+  % Optional Inputs:
+  % tol - the tolerance of k
+  % verbose - whether or not to display verbosity messages
   %
   % Written by Nicholas Dwork, Copyright 2024
   %
@@ -12,7 +20,7 @@ function [out,k] = findMaxSSIM( recon, trueRecon, varargin )
   % purpose.
 
   if nargin < 2
-    disp( 'Usage:  out = findMaxSSIM( recon, trueRecon [, ''verbose'', true/false ] )' );
+    disp( 'Usage:  out = findMaxSSIM( est, truth [, ''tol'', tol, ''verbose'', true/false ] )' );
     if nargout > 0, out = []; end
     return;
   end
@@ -24,11 +32,11 @@ function [out,k] = findMaxSSIM( recon, trueRecon, varargin )
   tol = p.Results.tol;
   verbose = p.Results.verbose;
 
-  f = @(k) -ssim( k*recon, trueRecon );
+  f = @(k) -ssim( k * est, truth );
 
   LB = 0;
-  UB = max( recon(:) ) / mean( trueRecon(:) ) * 10;
+  UB = max( est(:) ) / mean( truth(:) ) * 10;
 
-  k = goldenSectionSearch( f, LB, UB, 'tol', 1d-4, 'verbose', verbose );
+  k = goldenSectionSearch( f, LB, UB, 'tol', tol, 'verbose', verbose );
   out = f( k );
 end

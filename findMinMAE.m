@@ -1,8 +1,8 @@
 
-function out = findMinMAE( recon, trueRecon, varargin )
-  % Result is min_k MAE( k * recon - trueRecon )
+function out = findMinMAE( est, truth, varargin )
+  % Result is min_k MAE( k * est - truth )
   %
-  % out = findMinMAE( recon, trueRecon [, 'verbose', true/false ] )
+  % out = findMinMAE( est, truth [, 'verbose', true/false ] )
   %
   % Written by Nicholas Dwork, Copyright 2024
   %
@@ -22,10 +22,10 @@ function out = findMinMAE( recon, trueRecon, varargin )
   p.parse( varargin{:} );
   verbose = p.Results.verbose;
 
-  f = @(k) mae( k*recon, trueRecon );
+  f = @(k) mae( k * est, truth );
 
   LB = 0;
-  UB = max( recon(:) ) / mean( trueRecon(:) ) * 10;
+  UB = max( est(:) ) / mean( truth(:) ) * 10;
 
   k = goldenSectionSearch( f, LB, UB, 'tol', 1d-6, 'verbose', verbose );
   out = f( k );

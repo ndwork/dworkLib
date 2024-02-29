@@ -1,8 +1,8 @@
 
-function out = findMinMSE( recon, trueRecon, varargin )
-  % Result is min_k MSE( k * recon - trueRecon )
+function [out,k] = findMinMSE( est, truth, varargin )
+  % Result is min_k MSE( k * est - truth )
   %
-  % out = findMinMSE( recon, trueRecon [, 'verbose', true/false ] )
+  % out = findMinMSE( est, truth [, 'verbose', true/false ] )
   %
   % Written by Nicholas Dwork, Copyright 2024
   %
@@ -12,7 +12,7 @@ function out = findMinMSE( recon, trueRecon, varargin )
   % purpose.
 
   if nargin < 2
-    disp( 'Usage:  out = findMinMSE( recon, trueRecon [, ''verbose'', true/false ] )' );
+    disp( 'Usage:  out = findMinMSE( est, truth [, ''verbose'', true/false ] )' );
     if nargout > 0, out = []; end
     return;
   end
@@ -22,10 +22,10 @@ function out = findMinMSE( recon, trueRecon, varargin )
   p.parse( varargin{:} );
   verbose = p.Results.verbose;
 
-  f = @(k) mse( k*recon, trueRecon );
+  f = @(k) mse( k*est, truth );
 
   LB = 0;
-  UB = max( recon(:) ) / mean( trueRecon(:) ) * 10;
+  UB = max( est(:) ) / mean( truth(:) ) * 10;
 
   k = goldenSectionSearch( f, LB, UB, 'tol', 1d-6, 'verbose', verbose );
   out = f( k );
