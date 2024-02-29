@@ -1,8 +1,8 @@
 
-function out = findMinMSE( recon, trueRecon, varargin )
+function out = findMinRelErr( recon, trueRecon, varargin )
   % Result is min_k MSE( k * recon - trueRecon )
   %
-  % out = findMinMSE( recon, trueRecon [, 'verbose', true/false ] )
+  % out = findMinRelErr( recon, trueRecon [, 'verbose', true/false ] )
   %
   % Written by Nicholas Dwork, Copyright 2024
   %
@@ -22,7 +22,7 @@ function out = findMinMSE( recon, trueRecon, varargin )
   p.parse( varargin{:} );
   verbose = p.Results.verbose;
 
-  f = @(k) mse( k*recon, trueRecon );
+  f = @(k) relErr( k*recon, trueRecon );
 
   LB = 0;
   UB = max( recon(:) ) / mean( trueRecon(:) ) * 10;

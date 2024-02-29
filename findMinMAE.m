@@ -27,5 +27,6 @@ function out = findMinMAE( recon, trueRecon, varargin )
   LB = 0;
   UB = max( recon(:) ) / mean( trueRecon(:) ) * 10;
 
-  out = goldenSectionSearch( f, LB, UB, 'tol', 1d-6, 'verbose', verbose );
+  k = goldenSectionSearch( f, LB, UB, 'tol', 1d-6, 'verbose', verbose );
+  out = f( k );
 end
