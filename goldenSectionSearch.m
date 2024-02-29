@@ -31,14 +31,20 @@ function [out,iterationIndx] = goldenSectionSearch( f, LB, UB, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  defaultNMax = 1000;
+  defaultTol = 1d-6;
+
   p = inputParser;
-  p.addParameter( 'nMax', 1000, @ispositive );
-  p.addParameter( 'tol', 1d-4, @ispositive );
+  p.addParameter( 'nMax', defaultNMax, @ispositive );
+  p.addParameter( 'tol', defaultTol, @ispositive );
   p.addParameter( 'verbose', 0, @(x) ispositive(x) || islogical(x) );
   p.parse( varargin{:} );
   nMax = p.Results.nMax;
   tol = p.Results.tol;
   verbose = p.Results.verbose;
+
+  if numel( nMax ) == 0, nMax = defaultNMax; end
+  if numel( tol ) == 0, tol = defaultTol; end
 
   R = 0.61803398874989484;  % golden ratio
 
