@@ -50,7 +50,7 @@ function out = douglasRachford( x0, proxf, proxg, t, varargin )
 
     y = proxg( 2 * x - z, t );
 
-    z = z + rho( y - x );
+    z = z + rho * ( y - x );
 
   end
 
