@@ -37,12 +37,14 @@ function [ out, objValues ] = douglasRachford( x0, proxf, proxg, t, varargin )
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @ispositive );
+  p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'rho', 1, @(x) numel(x) == 1 && x > 0 && x < 2 );
   p.addParameter( 'verbose', false, @islogical );
   p.parse( x0, varargin{:} );
   f = p.Results.f;
   g = p.Results.g;
   N = p.Results.N;
+  printEvery = p.Results.printEvery;
   rho = p.Results.rho;
   verbose = p.Results.verbose;
 
@@ -68,7 +70,7 @@ function [ out, objValues ] = douglasRachford( x0, proxf, proxg, t, varargin )
       objValues( optIter ) = objValue;
     end
 
-    if verbose == true
+    if verbose == true && mod( optIter, printEvery ) == 0
       outStr = [ 'douglasRachford: Completed ', indx2str(optIter,N), ' of ', num2str(N) ];
       if numel( f ) > 0 && numel( g ) > 0
         outStr = [ outStr, '  objective: ', num2str( objValue ) ];   %#ok<AGROW>
