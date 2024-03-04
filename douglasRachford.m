@@ -79,5 +79,5 @@ function [ out, objValues ] = douglasRachford( x0, proxf, proxg, t, varargin )
     end
   end
 
-  out = y;
+  out = z;
 end
