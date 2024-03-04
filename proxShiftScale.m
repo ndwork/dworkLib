@@ -1,9 +1,9 @@
 
-function out = proxShiftScale( f, x, a, b )
-  % Computes the proximal operator of f( a x - b )
+function out = proxShiftScale( proxf, x, a, b )
+  % Computes the proximal operator of f( a x + b )
   %
   % Inputs:
-  % f - a function handle to the proximal operator
+  % proxf - a function handle to the proximal operator of f
   % x - the domain value for proximal operator evaluation
   % a - (scalar) the scaling of the domain variable
   % b - the shifting of the domain variable
@@ -16,5 +16,5 @@ function out = proxShiftScale( f, x, a, b )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  out = 1/a * ( f( a*x + b, a*a ) - b );
+  out = (1/a) * ( proxf( a*x + b, a*a ) - b );
 end
