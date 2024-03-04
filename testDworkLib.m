@@ -66,6 +66,17 @@ function testDworkLib
   disp( 'applyC and applyCT passed' );
 
 
+  %% avgOpIter
+  S = diag( rand(8,1) );
+  x0 = rand(8,1);
+  asdf = avgOpIter( x0, S, 'maxIter', 1000 );
+  if norm( asdf ) > 1d-12
+    error([ 'avgOpIter failed with error: ', num2str( norm(asdf)) ]);
+  else
+    disp( 'avgOpIter passed' );
+  end
+
+
   %% bilateralFilter
   fprintf('\nTesting bilateralFilter: \n');
   img = phantom();  sImg = size(img);
