@@ -26,11 +26,11 @@ function value = findValueBelowFraction( data, fraction, varargin )
     disp( 'Usage: value = findValueBelowFraction( data, fraction )' );
     return
   end
-  
+
   nData = numel( data );
   lowerValue = min( data(:) );
   upperValue = max( data(:) );
 
-  f = @( value ) fraction - sum( data(:) >= value ) / nData; 
+  f = @( value ) fraction - sum( data(:) <= value ) / nData; 
   value = binarySearch( f, lowerValue, upperValue, 'tol', tol, 'nMax', Inf );
 end
