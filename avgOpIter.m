@@ -1,4 +1,5 @@
-function x = avgOpIter( x0, S, varargin )
+
+function [x,objValues] = avgOpIter( x0, S, varargin )
   % Implements and averaged opterator iteration.  See "Line Search for Averaged
   % Operator Iteration" by Gisellson et al. (2016)
   %
@@ -19,24 +20,47 @@ function x = avgOpIter( x0, S, varargin )
 
   p = inputParser;
   p.addParameter( 'alpha', 0.5, @(x) x>0 && x<1 );
-  p.addParameter( 'maxIter', 100, @ispositive );
+  p.addParameter( 'N', 100, @ispositive );
+  p.addParameter( 'objFunction', [] );
+  p.addParameter( 'verbose', false );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
-  maxIter = p.Results.maxIter;
+  N = p.Results.N;
+  objFunction = p.Results.objFunction;
+  verbose = p.Results.verbose;
 
-  if ismatrix( S )
-    x = x0;
-    for i = 1 : maxIter
+  if nargout > 2
+    if numel( objFunction ) == 0
+      error( 'Must specify an objective function to return objective values' );
+    end
+    objValues = zeros( N, 1 );
+  end
+
+  x = x0;
+  for optIter = 1 : N
+    if isa( S, 'function_handle' )
+      x = ( 1 - alpha ) * x + alpha * S( x );
+    else
       x = ( 1 - alpha ) * x + alpha * S * x;
     end
 
-  else
-    % S is a function handle
-  
-    x = x0;
-    for i = 1 : maxIter
-      x = ( 1 - alpha ) * x + alpha * S( x );
+    if nargout > 1 || ( numel(objFunction) > 0 && verbose == true )
+      objValue = objFunction( x );
     end
+
+    if nargout > 1
+      objValues( optIter ) = objValue;
+    end
+
+    if verbose == true
+      outStr = [ 'avgOpIter: Completed ', indx2str(optIter,N), ' of ', num2str(N) ];
+      if numel( objFunction ) > 0
+        outStr = [ outStr, '  objective: ', num2str( objValue ) ];   %#ok<AGROW>
+      end
+      disp( outStr );
+    end
+
+    objValues(optIter) = objFunction( x );
   end
 
 end
