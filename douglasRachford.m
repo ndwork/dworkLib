@@ -1,6 +1,6 @@
 
-function out = douglasRachford( x0, proxf, proxg, t, varargin )
-  % out = douglasRachford( x0, proxf, proxg, t [, 
+function [ out, objValues ] = douglasRachford( x0, proxf, proxg, t, varargin )
+  % [ out, objValues ] = douglasRachford( x0, proxf, proxg, t [, 
   %   'N', N, 'rho', rho, 'verbose', verbose ] )
   %
   % minimizes f( x ) + g( x )
@@ -12,6 +12,9 @@ function out = douglasRachford( x0, proxf, proxg, t, varargin )
   % t - the step size
   %
   % Optional Inputs:
+  % f - the function handle for f
+  % g - the function handle for g
+  % N - the number of iterations to run DR
   % rho - the relaxation parameter; 0 < rho < 2
   %
   % Written by Nicholas Dwork - Copyright 2019
@@ -31,27 +34,47 @@ function out = douglasRachford( x0, proxf, proxg, t, varargin )
 
   p = inputParser;
   p.addRequired( 'x0', @isnumeric );
+  p.addParameter( 'f', [] );
+  p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'rho', 1, @(x) numel(x) == 1 && x > 0 && x < 2 );
   p.addParameter( 'verbose', false, @islogical );
   p.parse( x0, varargin{:} );
+  f = p.Results.f;
+  g = p.Results.g;
   N = p.Results.N;
   rho = p.Results.rho;
   verbose = p.Results.verbose;
 
+  if nargout > 1
+    objValues = zeros( N, 1 );
+  end
+
   z = x0;
 
   for optIter = 1 : N
-    if verbose == true
-      disp([ 'douglasRachford: Working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
-    end
-
     x = proxf( z, t );
 
     y = proxg( 2 * x - z, t );
 
     z = z + rho * ( y - x );
 
+    
+    if nargout > 1 || ( numel(f) > 0 && numel(g) > 0 && verbose == true )
+      objValue = f( x ) + g( x );
+    end
+
+    if nargout > 1
+      objValues( optIter ) = objValue;
+    end
+
+    if verbose == true
+      outStr = [ 'douglasRachford: Completed ', indx2str(optIter,N), ' of ', num2str(N) ];
+      if numel( f ) > 0 && numel( g ) > 0
+        outStr = [ outStr, '  objective: ', num2str( objValue ) ];   %#ok<AGROW>
+      end
+      disp( outStr );
+    end
   end
 
   out = y;
