@@ -77,5 +77,5 @@ function [ out, objValues ] = primalDualDR( x0, proxf, proxgConj, t, varargin )
     end
   end
 
-  out = y;
+  out = z;
 end
