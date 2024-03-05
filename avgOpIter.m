@@ -29,7 +29,7 @@ function [x,objValues] = avgOpIter( x0, S, varargin )
   objFunction = p.Results.objFunction;
   verbose = p.Results.verbose;
 
-  if nargout > 2
+  if nargout > 1
     if numel( objFunction ) == 0
       error( 'Must specify an objective function to return objective values' );
     end
