@@ -4,6 +4,8 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'pruessman', [, 'L', L, ...
   %     'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
   % or
+  %   senseMaps = mri_makeSensitivityMaps_ying( kData, 'alg', 'ying', img [, 'polyOrder', polyOrder ] );
+  % or
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple' [, 'epsilon', epsilon ] );
   % or
   %   senseMaps = mri_makeSensitivityMaps( kData, img, 'alg', 'ying' [, 'polyOrder', polyOrder, ...
@@ -88,7 +90,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, v
 
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
   sCoilRecons = size( coilRecons );
-  ssqRecon = norms( coilRecons, 2, 4 );
+  ssqRecon = norms( coilRecons, 2, 3 );
 
   if numel( mask ) == 0
     mask = ones( sCoilRecons(1:3) );
@@ -211,6 +213,11 @@ function sMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder )
 
   if numel( polyOrder ) == 1, polyOrder = [ polyOrder polyOrder ]; end
 
+  if numel( img ) == 0
+    coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+    img = mri_reconRoemer( coilRecons );
+  end
+
   sKData = size( kData );
   nPixels = prod( sKData(1:2) );
   nCoils = sKData( 3 );
@@ -254,7 +261,7 @@ function sMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder )
     if checkA ~= true, error([ 'Adjoint check failed with error: ', num2str(errA) ]); end
   end
 
-  polyCoeffs = lsqr( @applyA, kData( abs(kData) ~= 0 ), [], 100, [] );
+  polyCoeffs = lsqr( @applyA, kData( abs(kData) ~= 0 ), [], 100 );
   polyCoeffs = reshape( polyCoeffs, [], nCoils );
 
   sMaps = tensorprod( V, polyCoeffs, 3, 1 );
