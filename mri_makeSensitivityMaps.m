@@ -93,11 +93,7 @@ end
 
 function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, verbose )
 
-  coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
-  %sData = size( coilRecons );
-  %ssqRecon = norms( coilRecons, 2, 3 );
   [ nRows, nCols, nCoils ] = size( kData );
-
   if numel( mask ) == 0
     mask = ones( nRows, nCols, nCoils );
     minMask = 1;
@@ -113,10 +109,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   ys = coords(:) * ones( 1, hSize );
   xs = ones(hSize,1) * coords';
 
-  %[ nRows, nCols, nCoils ] = size( coilRecons );
-
-  %senseMaps0 = bsxfun( @rdivide, coilRecons, ssqRecon );
-  senseMaps0 = mri_makeSensitivityMaps_simple( kData, epsilon );
+  [senseMaps0,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon );
   senseMaps = zeros( size( senseMaps0 ) );
 
   senseMapCols = cell( 1, nCols, 1 );
@@ -135,17 +128,16 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
       if max( thisMask(:) ) == 0, continue; end
 
       thisMap0 = senseMaps0( y0 - floor(hSize/2) : y0 + floor(hSize/2) , ...
-                               x0 - floor(hSize/2) : x0 + floor(hSize/2), : );   %#ok<PFBNS>
+                             x0 - floor(hSize/2) : x0 + floor(hSize/2), : );   %#ok<PFBNS>
 
-      thisAbsRecon = abs( ...
-        coilRecons( y0 - floor(hSize/2) : y0 + floor(hSize/2) , ...
-                    x0 - floor(hSize/2) : x0 + floor(hSize/2), : ) );   %#ok<PFBNS>
+      thisRecon = coilRecons( y0 - floor(hSize/2) : y0 + floor(hSize/2) , ...
+                              x0 - floor(hSize/2) : x0 + floor(hSize/2), : );   %#ok<PFBNS>
 
       for coil = 1 : nCoils
         thisMap = thisMap0( :, :, coil );
-        thisAbsCoilRecon = thisAbsRecon( :, :, coil );
+        thisCoilRecon = thisRecon( :, :, coil );
 
-        w = thisMask .* gFilt .* thisAbsCoilRecon ./ abs( thisMap );
+        w = thisMask .* gFilt .* thisCoilRecon ./ abs( thisMap );
         w( ~isfinite(w) ) = 0;
         c = polyFit2( xs, ys, thisMap, L, L, 'w', w );
 
@@ -181,7 +173,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
 end
 
 
-function senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon )
+function [senseMaps,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon )
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
   reconSSQ = sqrt( sum( coilRecons .* conj( coilRecons ), ndims( kData ) ) );
   senseMaps = bsxfun( @rdivide, coilRecons, ( reconSSQ + epsilon ) );
