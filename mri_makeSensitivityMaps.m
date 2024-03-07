@@ -113,12 +113,11 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   [senseMaps0,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon );
   senseMaps0 = padData( senseMaps0, [ nRows+hSize, nCols+hSize, nCoils ], 'circ', true );
   coilRecons = padData( coilRecons, [ nRows+hSize, nCols+hSize, nCoils ], 'circ', true );
-  senseMaps = zeros( size( senseMaps0 ) );
   mask = padData( mask, [ nRows+hSize, nCols+hSize ], 0 );
   senseMapCols = cell( 1, nCols, 1 );
 
   pfObj = parforProgress( nCols );
-  parfor x0 = hSize : hSize+nCols
+  parfor x0 = floor(hSize/2)+1 : floor(hSize/2)+nCols
     if verbose == true, pfObj.progress( nCols + x0, 20 ); end   %#ok<PFBNS>
 
     senseMapRowCoils = senseMaps0( :, x0, : );
