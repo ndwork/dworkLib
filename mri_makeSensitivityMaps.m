@@ -21,6 +21,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % kData - the k-space data collected from the MRI machine ( kx, ky, coil )
   %
   % Optional Inputs:
+  % alg - selects the algorithm to use (Pruessman is the default)
   % epsilon - a term added to the denominator to prevent divide by 0
   % L - the order of the polynomial to fit
   % mask - an array of zeros and ones; the mask specifies those data points that have
@@ -51,7 +52,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   p = inputParser;
   p.addOptional( 'img', [] );
-  p.addParameter( 'alg', 'ying', @(x) true );
+  p.addParameter( 'alg', 'pruessman', @(x) true );
   p.addParameter( 'epsilon', 0, @ispositive );
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
@@ -117,8 +118,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   senseMapCols = cell( 1, nCols, 1 );
 
   pfObj = parforProgress( nCols );
-  %parfor x0 = hSize : hSize+nCols
-for x0 = floor(hSize/2)+1 : floor(hSize/2)+nCols
+  parfor x0 = hSize : hSize+nCols
     if verbose == true, pfObj.progress( nCols + x0, 20 ); end   %#ok<PFBNS>
 
     senseMapRowCoils = senseMaps0( :, x0, : );
