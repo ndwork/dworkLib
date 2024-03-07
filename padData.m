@@ -1,6 +1,6 @@
 
 function padded = padData( data, N, varargin )
-  % padded = padData( data, N [, padValue ] )
+  % padded = padData( data, N [, padValue, 'circ', trueFalse ] )
   %
   % Inputs:
   % data - an array to be padded
@@ -27,13 +27,22 @@ function padded = padData( data, N, varargin )
 
   defaultPadValue = 0;
   p = inputParser;
-  p.addOptional( 'padValue', defaultPadValue );
+  p.addOptional( 'padValue', [] );
+  p.addParameter( 'circ', false );
   p.parse( varargin{:} );
   padValue = p.Results.padValue;
+  circ = p.Results.circ;
 
   sData = size(data);
   tooSmall = max( sData > N );
   if tooSmall>0, error('Padded size is too small.'); end
+
+  if numel( padValue ) > 0 && circ == true
+    error( 'Cannot specify a padding value and circular padding' );
+  end
+  if numel( padValue ) == 0
+    padValue = defaultPadValue;
+  end
 
   nDimData = ndims( data );
   if nDimData==2 && min( size(data) ) == 1
@@ -55,6 +64,11 @@ function padded = padData( data, N, varargin )
     minY = findMinIndx( N, nData );
     padded( minY : minY+nData-1 ) = data;
 
+    if circ == true
+      padded( 1 : minY-1 ) = padded( nData+1 : minY+nData-1 );
+      padded( minY+nData : end ) = padded( minY : N-nData );
+    end
+
   elseif nDimData == 2
     padded = zeros( N(:)' );
     sData = size( data );
@@ -62,6 +76,14 @@ function padded = padData( data, N, varargin )
     minX = findMinIndx( N(2), sData(2) );
     padded( minY : minY+sData(1)-1, ...
             minX : minX+sData(2)-1 ) = data;
+
+    if circ == true
+      padded( 1 : minY-1, : ) = padded( sData(1)+1 : minY+sData(1)-1, : );
+      padded( minY+sData(1) : end, : ) = padded( minY : N(1)-sData(1), : );
+
+      padded( :, 1 : minX-1 ) = padded( :, sData(2)+1 : minX+sData(2)-1 );
+      padded( :, minX+sData(2) : end ) = padded( :, minX : N(2)-sData(2) );
+    end
 
   elseif nDimData == 3
     padded = zeros( N(:)' );
@@ -73,11 +95,27 @@ function padded = padData( data, N, varargin )
              minX : minX + sData(2)-1, ...
              minZ : minZ + sData(3)-1  ) = data;
 
+    if circ == true
+      padded( 1 : minY-1, :, : ) = padded( sData(1)+1 : minY+sData(1)-1, :, : );
+      padded( minY+sData(1) : end, :, : ) = padded( minY : N(1)-sData(1), :, : );
+
+      padded( :, 1 : minX-1, : ) = padded( :, sData(2)+1 : minX+sData(2)-1, : );
+      padded( :, minX+sData(2) : end, : ) = padded( :, minX : N(2)-sData(2), : );
+
+      padded( :, :, 1 : minZ-1 ) = padded( :, :, sData(3)+1 : minZ+sData(3)-1 );
+      padded( :, :, minZ+sData(3) : end ) = padded( :, :, minZ : N(3)-sData(3) );
+    end
+
   else
     padded = zeros( N(:)' );
     sData = size( data );
     minIndxs = zeros( numel(N), 1 );
     str2eval = ' padded ( ';
+
+    if circ == true
+      error( 'I still need to implement this' );
+    end
+
     nDimsData = ndims( data );
     for dimIndx = 1 : nDimsData
       minIndxs( dimIndx ) = findMinIndx( N( dimIndx ), sData( dimIndx ) );
