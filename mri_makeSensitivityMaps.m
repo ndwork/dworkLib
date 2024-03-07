@@ -95,7 +95,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
 
   [ nRows, nCols, nCoils ] = size( kData );
   if numel( mask ) == 0
-    mask = ones( nRows, nCols, nCoils );
+    mask = ones( nRows, nCols );
     minMask = 1;
   else
     minMask = min( mask(:) );
@@ -110,17 +110,19 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   xs = ones(hSize,1) * coords';
 
   [senseMaps0,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon );
+  senseMaps0 = padData( senseMaps0, [ nRows+hSize, nCols+hSize, nCoils ], 'circ', true );
+  coilRecons = padData( coilRecons, [ nRows+hSize, nCols+hSize, nCoils ], 'circ', true );
   senseMaps = zeros( size( senseMaps0 ) );
-
+  mask = padData( mask, [ nRows+hSize, nCols+hSize ], 0 );
   senseMapCols = cell( 1, nCols, 1 );
-  for i = 1:nCols, senseMapCols{i} = senseMaps0(:,i,:); end
 
   pfObj = parforProgress( nCols );
-  parfor x0 = hSize : nCols-hSize
+  %parfor x0 = hSize : hSize+nCols
+for x0 = floor(hSize/2)+1 : floor(hSize/2)+nCols
     if verbose == true, pfObj.progress( nCols + x0, 20 ); end   %#ok<PFBNS>
 
     senseMapRowCoils = senseMaps0( :, x0, : );
-    for y0 = hSize : nRows-hSize
+    for y0 = floor(hSize/2)+1 : floor(hSize/2)+nRows
 
       thisMask = mask( y0 - floor(hSize/2) : y0 + floor(hSize/2), ...
                        x0 - floor(hSize/2) : x0 + floor(hSize/2) );   %#ok<PFBNS>
@@ -149,6 +151,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   end
 
   maskedSenseMap = cell2mat( senseMapCols );
+  maskedSenseMap = cropData( maskedSenseMap, [nRows, nCols, nCoils] );
   if minMask < 1
     [ rMaskedIn,  cMaskedIn  ] = find( mask(:,:) == 1 );
     [ rMaskedOut, cMaskedOut ] = find( mask(:,:) == 0 );
@@ -166,8 +169,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
       maskedSenseMap( thoseIndxs ) = SI( cMaskedOut, rMaskedOut );
     end
   end
-
-  senseMaps(:,:,:) = maskedSenseMap;
+  senseMaps = maskedSenseMap;
 
   if verbose == true, pfObj.clean; end
 end
