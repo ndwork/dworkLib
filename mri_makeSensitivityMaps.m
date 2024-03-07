@@ -4,7 +4,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'pruessman', [, 'L', L, ...
   %     'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
   % or
-  %   senseMaps = mri_makeSensitivityMaps_ying( kData, 'alg', 'ying', img [, 'polyOrder', polyOrder ] );
+  %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'ying', img [, 'polyOrder', polyOrder ] );
   % or
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple' [, 'epsilon', epsilon ] );
   % or
@@ -73,27 +73,33 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   switch alg
     case 'pruessman'
-      senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, verbose );
+      senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, verbose );
     case 'simple'
       senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
     case 'sortaSimple'
       senseMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon );
     case 'ying'
       senseMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder );
+      % Note, this method was written according to the JSENSE paper. It produces horrible
+      % results, much worse than those presented in the paper.  Upon review of the code
+      % released with the paper, I found that there are many more operations and
+      % parameters in the code than there were in the paper.
     otherwise
       error( 'Unrecognized algorithm' );
   end
 
 end
 
-function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, verbose )
+
+function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, verbose )
 
   coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
-  sCoilRecons = size( coilRecons );
-  ssqRecon = norms( coilRecons, 2, 3 );
+  %sData = size( coilRecons );
+  %ssqRecon = norms( coilRecons, 2, 3 );
+  [ nRows, nCols, nCoils ] = size( kData );
 
   if numel( mask ) == 0
-    mask = ones( sCoilRecons(1:3) );
+    mask = ones( nRows, nCols, nCoils );
     minMask = 1;
   else
     minMask = min( mask(:) );
@@ -107,9 +113,10 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, v
   ys = coords(:) * ones( 1, hSize );
   xs = ones(hSize,1) * coords';
 
-  [ nRows, nCols, nCoils ] = size( coilRecons );
+  %[ nRows, nCols, nCoils ] = size( coilRecons );
 
-  senseMaps0 = bsxfun( @rdivide, coilRecons, ssqRecon );
+  %senseMaps0 = bsxfun( @rdivide, coilRecons, ssqRecon );
+  senseMaps0 = mri_makeSensitivityMaps_simple( kData, epsilon );
   senseMaps = zeros( size( senseMaps0 ) );
 
   senseMapCols = cell( 1, nCols, 1 );
@@ -266,6 +273,4 @@ function sMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder )
 
   sMaps = tensorprod( V, polyCoeffs, 3, 1 );
 end
-
-
 
