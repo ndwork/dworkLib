@@ -60,8 +60,8 @@ function [scaling,imH] = imshownice( img, varargin )
     if numel( sdevScale ) > 0
       scaling = [ medianImg - sdevScale*sdevImg, medianImg + sdevScale*sdevImg ];
     else
-      lowScalingLevel = findValueBelowFraction( img(:), 1-thresh );
-      highScalingLevel = findValueBelowFraction( img(:), thresh );
+      lowScalingLevel = findValueBelowFraction( img(:), thresh );
+      highScalingLevel = findValueBelowFraction( img(:), 1-thresh );
       scaling = [ lowScalingLevel highScalingLevel ];
     end
     imH = imshow( tmp, scaling );
@@ -76,8 +76,8 @@ function [scaling,imH] = imshownice( img, varargin )
       lowScalingLevel = medianImg - sdevScale*sdevImg;
       highScalingLevel = medianImg + sdevScale*sdevImg;
     else
-      lowScalingLevel = findValueBelowFraction( img(:), 1-thresh );
-      highScalingLevel = findValueBelowFraction( img(:), thresh );
+      lowScalingLevel = findValueBelowFraction( img(:), thresh );
+      highScalingLevel = findValueBelowFraction( img(:), 1-thresh );
     end
     scaling = [lowScalingLevel highScalingLevel];
     scaled = scaleImg( tmp, [0 1], scaling );

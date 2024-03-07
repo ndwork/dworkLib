@@ -123,8 +123,8 @@ function imH = showImageCube( cube, varargin )
     imH = imshowscale( outImg, scale, 'range', range, 'sdevScale', sdevScale );
   else
     thresh = 0.05;
-    lowScalingLevel = findValueBelowFraction( cube(:), 1-thresh );
-    highScalingLevel = findValueBelowFraction( cube(:), thresh );
+    lowScalingLevel = findValueBelowFraction( cube(:), thresh );
+    highScalingLevel = findValueBelowFraction( cube(:), 1-thresh );
     scaling = [ lowScalingLevel highScalingLevel ];
   
     imH = imshowscale( outImg, scale, 'range', scaling, 'sdevScale', sdevScale );
