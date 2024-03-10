@@ -69,7 +69,7 @@ function [ out, objValues ] = primalDualDR( x0, proxf, proxgConj, t, varargin )
     end
 
     if verbose == true
-      outStr = [ 'douglasRachford: Completed ', indx2str(optIter,N), ' of ', num2str(N) ];
+      outStr = [ 'primal-dual DR: Completed ', indx2str(optIter,N), ' of ', num2str(N) ];
       if numel( f ) > 0 && numel( g ) > 0
         outStr = [ outStr, '  objective: ', num2str( objValue ) ];   %#ok<AGROW>
       end
