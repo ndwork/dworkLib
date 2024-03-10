@@ -1,6 +1,6 @@
 
-function out = huber( in, mu )
-  % out = huber( in, mu )
+function out = huberPenalty( in, mu )
+  % out = huberPenalty( in, mu )
   %
   % Calculates the Huber penalty loss of in
   %
