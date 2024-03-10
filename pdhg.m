@@ -2,8 +2,7 @@
 function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   % [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau [, ...
   %   'A', A, 'f', f, 'g', g, 'N', N, 'normA', normA, 'sigma', sigma, ...
-  %    'lambda', lambda, 'printEvery', printEvery, 'theta', theta, ...
-  %    'tol', tol, 'verbose', verbose, 'z', z ] )
+  %    'printEvery', printEvery, 'theta', theta, 'tol', tol, 'verbose', verbose, 'z', z ] )
   %
   % Implements the Primal Dual Hybrid Gradient (Chambolle-Pock) method that
   % solves problems of the form:  minimize f( x ) + g( A x )
@@ -20,7 +19,6 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   % N - the number of iterations that ADMM will perform (default is 100)
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
-  % lambda - relaxation parameter
   % theta - acceleration parameter
   % verbose - true or false
   % z - initial value of dual variable
@@ -43,7 +41,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     disp( 'Usage;  ' );
     disp( '  [xStar,objValues] = pdhg( x, proxf, proxgConj, tau [, ... ');
     disp( '  ''A'', A, ''f'', f, ''g'', g, ''N'', N, ''normA'', normA, ''sigma'', sigma, ...' );
-    disp( '  ''lambda'', lambda, ''printEvery'', printEvery, ''theta'', theta, ...' );
+    disp( '  ''printEvery'', printEvery, ''theta'', theta, ...' );
     disp( '  ''tol'', tol, ''verbose'', verbose, ''z'', z ] )' );
     if nargout > 0, xStar = []; end
     if nargout > 1, objValues = []; end
@@ -61,7 +59,6 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'sigma', [], @ispositive );
   p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 1 );
   p.addParameter( 'tol', defaultTol, @(x) numel(x) == 0 || ispositive(x) );
-  p.addParameter( 'lambda', 1, @(x) x >= 0 && x <= 2 );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'z', [], @isnumeric );
@@ -74,7 +71,6 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   sigma = p.Results.sigma;
   theta = p.Results.theta;
   tol = p.Results.tol;
-  lambda = p.Results.lambda;
   printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
   z = p.Results.z;
