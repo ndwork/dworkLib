@@ -32,6 +32,11 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   % warranty expressed or implied, including the implied warranties of merchantability or fitness
   % for a particular purpose.
 
+  p = inputParser;
+  p.addParameter( 'checkProx', false );
+  p.parse( varargin{:} );
+  checkProx = p.Results.checkProx;
+
   acr = cropData( kData, acr_sz );
   weights = mri_reconSPIRiT_get_weights( acr, kernel_sz );
   
@@ -42,9 +47,9 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   y_data = kData(idx_acq);
   eps = 1e-2;
 
-  checkProx = 1;
   if checkProx
-    proxTest = @(in, sc) projB0(in, sqrt(eps));
+    proxTest = @(in, sc) projectOntoBall( in, sqrt(eps) );
+
     test1 = proxh(x0, 0);
     test2 = proxAffine(proxTest, x0, @applyD, -1*y_data, 1);
     
@@ -56,36 +61,36 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
 
   % [xStar, objVal, relDiffs] = fista(0*x0(:), @grad_g, @proxh, 'g', @normG, 'h', @h, 'N', 100, ...
   %   'verbose', true, 't', 0.05 );
-  [xStar, objVal, relDiffs] = fista_wLS(x0(:), @normG, @grad_g, @proxh, 'h', @h, 'N', 100, ...
+  [xStar, objVal, relDiffs] = fista_wLS(x0(:), @g, @grad_g, @proxh, 'h', @h, 'N', 100, ...
     'verbose', true, 't0', 0.01);
 
   out = reshape( xStar, size(kData) );
 
-  function out = proxh(in, sc)
+  function out = proxh( in, sc )   %#ok<INUSD>
     din = in(idx_acq) - y_data;
-    tmp_proj = projB0(din, sqrt(eps));
+    tmp_proj = projectOntoBall( din, sqrt(eps) );
     tmp2 = din - tmp_proj;
     out = zeros(size(kData));
     out(idx_acq) = tmp2;
     out = in(:) - out(:);
   end
 
-  function out = applyG(in, op)
+  function out = applyG( in, op )
     in = reshape(in, size(kData));
-  if strcmp(op, 'transp')
-    out = spirit_conv_adj(in, weights);
-  else
-    out = spirit_conv(in, weights);
-  end
-  out = out(:);
+    if nargin < 2 || strcmp(op, 'transp')
+      out = spirit_conv_adj(in, weights);
+    else
+      out = spirit_conv(in, weights);
+    end
+    out = out(:);
   end
 
   function out = h(x)
-    out = ind(x, y_data, sqrt(eps));
+    out = normIndicator( x, y_data, sqrt(eps) );
   end
 
-  function out = ind(x, y, r)
-    dx = x(idx_acq);
+  function out = normIndicator( x, y, r )
+    dx = x( idx_acq );
     if norm(dx - y) < r
       out = 0;
     else
@@ -93,7 +98,7 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
     end
   end
 
-  function out = projB(x, y, r)
+  function out = projB( x, y, r )
     dxy = x - y;
     if norm(dxy) < r
       out = x;
@@ -102,28 +107,20 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
     end
   end
 
-function out = projB0(x, r)
-    if norm(x) < r
-      out = x;
-    else
-      out = x * (r / norm(x));
-    end
-  end
-
-  function out = normG(in)
-    tmpg = applyG(in, 'notransp');
-    out = 0.5 * norm(tmpg(:) - in(:))^2;
+  function out = g( in )
+    tmpg = applyG( in );
+    out = 0.5 * norm( tmpg(:) - in(:) )^2;
   end
 
   function out = grad_g(in)
-    tmpgrad = applyG(in, 'notransp') - in;
-    out = applyG(tmpgrad, 'transp') - tmpgrad;
+    tmpgrad = applyG( in ) - in;
+    out = applyG( tmpgrad, 'transp' ) - tmpgrad;
     out = out(:);
   end
 
-  function out = applyD(in, op)
-    if strcmp(op, 'transp')
-      out = 0*kData;
+  function out = applyD( in, op )  % Apply the sampling mask
+    if strcmp( op, 'transp' )
+      out = 0 * kData;
       out(idx_acq) = in;
     else
       out = in(idx_acq);
