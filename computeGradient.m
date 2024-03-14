@@ -3,7 +3,7 @@ function out = computeGradient( in, varargin )
   % out = computeGradient( in [, op ] ] )
   %
   % This function computes the gradient (or the derivative) of the input
-  % with circular boundary conditions
+  % as a forward-difference with circular boundary conditions
   %
   % Inputs:
   % in - a multi-dimensional array
