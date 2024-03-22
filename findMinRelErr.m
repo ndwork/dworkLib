@@ -1,8 +1,8 @@
 
-function out = findMinRelErr( est, truth, varargin )
+function [out,k] = findMinRelErr( est, truth, varargin )
   % Result is min_k MSE( k * est - truth )
   %
-  % out = findMinRelErr( est, truth [, 'verbose', true/false ] )
+  % [out,k] = findMinRelErr( est, truth [, 'verbose', true/false ] )
   %
   % Written by Nicholas Dwork, Copyright 2024
   %

@@ -2,7 +2,7 @@
 function [out,k] = findMaxSSIM( est, truth, varargin )
   % Result is max_k ssim( k * est - truth )
   %
-  % out = findMaxSSIM( est, truth [, 'tol', tol, 'verbose', true/false ] )
+  % [out,k] = findMaxSSIM( est, truth [, 'tol', tol, 'verbose', true/false ] )
   %
   % Inputs:
   % est - the estimate array

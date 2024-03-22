@@ -1,8 +1,8 @@
 
-function out = findMinMAE( est, truth, varargin )
+function [out,k] = findMinMAE( est, truth, varargin )
   % Result is min_k MAE( k * est - truth )
   %
-  % out = findMinMAE( est, truth [, 'verbose', true/false ] )
+  % [out,k] = findMinMAE( est, truth [, 'verbose', true/false ] )
   %
   % Written by Nicholas Dwork, Copyright 2024
   %
