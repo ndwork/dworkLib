@@ -33,14 +33,23 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   % for a particular purpose.
 
   p = inputParser;
+  p.addParameter( 'alg', 'fista_wLS', @(x) true );
   p.addParameter( 'checkProx', false );
+  p.addParameter( 'verbose', false );
+  p.addParameter( 'weights', [], @isnumeric );
   p.parse( varargin{:} );
+  alg = p.Results.alg;
   checkProx = p.Results.checkProx;
+  verbose = p.Results.verbose;
+  weights = p.Results.weights;
 
-  acr = cropData( kData, acr_sz );
-  weights = mri_reconSPIRiT_get_weights( acr, kernel_sz );
-  
-  x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
+  if numel( kernel_sz ) == 1, kernel_sz = [ kernel_sz kernel_sz ]; end
+
+  nCoils = size( kData, 3 );
+  acr = cropData( kData, [ acr_sz nCoils ] );
+  if numel( weights ) == 0
+    weights = mri_reconSPIRiT_get_weights( acr, kernel_sz );
+  end
 
   idx_acq = kData~=0;
 
@@ -59,10 +68,17 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
     end
   end
 
-  % [xStar, objVal, relDiffs] = fista(0*x0(:), @grad_g, @proxh, 'g', @normG, 'h', @h, 'N', 100, ...
-  %   'verbose', true, 't', 0.05 );
-  [xStar, objVal, relDiffs] = fista_wLS(x0(:), @g, @grad_g, @proxh, 'h', @h, 'N', 100, ...
-    'verbose', true, 't0', 0.01);
+  %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
+  x0 = kData;
+
+  if strcmp( alg, 'fista' )
+    [xStar, objVal, relDiffs] = fista(0*x0(:), @grad_g, @proxh, 'g', @normG, 'h', @h, 'N', 100, ...
+      'verbose', verbose, 't', 0.05 );   %#ok<ASGLU>
+
+  elseif strcmp( alg, 'fista_wLS' )
+    [xStar, objVal, relDiffs] = fista_wLS( x0(:), @g, @grad_g, @proxh, 'h', @h, 'N', 100, ...
+      'verbose', verbose, 't0', 0.01);   %#ok<ASGLU>
+  end
 
   out = reshape( xStar, size(kData) );
 
