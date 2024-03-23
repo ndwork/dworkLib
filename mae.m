@@ -24,6 +24,6 @@ function out = mae( est, true )
     return;
   end
 
-  out = norm( est(:) - true(:), 1 )^2 / numel( est );
+  out = norm( est(:) - true(:), 1 ) / numel( est );
 
 end
