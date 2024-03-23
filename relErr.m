@@ -15,5 +15,5 @@ function out = relErr( est, truth )
     return;
   end
 
-  out = norm( est(:) - truth(:) ) / norm( truth(:) );
+  out = norm( est(:) - truth(:), 2 ) / norm( truth(:), 2 );
 end
