@@ -38,5 +38,5 @@ function [out,k] = findMaxSSIM( est, truth, varargin )
   UB = max( est(:) ) / mean( truth(:) ) * 10;
 
   k = goldenSectionSearch( f, LB, UB, 'tol', tol, 'verbose', verbose );
-  out = f( k );
+  out = -f( k );
 end
