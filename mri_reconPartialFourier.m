@@ -38,7 +38,7 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
 
   else
     % Non-Cartesian sampling
-    [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, traj, op );
+    [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, traj, op );
   end
 
 end
