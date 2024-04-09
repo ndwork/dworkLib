@@ -33,6 +33,8 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
+  defaultOptAlg = 'fista_wLS';
+
   p = inputParser;
   p.addRequired( 'kData', @isnumeric );
   p.addRequired( 'sMaps', @isnumeric );
@@ -44,7 +46,7 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   p.addParameter( 'noiseCov', [], @isnumeric );
   p.addParameter( 'nReweightIter', 1, @ispositive );
   p.addParameter( 'reweightEpsilon', 10, @ispositive );
-  p.addParameter( 'optAlg', 'fista_wLS', @(x) true );
+  p.addParameter( 'optAlg', defaultOptAlg, @(x) true );
   p.addParameter( 'printEvery', 10, @ispositive );
   p.addParameter( 't', [], @ispositive );
   p.addParameter( 'transformType', 'wavelet', @(x) true );
@@ -68,6 +70,7 @@ function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   verbose = p.Results.verbose;
 
   if numel( nReweightIter ) == 0, nReweightIter = 1; end
+  if numel( optAlg ) == 0, optAlg = defaultOptAlg; end
   if numel( reweightEpsilon ) == 0, reweightEpsilon = 10; end
   if numel( transformType ) == 0, transformType = 'wavelet'; end
   if numel( waveletType ) == 0, waveletType = 'Daubechies-4'; end
