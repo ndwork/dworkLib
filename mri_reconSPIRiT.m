@@ -59,6 +59,11 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   y_data = kData(idx_acq);
   eps = 1e-2;
 
+  %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
+  if numel( x0 ) == 0
+    x0 = kData;
+  end
+
   if checkProx
     proxTest = @(in, sc) projectOntoBall( in, sqrt(eps) );
 
@@ -69,11 +74,6 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
     if abs(err) > 1e-6
       error('Something wrong with proximal operator');
     end
-  end
-
-  %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
-  if numel( x0 ) == 0
-    x0 = kData;
   end
 
   if strcmp( alg, 'fista' )
@@ -119,14 +119,14 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
     end
   end
 
-  function out = projB( x, y, r )
-    dxy = x - y;
-    if norm(dxy) < r
-      out = x;
-    else
-      out = dxy * (r / norm(dxy)) + y;
-    end
-  end
+  % function out = projB( x, y, r )
+  %   dxy = x - y;
+  %   if norm(dxy) < r
+  %     out = x;
+  %   else
+  %     out = dxy * (r / norm(dxy)) + y;
+  %   end
+  % end
 
   function out = g( in )
     tmpg = applyG( in );
