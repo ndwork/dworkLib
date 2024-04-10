@@ -223,6 +223,20 @@ function testDworkLib
     disp('wtDaubechies test passed');
   end
 
+
+  %% deaubechies2
+  sig = rand(128,128);
+  split = makeWavSplit( size(sig) );
+  wt = wtDaubechies2( sig, split );
+  sigHat = iwtDaubechies2( wt, 'split', split );
+  err = norm( sig(:) - sigHat(:), 2 );
+  if err > 1d-12
+    error( ['wtDaubechies2 error: ', num2str(err,2)] );
+  else
+    disp('wtDaubechies2 test passed');
+  end
+
+
   %% deaubechies adjoint
   x = rand(8,1);
   y = rand(8,1);
