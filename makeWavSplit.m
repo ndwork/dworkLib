@@ -25,6 +25,9 @@ function wavSplit = makeWavSplit( sData, varargin )
     wavSplit = zeros( 2.^(nPows-1) );
   end
   wavSplit(1) = 1;
+
+  sWavSplit = size( wavSplit );
+  wavSplit = wavSplit( 1:min(sWavSplit), 1 : min(sWavSplit) );
 end
 
 
