@@ -37,17 +37,20 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   p.addParameter( 'checkProx', false );
   p.addParameter( 'verbose', false );
   p.addParameter( 'weights', [], @isnumeric );
+  p.addParameter( 'x0', [], @isnumeric );
   p.parse( varargin{:} );
   alg = p.Results.alg;
   checkProx = p.Results.checkProx;
   verbose = p.Results.verbose;
   weights = p.Results.weights;
+  x0 = p.Results.x0;
 
   if numel( kernel_sz ) == 1, kernel_sz = [ kernel_sz kernel_sz ]; end
 
   nCoils = size( kData, 3 );
-  acr = cropData( kData, [ acr_sz nCoils ] );
+  
   if numel( weights ) == 0
+    acr = cropData( kData, [ acr_sz nCoils ] );
     weights = mri_reconSPIRiT_get_weights( acr, kernel_sz );
   end
 
@@ -69,7 +72,9 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   end
 
   %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
-  x0 = kData;
+  if numel( x0 ) == 0
+    x0 = kData;
+  end
 
   if strcmp( alg, 'fista' )
     [xStar, objVal, relDiffs] = fista(0*x0(:), @grad_g, @proxh, 'g', @normG, 'h', @h, 'N', 100, ...
@@ -93,10 +98,10 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
 
   function out = applyG( in, op )
     in = reshape(in, size(kData));
-    if nargin < 2 || strcmp(op, 'transp')
-      out = spirit_conv_adj(in, weights);
-    else
+    if nargin < 2 || strcmp(op, 'notransp')
       out = spirit_conv(in, weights);
+    else
+      out = spirit_conv_adj(in, weights);
     end
     out = out(:);
   end
