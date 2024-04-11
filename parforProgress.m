@@ -31,7 +31,7 @@ classdef parforProgress
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
-  
+
   properties
     nTotal
     tmpFile
@@ -49,7 +49,11 @@ classdef parforProgress
       defaultTmpFile = ['parforProgress_', num2str(pid), '.txt'];
 
       st = dbstack;
-      defaultMsgHdr = [ st(2).name, ':  ' ]; % The function caller's name (parent)
+      if numel( st ) > 1
+        defaultMsgHdr = [ st(2).name, ':  ' ]; % The function caller's name (parent)
+      else
+        defaultMsgHdr = 'main:  ';
+      end
       defaultMsgFtr = [];
 
       p = inputParser;
