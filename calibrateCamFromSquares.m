@@ -79,6 +79,7 @@ function K = calibrateCamFromSquares( squares, varargin )
   end
 
   K = chol( invIAC );
+  K = K ./ K(3,3);
 end
 
 function errH = checkH( H, squarePts )
