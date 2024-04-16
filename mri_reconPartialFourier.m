@@ -6,7 +6,7 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   %
   % Inputs:
   % in - the input array of size Ny x Nx x nCoils representing the MRI data.
-  %      It is assumed that the bottom portion of this data is 0.
+  %      It is assumed that the bottom portion of in is 0.
   % sFSR - Either a scalar or a two element array that specifies the size of the fully
   %   sampled region, which is used to estimate the phase of the image.
   %   If a scalar, then the size of the fully sampled region is sFSR x Nx.
