@@ -6,6 +6,7 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   %
   % Inputs:
   % in - the input array of size Ny x Nx x nCoils representing the MRI data.
+  %      It is assumed that the bottom portion of this data is 0.
   % sFSR - Either a scalar or a two element array that specifies the size of the fully
   %   sampled region, which is used to estimate the phase of the image.
   %   If a scalar, then the size of the fully sampled region is sFSR x Nx.
@@ -75,10 +76,12 @@ function [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, 
     inLF = in;  % Low-freq data
     if nCoils == 1
       inLF( 1:firstY-1, : ) = 0;
+      inLF( lastY+1:end, : ) = 0;
       inLF( :, 1:firstX-1 ) = 0;
       inLF( :, lastX+1:end ) = 0;
     else
       inLF( 1:firstY-1, :, : ) = 0;
+      inLF( lastY+1:end, :, : ) = 0;
       inLF( :, 1:firstX-1, : ) = 0;
       inLF( :, lastX+1:end, : ) = 0;
     end
