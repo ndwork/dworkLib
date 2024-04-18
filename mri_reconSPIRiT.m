@@ -35,11 +35,13 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   p = inputParser;
   p.addParameter( 'alg', 'fista_wLS', @(x) true );
   p.addParameter( 'checkProx', false );
+  p.addParameter( 'eps', 0, @isnonnegative );
   p.addParameter( 'verbose', false );
   p.addParameter( 'weights', [], @isnumeric );
   p.addParameter( 'x0', [], @isnumeric );
   p.parse( varargin{:} );
   alg = p.Results.alg;
+  eps = p.Results.eps;
   checkProx = p.Results.checkProx;
   verbose = p.Results.verbose;
   weights = p.Results.weights;
@@ -57,14 +59,14 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   idx_acq = kData~=0;
 
   y_data = kData(idx_acq);
-  eps = 1e-2;
+  %eps = 1e-2;
 
   %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
   if numel( x0 ) == 0
     x0 = kData;
   end
 
-  if checkProx
+  if checkProx == true
     proxTest = @(in, sc) projectOntoBall( in, sqrt(eps) );
 
     test1 = proxh(x0, 0);
