@@ -41,10 +41,10 @@ function [out,l,c,s] = ssim( in1, in2, varargin )
   L = p.Results.L;
   W = p.Results.W;
 
-  dynamicRange = max( [ in1(:); in2(:); ] ) - min( [ in1(:); in2(:); ] );
-  if numel( L ) == 0, L = dynamicRange; end
-
-  h = fspecial( 'gaussian', W, 1.5 );
+  if numel( L ) == 0
+    dynamicRange = max( max(in1(:)), max(in2(:)) ) - min( min(in1(:)), min(in2(:)) );
+    L = dynamicRange;
+  end
 
   hW = floor( W / 2 );  % half W
 
@@ -61,9 +61,9 @@ function [out,l,c,s] = ssim( in1, in2, varargin )
       sub2 = in2( y - hW : y + hW, x - hW : x + hW );
 
       if nargout > 1
-        [thisSSIM,l,c,s] = subSSIM( sub1, sub2, h, k1, k2, L );
+        [thisSSIM,l,c,s] = subSSIM( sub1, sub2, k1, k2, L );
       else
-        thisSSIM = subSSIM( sub1, sub2, h, k1, k2, L );
+        thisSSIM = subSSIM( sub1, sub2, k1, k2, L );
       end
       subSSIMs( y - hW, x - hW ) = thisSSIM;
       if nargout > 1
@@ -81,10 +81,10 @@ function [out,l,c,s] = ssim( in1, in2, varargin )
 end
 
 
-function [out,l,c,s] = subSSIM( in1, in2, h, k1, k2, L )
-  mean1 = mean( in1(:) .* h(:) );
-  mean2 = mean( in2(:) .* h(:) );
-  cov12 = cov( sqrt( h(:) ) .* in1(:), sqrt( h(:) ) .* in2(:) );
+function [out,l,c,s] = subSSIM( in1, in2, k1, k2, L )
+  mean1 = mean( in1(:) );
+  mean2 = mean( in2(:) );
+  cov12 = cov( in1(:), in2(:) );
   var1 = var( in1(:) );  sig1 = sqrt( var1 );
   var2 = var( in2(:) );  sig2 = sqrt( var2 );
   cov12 = cov12(1,2);
