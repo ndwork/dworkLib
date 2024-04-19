@@ -1,6 +1,6 @@
 
-function [out,l,c,s] = ssim( in1, in2, varargin )
-  % out = ssim( in1, in2 [, 'k1', k1, 'k2', k2, 'L', L, 'W', W ] )
+function [out,l,c,s] = calcSSIM( in1, in2, varargin )
+  % out = calcSSIM( in1, in2 [, 'k1', k1, 'k2', k2, 'L', L, 'W', W ] )
   %
   % Computes the structural similarity metric between inputs 1 and 2 according
   % to "Image Quality Assessment: From Error Visibility to Structural
@@ -99,7 +99,7 @@ function [out,l,c,s] = subSSIM( in1, in2, k1, k2, L )
     c = ( 2 * sig1 * sig2 + c2 ) ./ ( var1 + var2 + c2 );
     s = ( cov12 + c3 ) ./ ( sig1 * sig2 + c3 );
 
-    out = l * s * s;
+    out = l * c * s;
   else
 
     num = ( 2 * mean1 * mean2 + c1 ) * ( 2 * cov12 + c2 );
