@@ -3,6 +3,9 @@ function [recon,lambda] = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, 
   % recon = mri_reconStructuredSparseSENSE( kData, sMaps, lambda, [, 'img0', img0, 'nIter', nIter, ...
   %   'noiseCov', noiseCov, 'transformType', transformType, 'wavSplit', wavSplit ] )
   %
+  % Written for the work of "Accelerated Parallel Magnetic Resonance Imaging with Compressed
+  % Sensing Using Structured Sparsity" by Nicholas Dwork and Erin Englund
+  %
   % Inputs:
   % kData - an array of size Ny x Nx x nCoils
   %
