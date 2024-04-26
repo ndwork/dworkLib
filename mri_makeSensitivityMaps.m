@@ -14,7 +14,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % Options are to either use the method of (1) or (2, default)
   % 1) Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
   %    Pruessmann et al., 1999
-  % 2) Created using the method of "Joint image reconstruction and sensitivity estimation "
+  % 2) Created using the method of "Joint image reconstruction and sensitivity estimation
   %    in SENSE (JSENSE)" by Ying et al.
   %
   % Inputs:
