@@ -53,7 +53,7 @@ function out = multiScaleSSIM( in1, in2, varargin )
   indxSSIM = 0;
   while min( sScaled ) > N
     indxSSIM = indxSSIM + 1;
-    [~,l,c,s] = ssim( in1, in2, 'k1', k1, 'k2', k2, 'L', L );
+    [~,l,c,s] = calcSSIM( in1, in2, 'k1', k1, 'k2', k2, 'L', L );
     cs( indxSSIM ) = c;
     ss( indxSSIM ) = s;
 
