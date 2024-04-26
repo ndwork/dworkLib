@@ -116,7 +116,11 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   mask = padData( mask, [ nRows+hSize, nCols+hSize ], 0 );
   senseMapCols = cell( 1, nCols, 1 );
 
-  pfObj = parforProgress( nCols );
+  if verbose == true
+    pfObj = parforProgress( nCols );
+  else
+    pfObj = [];
+  end
   parfor x0 = floor(hSize/2)+1 : floor(hSize/2)+nCols
     if verbose == true, pfObj.progress( nCols + x0, 20 ); end   %#ok<PFBNS>
 
@@ -169,7 +173,6 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
     end
   end
   senseMaps = maskedSenseMap;
-
   if verbose == true, pfObj.clean; end
 end
 
