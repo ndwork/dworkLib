@@ -855,6 +855,33 @@ function testDworkLib
     disp('matrixVolProd passed');
   end
 
+  %% mri_reconPartialFourier
+
+  load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
+
+  sImg = [ size( DATA, 1 ) size( DATA, 2 ) ];
+  wavSplit = makeWavSplit( sImg );
+  [ FSR, sFSR ] = mri_makeFullySampledCenterRegion( sImg, wavSplit );
+
+  samplePattern = zeros( size( DATA, 1 ), size( DATA, 2 ) );
+  samplePattern( 1 : ceil( size( DATA, 1 ) / 2 ) + ceil( sFSR(1)/2 ), : ) = 1;
+  samplePattern( FSR == 1 ) = 1;
+  dataPF = bsxfun( @times, DATA, samplePattern );
+
+  coilRecons = mri_reconPartialFourier( dataPF, sFSR );
+  coilPhases = angle( coilRecons );
+
+  reconPF = mri_reconRoemer( coilRecons );
+
+  coilReconsTrue = mri_reconIFFT( DATA, 'multiSlice', true );
+  trueRecon = mri_reconRoemer( coilReconsTrue );
+
+  figure;
+  subplot(1,2,1);  imshow( abs( trueRecon ), [] );  title( 'Fully-sampled Recon' );
+  subplot(1,2,2);  imshow( abs( reconPF ), [] );  title( 'Partial Fourier Recon' );
+
+
   %% nonlocal mean
   fprintf('\nTesting nonlocal means: \n');
   img = phantom();  sImg = size(img);
