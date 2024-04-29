@@ -48,6 +48,7 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   x0 = p.Results.x0;
 
   if numel( kernel_sz ) == 1, kernel_sz = [ kernel_sz kernel_sz ]; end
+  if numel( eps ) == 0, eps = 0; end
 
   nCoils = size( kData, 3 );
   
