@@ -35,7 +35,7 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   p = inputParser;
   p.addParameter( 'alg', 'fista_wLS', @(x) true );
   p.addParameter( 'checkProx', false );
-  p.addParameter( 'eps', 0, @isnonnegative );
+  p.addParameter( 'eps', 0, @(x) numel(x) == 0 || isnonnegative(x) );
   p.addParameter( 'verbose', false );
   p.addParameter( 'weights', [], @isnumeric );
   p.addParameter( 'x0', [], @isnumeric );
