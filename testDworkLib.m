@@ -779,6 +779,24 @@ function testDworkLib
     disp( 'linInterp passed' );
   end
 
+  %% lineCircleIntersect
+  pt = [ 0, 1 ];
+  vec = [ 1, 1 ];
+  center = [ -1, -1 ];
+  radius = 3;
+  intersectionPts = lineCircleIntersect( pt, vec, center, radius );
+  disp( intersectionPts );
+
+  % 
+  % pt = [  0, 0 ];
+  % vec = [ 1, 0 ];
+  % center = [ 1 0 ];
+  % radius = 2;
+  % [intersectionPts,t] = lineCircleIntersect( pt, vec, center, radius );
+  % disp( intersectionPts );
+  % disp( t );
+
+
 
   %% lsqrTikhonov
   damping = 0;
