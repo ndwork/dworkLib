@@ -1,5 +1,5 @@
 
-function [ intersectionPts, t ] = lineCircleIntersect( pt, vec, center, radius )
+function [ intersectionPts, ts ] = lineCircleIntersect( pt, vec, center, radius )
   % intersectionPts = lineCircleIntersect( pt, vec, center, radius )
   %
   % Find the points of intersection between a line and a cirlce.  (Note that these points
@@ -7,6 +7,10 @@ function [ intersectionPts, t ] = lineCircleIntersect( pt, vec, center, radius )
   % The line is defined as { pt + t * vec, where t is real }
   % The circle is defined as
   %   { (x,y) : ( x - center )^2 + ( y - center )^2 = radius^2 }
+  %
+  % Outputs:
+  % intersectionPts - an array specifying the intersection points
+  % ts - an array of t values where the vec have norm 1
   %
   % Written by Nicholas Dwork, Copyright 2024
   %
@@ -17,9 +21,18 @@ function [ intersectionPts, t ] = lineCircleIntersect( pt, vec, center, radius )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 4
+    disp( 'Usage: intersectionPts = lineCircleIntersect( pt, vec, center, radius )' );
+    if nargout > 0, intersectionPts = []; end
+    if nargout > 1, ts = []; end
+    return
+  end
+
   if numel( center ) == 2, center = center(:)'; end
   if numel( pt ) == 2, pt = pt(:)'; end
   if numel( vec ) == 2, vec = vec(:)'; end
+
+  if nargout > 1, vec = bsxfun( @rdivide, vec, LpNorms( vec, 2, 2 ) ); end
 
   a = vec(:,1) .* vec(:,1) + vec(:,2) .* vec(:,2);
 
@@ -95,5 +108,5 @@ function [ intersectionPts, t ] = lineCircleIntersect( pt, vec, center, radius )
   intersectionPts = [ bsxfun( @plus, pt, roots1Vec ); ...
                       bsxfun( @plus, pt, roots2Vec ); ];
 
-  if nargout > 1, t = [ roots1(:); roots2(:); ]; end
+  if nargout > 1, ts = [ roots1(:); roots2(:); ]; end
 end
