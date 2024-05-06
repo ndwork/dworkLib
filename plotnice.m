@@ -13,6 +13,8 @@ function plotnice( in1, varargin )
   %
   % Written by Nicholas - Copyright 2016
   %
+  % www.github.com/ndwork/dworkLib
+  %
   % This software is offered under the GNU General Public License 3.0.  It
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
