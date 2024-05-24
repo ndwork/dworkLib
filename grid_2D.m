@@ -1,6 +1,6 @@
 
 function recon = grid_2D( F, kTraj, N, varargin )
-  % recon = grid_2D( F, kTraj, N, [ weights, 'alpha', alpha, 'W', W, 'nC', nC ] )
+  % recon = grid_2D( F, kTraj, N, [ weights, 'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % The gridding non-uniform FFT algorithm based on EE369C notes by John Pauly
   % and Beatty et. al., IEEE TMI, 2005.  Definitions and details according to
@@ -18,6 +18,7 @@ function recon = grid_2D( F, kTraj, N, varargin )
   %     can be generated using makePrecompWeights_2D.  Alternatively, they
   %     can be determined analytically for some sequences.
   %     By default, weights are determined with makePrecompWeights_2D.
+  %   alg is the algortihm to use to determine the weights when they are not provided
   %   alpha is the oversampling factor > 1
   %   W is the window width in pixels
   %   nC is the number of points to sample the convolution kernel
@@ -35,24 +36,26 @@ function recon = grid_2D( F, kTraj, N, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  recon = grid_2D( F, kTraj, N, [ weights, ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
+    disp( 'Usage:  recon = grid_2D( F, kTraj, N, [ weights, ''alg'', alg, ''alpha'', alpha, ''W'', W, ''nC'', nC ] )' );
     if nargout > 0, recon = []; end
     return
   end
 
   p = inputParser;
   p.addOptional( 'weights', [], @isnumeric );
+  p.addParameter( 'alg', [], @(x) true );
   p.addParameter( 'alpha', [], @(x) numel(x) == 0  ||  x >= 1 );
   p.addParameter( 'nC', [], @(x) numel(x) == 0  ||  ispositive(x) );
   p.addParameter( 'W', [], @(x) numel(x) == 0  ||  ispositive(x) );
   p.parse( varargin{:} );
   weights = p.Results.weights;
+  alg = p.Results.alg;
   alpha = p.Results.alpha;
   nC = p.Results.nC;
   W = p.Results.W;
 
   if numel( weights ) == 0
-    weights = makePrecompWeights_2D( kTraj, 'alpha', alpha, 'W', W, 'nC', nC, 'sImg', N );
+    weights = makePrecompWeights_2D( kTraj, 'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC, 'sImg', N );
   end
 
   if numel( weights ) > 1 || weight ~= 1
