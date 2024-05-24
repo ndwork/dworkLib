@@ -20,10 +20,10 @@ function [weights,nOptIter,flag,res] = makePrecompWeights_2D( kTraj, varargin )
   %     FP_slow - uses less memory but processes much slower
   %     GP - gradient projection algorithm
   %     GP_sparse - sparse matrix approximation of GP algorithm
-  %     JACKSON - one iteration of FP method
+  %     JACKSON (default) - one iteration of FP method
   %     LSQR - least squares on trajectory points
   %     SAMSANOV - Constrainted Least Squares on grid points
-  %     VORONOI (default) - uses the area of each voronoi cell as the metric of density
+  %     VORONOI - uses the area of each voronoi cell as the metric of density
   %   gamma - distance weighting parameter for Gradient Projection algorithm
   %     ( default is 0.25 * N )
   %   nIter - number of iterations for iterative algorithms
