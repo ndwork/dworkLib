@@ -64,7 +64,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.addParameter( 'tol', [], @isnumeric );
   p.addParameter( 'useLineSearch', false, @islogical );
   p.addParameter( 'useMomentum', false, @islogical );
-  p.addParameter( 'verbose', 0, @islogical );
+  p.addParameter( 'verbose', false, @islogical );
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   beta = p.Results.beta;
@@ -159,8 +159,11 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     if verbose == true  &&  mod( k+1, printEvery ) == 0
       verboseStr = [ 'gradDescent Iteration: ', num2str(k) ];
       if calculateObjectiveValues == true
-        verboseStr = [ verboseStr, ' with objective value ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
-      end 
+        verboseStr = [ verboseStr, ' has objective value ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
+      end
+      if useLineSearch == true
+        verboseStr = [ verboseStr, ' using step size ', num2str(t/tau) ];   %#ok<AGROW>
+      end
       if calculateRelDiffs == true && k > 0
         verboseStr = [ verboseStr, ' with relDiff ', num2str( relDiff ) ];   %#ok<AGROW>
       end
