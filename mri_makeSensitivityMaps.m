@@ -2,11 +2,11 @@
 function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % Either
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'pruessman', [, 'L', L, ...
-  %     'mask', mask, 'sigma', sigma, 'verbose', true/false ] )
+  %     'mask', mask, 'sImg', sImg, 'sigma', sigma, 'traj', traj, 'verbose', true/false ] )
   % or
-  %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'ying', img [, 'polyOrder', polyOrder ] );
+  %   senseMaps = mri_makeSensitivityMaps( kData, img, 'alg', 'ying' [, 'polyOrder', polyOrder ] );
   % or
-  %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple' [, 'epsilon', epsilon ] );
+  %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple' [, 'epsilon', epsilon, 'sImg', sImg, 'traj', traj ] );
   % or
   %   senseMaps = mri_makeSensitivityMaps( kData, img, 'alg', 'ying' [, 'polyOrder', polyOrder, ...
   %     'verbose', true/false );
@@ -57,7 +57,9 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   p.addParameter( 'L', 2, @ispositive );
   p.addParameter( 'mask', [], @(x) isnumeric(x) || islogical(x) || numel( x ) == 0 );
   p.addParameter( 'polyOrder', defaultPolyOrder, @ispositive );
+  p.addParameter( 'sImg', [], @ispositive );
   p.addParameter( 'sigma', 3, @ispositive );
+  p.addParameter( 'traj', [], @isnumeric );
   p.addParameter( 'verbose', false, @(x) islogical(x) || isnumeric(x) );
   p.parse( varargin{:} );
   alg = p.Results.alg;
@@ -66,7 +68,9 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   L = p.Results.L;
   mask = p.Results.mask;
   polyOrder = p.Results.polyOrder;
+  sImg = p.Results.sImg;
   sigma = p.Results.sigma;
+  traj = p.Results.traj;
   verbose = p.Results.verbose;
 
   if numel( epsilon ) == 0, epsilon = 0; end
@@ -74,9 +78,9 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   switch alg
     case 'pruessman'
-      senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, verbose );
+      senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, sImg, traj, verbose );
     case 'simple'
-      senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
+      senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon, sImg, traj );
     case 'sortaSimple'
       senseMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon );
     case 'ying'
@@ -92,9 +96,16 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 end
 
 
-function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, verbose )
+function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, sImg, traj, verbose )
 
-  [ nRows, nCols, nCoils ] = size( kData );
+  if numel( traj ) > 0
+    nCoils = size( kData, 2 );
+    nRows = sImg(1);
+    nCols = sImg(2);
+  else
+    [ nRows, nCols, nCoils ] = size( kData );
+  end
+
   if numel( mask ) == 0
     mask = ones( nRows, nCols );
     minMask = 1;
@@ -110,7 +121,7 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
   ys = coords(:) * ones( 1, hSize );
   xs = ones(hSize,1) * coords';
 
-  [senseMaps0,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon );
+  [senseMaps0,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon, sImg, traj );
   senseMaps0 = padData( senseMaps0, [ nRows+hSize, nCols+hSize, nCoils ], 'circ', true );
   coilRecons = padData( coilRecons, [ nRows+hSize, nCols+hSize, nCoils ], 'circ', true );
   mask = padData( mask, [ nRows+hSize, nCols+hSize ], 0 );
@@ -177,9 +188,13 @@ function senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, e
 end
 
 
-function [senseMaps,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon )
-  coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
-  reconSSQ = sqrt( sum( coilRecons .* conj( coilRecons ), ndims( kData ) ) );
+function [senseMaps,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon, sImg, traj )
+  if numel( traj ) > 0
+    coilRecons = grid_2D( kData, traj, sImg );
+  else
+    coilRecons = mri_reconIFFT( kData, 'multiSlice', true );
+  end
+  reconSSQ = sqrt( sum( coilRecons .* conj( coilRecons ), ndims( coilRecons ) ) );
   senseMaps = bsxfun( @rdivide, coilRecons, ( reconSSQ + epsilon ) );
 end
 
