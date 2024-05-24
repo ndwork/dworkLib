@@ -8,7 +8,7 @@ function mask = mri_makeIntensityMask( kData, varargin )
   %
   % Inputs:
   % kData - the k-space data collected from the MRI machine
-  %   ( kx, ky, slice, coil )
+  %   ( kx, ky, coil, slice )
   %
   % Optional Inputs:
   % thresh - percentage of maximum intensity that is considered valid
@@ -39,8 +39,12 @@ function mask = mri_makeIntensityMask( kData, varargin )
   sigmaScalar = p.Results.sigmaScalar;
   thresh = p.Results.thresh;
 
-  ssqRecon = mri_reconSSQ( kData, 'multiSlice', true );
-  ssqRecon = ssqRecon / max( ssqRecon(:) );
+  if size( kData, 3 ) > 1
+    ssqRecon = mri_reconSSQ( kData, 'multiSlice', true );
+    ssqRecon = ssqRecon / max( ssqRecon(:) );
+  else
+    ssqRecon = abs( mri_reconIFFT( kData ) );
+  end
 
   if numel( noiseCoords ) > 0
     noiseRegion = ssqRecon( noiseCoords(1):noiseCoords(2), noiseCoords(3):noiseCoords(4) );
