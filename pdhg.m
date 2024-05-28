@@ -60,7 +60,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 1 );
   p.addParameter( 'tol', defaultTol, @(x) numel(x) == 0 || ispositive(x) );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
-  p.addParameter( 'printEvery', 1, @ispositive );
+  p.addParameter( 'printEvery', [], @ispositive );
   p.addParameter( 'z', [], @isnumeric );
   p.parse( varargin{:} );
   A = p.Results.A;
@@ -74,7 +74,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   printEvery = p.Results.printEvery;
   verbose = p.Results.verbose;
   z = p.Results.z;
-  
+
   if numel( A ) == 0
     applyA = @(x) x;
     applyAT = @(x) x;
@@ -86,8 +86,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     applyAT = @(x) A( x, 'transp' );
   end
 
-  if nargout > 1,  objValues = zeros( N, 1 ); end
-  if nargout > 2,  relDiffs = zeros( N, 1 ); end
+  if numel( printEvery ) == 0, printEvery = 1; end
 
   if numel( sigma ) == 0  && numel( A ) > 0
     if numel( normA ) == 0
@@ -96,6 +95,9 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     if normA == 0, return; end
     sigma = ( 0.99 / normA^2 ) / tau;
   end
+
+  if nargout > 1,  objValues = zeros( N, 1 ); end
+  if nargout > 2,  relDiffs = zeros( N, 1 ); end
 
   calculateRelDiffs = false;
   if nargout > 2  ||  ( numel( tol ) > 0  &&  tol < Inf )
