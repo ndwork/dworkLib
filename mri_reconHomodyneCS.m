@@ -39,7 +39,7 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
   nu = ceil( ( sImg(1) + 1 ) / 2 ) + round( sFSR(1)/2 ) - 1;  % the last index of the partial Fourier data
   sTopPortion = [ nu sImg(2) ];
 
-  [~,phaseImg] = mri_reconPFHomodyne( kData, sFSR );
+  [~,phaseImg] = mri_reconPartialFourier( kData, sFSR );
   phases = angle( phaseImg );
 
   f0 = kData( 1 : nu, : );
@@ -48,12 +48,12 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
     if nargin < 2 || strcmp( op, 'notransp' )
       tmp = zeros( sImg );
       tmp( 1 : nu, : ) = reshape( in, sTopPortion );
-      Pin = mri_reconPFHomodyne( tmp, sFSR, 'phases', phases );
+      Pin = mri_reconPartialFourier( tmp, sFSR, 'phases', phases );
       out = wtDaubechies2( Pin, wavSplit );
     else
       in = reshape( in, sImg );
       WHin = iwtDaubechies2( in, wavSplit );
-      out = mri_reconPFHomodyne( WHin, sFSR, 'phases', phases, 'op', 'transp' );
+      out = mri_reconPartialFourier( WHin, sFSR, 'phases', phases, 'op', 'transp' );
       out = out( 1 : nu, : );
     end
     out = out(:);
@@ -111,5 +111,5 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
 
   kRecon = zeros( sImg );
   kRecon( 1 : nu, : ) = reshape( fStar, sTopPortion );
-  recon = mri_reconPFHomodyne( kRecon, sFSR, 'phases', phases );
+  recon = mri_reconPartialFourier( kRecon, sFSR, 'phases', phases );
 end
