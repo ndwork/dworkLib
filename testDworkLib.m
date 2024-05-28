@@ -863,6 +863,7 @@ function testDworkLib
     disp('matrixVolProd passed');
   end
 
+
   %% mri_reconPartialFourier
 
   load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
@@ -888,6 +889,92 @@ function testDworkLib
   figure;
   subplot(1,2,1);  imshow( abs( trueRecon ), [] );  title( 'Fully-sampled Recon' );
   subplot(1,2,2);  imshow( abs( reconPF ), [] );  title( 'Partial Fourier Recon' );
+
+
+  %% mri_reconModelBased - Cartesian Sampling
+  load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
+
+  sMaps = mri_makeSensitivityMaps( DATA );
+
+  DATA( 1 : 2 : end, :, : ) = 0;
+  DATA( :, 1 : 2 : end, : ) = 0;
+
+  recon = mri_reconModelBased( DATA, sMaps );
+  figure;  imshowscale( abs( recon ), 3 );
+
+
+  %% mri_reconModelBased - non-Cartesian Sampling
+  reconChallengeDir = '/Users/nicholasdwork/Documents/Data/ismrmReconChallenge/doubleVision';
+  addpath( genpath( reconChallengeDir ) );
+
+  % Double vision spiral data from 2010 ISMRM Recon Challenge
+  % Off resonance not included
+  [ ~, ~, crdsDV, dataDV, trueImg ] = readDataDV( );
+  % crdsDV has size ( kx/ky, nSamples, nInterleaves )
+  % dataDV has size ( nSamples, nInterleaves, nSlices, nCoils )
+
+  sliceIndx = 6;
+  kx = squeeze( crdsDV( 1, :, : ) );
+  ky = squeeze( crdsDV( 2, :, : ) );
+  kTraj = [ ky(:) kx(:) ];
+  kData = reshape( dataDV(:,:,sliceIndx,:), [], nCoils );
+  kData = kData / max( abs( kData(:) ) );
+  sImg = size( trueImg );
+  %sMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple', 'sImg', sImg, 'traj', kTraj );
+load( 'junk_sMaps.mat', 'sMaps' );
+
+  trueImg = rot90( trueImg( :, :, sliceIndx ), -1 );
+  trueImg = trueImg / mean( trueImg(:) );
+  mask = abs( trueImg ) > 0.5;
+  mask = imdilate( mask, strel( 'disk', 5 ) );
+  mask = imerode( mask, strel( 'disk', 9 ) );
+  mask = imdilate( mask, strel( 'disk', 3 ) );
+
+  interleaveIndx = 1;
+  nCoils = size( dataDV, 4 );
+  
+  sampleStep = 2;
+  interleaveStep = 2;
+  kx = squeeze( crdsDV( 1, 1:sampleStep:end, interleaveIndx:interleaveStep:end ) );
+  ky = squeeze( crdsDV( 2, 1:sampleStep:end, interleaveIndx:interleaveStep:end ) );
+  kTraj = [ ky(:) kx(:) ];
+  kData = dataDV( 1 : sampleStep : end, interleaveIndx : interleaveStep : end, sliceIndx, : );
+  kData = reshape( kData, [], nCoils );
+  kData = kData / max( abs( kData(:) ) );
+
+
+  recon = mri_reconModelBased( kData, sMaps, 'traj', kTraj, 'support', mask );
+  figure;  imshowscale( abs( recon ), 3 );
+
+
+  %% mri_reconHomodyneCS
+
+  load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
+
+  vdSigFrac = 0.3;
+  sampleFraction = 0.3;
+  epsilon = 0;
+
+  sImg = size( DATA, [ 1 2 ] );
+  nSamples = round( sampleFraction * prod( sImg ) );
+  vdSig = round( vdSigFrac * sImg );
+
+  wavSplit = makeWavSplit( sImg );
+  [ fsr, sFSR ] = mri_makeFullySampledCenterRegion( sImg, wavSplit );
+  sampleMask = mri_makeSampleMask( sImg, nSamples, vdSig, 'startMask', fsr > 0 );
+  sampleMask ( ceil( ( sImg(1) + 1 ) / 2 ) + round( sFSR(1) / 2 ) : end, :, : ) = 0;
+
+  kData = bsxfun( @times, DATA, sampleMask );
+  nCoils = size( DATA, 3 );
+  recons = cell(1,1,nCoils);
+  parfor coilIndx = 1 : nCoils
+    recons{1,1,coilIndx} = mri_reconHomodyneCS( kData(:,:,coilIndx), sFSR, 'epsilon', epsilon );
+  end
+  recons = cell2mat( recons );
+  recon = mri_reconRoemer( recons );
+  figure;  imshowscale( abs( recon ), 3 );
 
 
   %% nonlocal mean
@@ -1359,4 +1446,56 @@ function testDworkLib
   status = withinPolyhedron( triangles, p );
 
 
+end
+
+
+%-- Supporting functions
+
+function [ B1MapDV, B0MapDV, crdsDV, dataDV, trueDV ] = readDataDV()
+
+  % Matlab i/o code examples 
+  % Double Vision recon challenge, ISMRM Stockholm 2010
+  % E. Aboussouan, Barrow Neurological Inst., Phoenix AZ
+  % eric.aboussouan@asu.edu
+
+  % read B1map:  320x320x12x8 complex 
+  fid = fopen('DV_B1MAPS.dat');
+  B1MapDV = fread(fid,inf, 'float32');
+  fclose(fid);
+  B1MapDV = squeeze(complex(B1MapDV(1:2:end), B1MapDV(2:2:end)));
+  B1MapDV = reshape(B1MapDV,[320,320,12,8]);
+
+  % read B0map: 320x320x12 
+  fid = fopen('DV_B0MAPS_HZ.dat');
+  B0MapDV = fread(fid,inf, 'float32');
+  fclose(fid);
+  B0MapDV = reshape(B0MapDV,[320,320,12]);
+
+  % read coordinates: 2x20000x8
+  fid = fopen('DV_CMEY_09JUL06.crd');
+  crdsDV = fread(fid,inf, 'float32');
+  fclose(fid);
+  crdsDV = reshape(crdsDV,[2,20000,8]);
+
+  % read data : 20000x8x12x8 complex
+  fid = fopen( 'DV_CMEY_09JUL06.dat' );
+  dataDV = fread( fid, inf, 'float32' );
+  fclose(fid);
+  dataDV = squeeze(complex(dataDV(1:2:end), dataDV(2:2:end)));
+  dataDV = reshape(dataDV,[20000,8,12,8]);
+
+  % read truth :
+  fid = fopen( 'DV_truth.dat' );
+  trueDV = fread( fid, inf, 'float32' );
+  fclose(fid);
+  trueDV = reshape( trueDV,[320,320,12] );
+
+%   % write data (example)
+%   % first interleave real and odd values before writing
+%   dataDV = [real(dataDV(:)), imag(dataDV(:))]';
+%   dataDV = dataDV(:);
+%   % then write
+%   fid = fopen('test.dat','w');
+%   fwrite(fid,dataDV,'float32');
+%   fclose(fid);
 end
