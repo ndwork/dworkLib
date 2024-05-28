@@ -1,6 +1,6 @@
 
 function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
-  % recon =  mri_reconHomodyneCS( kData, sFSR [, 'lambda', lambda, 'wavSplit', wavSplit ] )
+  % recon =  mri_reconHomodyneCS( kData, sFSR [, 'epsilon', epsilon, 'wavSplit', wavSplit ] )
   %
   % Inputs
   % kData - a 2D array with value equal to 0 wherever data was not collected or
@@ -26,6 +26,8 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
   verbose = p.Results.verbose;
   wavSplit = p.Results.wavSplit;
 
+  if numel( epsilon ) == 0, epsilon = 0; end
+
   sImg = size( kData, [ 1 2 ] );
   if numel( wavSplit ) == 0
     wavSplit = makeWavSplit( sImg );
@@ -37,6 +39,8 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
 
   [~,phaseImg] = mri_reconPFHomodyne( kData, sFSR );
   phases = angle( phaseImg );
+
+  f0 = kData( 1 : nu, : );
 
   function out = applyA(in, op)
     if nargin < 2 || strcmp( op, 'notransp' )
@@ -53,8 +57,6 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
     out = out(:);
   end
 
-  f0 = kData( 1 : nu, : );
-
   if doCheckAdjoints == true
     innerProd = @(x,y) real( dotP( x, y ) );
     [chkA,errA] = checkAdjoint( f0(:), @applyA, 'innerProd', innerProd );
@@ -68,6 +70,7 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
   end
 
   b = kData( sampleMask == 1 );
+
   function out = h( in )  % Indicator function for data consistency
     normDiff = norm( in( sampleMask( 1 : nu, : ) == 1 ) - b, 2 );
     if normDiff > epsilon, out = inf; else, out = 0; end
