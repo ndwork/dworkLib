@@ -126,7 +126,9 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     maxAbsX = max( abs( x(:) ) );
 
     if nargout > 1
-      objValues( optIter ) = f( x ) + g( applyA( x ) );
+      fx = f( x );
+      gAx = g( applyA( x ) );
+      objValues( optIter ) = fx + gAx;
     end
     if calculateRelDiffs == true && optIter > 1
       normLastX = norm( lastX(:) );
@@ -144,14 +146,19 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     if nargout > 2, relDiffs( optIter ) = relDiff; end
 
     if verbose == true
-      verboseStr = [ 'pdhg: iteration ', indx2str(optIter,N), ' of ', num2str(N) ];
-      if nargout > 1
-        verboseStr = [ verboseStr, ',  objective value: ', num2str( objValues( optIter ) ) ];   %#ok<AGROW>
+      if mod( optIter, printEvery ) == 0  ||  optIter == 1
+        verboseStr = [ 'pdhg: iteration ', indx2str( optIter, N ), ' of ', num2str( N ) ];
+        if nargout > 1
+          verboseStr = [ verboseStr, ',  objective value: ', num2str( objValues( optIter ) ) ];   %#ok<AGROW>
+        end
+        if calculateRelDiffs == true
+          verboseStr = [ verboseStr, ',  relative diff: ', num2str( relDiff ) ];   %#ok<AGROW>
+        end
+        if nargout > 1
+          verboseStr = [ verboseStr, ',  f(x): ', num2str(fx), ',  g(Ax): ', num2str(gAx) ];   %#ok<AGROW>
+        end
+        disp( verboseStr );
       end
-      if calculateRelDiffs == true
-        verboseStr = [ verboseStr, ',  relative diff: ', num2str( relDiff ) ];   %#ok<AGROW>
-      end
-      if mod( optIter, printEvery ) == 0  ||  optIter == 1, disp( verboseStr ); end
     end
 
     if optIter > 1  &&  numel( tol ) > 0  &&  tol > 0  &&  tol < Inf
