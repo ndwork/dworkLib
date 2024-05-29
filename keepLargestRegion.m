@@ -17,6 +17,9 @@ function out = keepLargestRegion( in )
   end
 
   [~,largestLabel] = max( nPerLabel );
-  out = zeros( size( in ) );
-  out( labels == largestLabel ) = 1;
+  if numel( largestLabel ) == 0
+    out = [];
+  else
+    out = ( labels == largestLabel );
+  end
 end
