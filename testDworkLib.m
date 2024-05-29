@@ -918,6 +918,7 @@ function testDworkLib
   kx = squeeze( crdsDV( 1, :, : ) );
   ky = squeeze( crdsDV( 2, :, : ) );
   kTraj = [ ky(:) kx(:) ];
+  nCoils = size( dataDV, 4 );
   kData = reshape( dataDV(:,:,sliceIndx,:), [], nCoils );
   kData = kData / max( abs( kData(:) ) );
   sImg = size( trueImg );
@@ -943,7 +944,6 @@ load( 'junk_sMaps.mat', 'sMaps' );
   kData = reshape( kData, [], nCoils );
   kData = kData / max( abs( kData(:) ) );
 
-
   recon = mri_reconModelBased( kData, sMaps, 'traj', kTraj, 'support', mask );
   figure;  imshowscale( abs( recon ), 3 );
 
@@ -961,7 +961,7 @@ load( 'junk_sMaps.mat', 'sMaps' );
   nSamples = round( sampleFraction * prod( sImg ) );
   vdSig = round( vdSigFrac * sImg );
 
-  wavSplit = makeWavSplit( sImg );
+  wavSplit = makeWavSplit( sImg, 'minSplitSize', 0.25*max(sImg) );
   [ fsr, sFSR ] = mri_makeFullySampledCenterRegion( sImg, wavSplit );
   sampleMask = mri_makeSampleMask( sImg, nSamples, vdSig, 'startMask', fsr > 0 );
   sampleMask ( ceil( ( sImg(1) + 1 ) / 2 ) + round( sFSR(1) / 2 ) : end, :, : ) = 0;
@@ -970,7 +970,8 @@ load( 'junk_sMaps.mat', 'sMaps' );
   nCoils = size( DATA, 3 );
   recons = cell(1,1,nCoils);
   parfor coilIndx = 1 : nCoils
-    recons{1,1,coilIndx} = mri_reconHomodyneCS( kData(:,:,coilIndx), sFSR, 'epsilon', epsilon );
+    recons{1,1,coilIndx} = mri_reconHomodyneCS( kData(:,:,coilIndx), sFSR, 'epsilon', epsilon, ...
+      'tol', 1d-5, 'printEvery', 100 );
   end
   recons = cell2mat( recons );
   recon = mri_reconRoemer( recons );
