@@ -27,6 +27,9 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   % mask - an array of zeros and ones; the mask specifies those data points that have
   %  valid data (and not just noise).  It has size ( kx, ky )
   % sigma - the standard deviation of the Gaussian weights to use when fitting a polynomial
+  % traj is a Mx2 array specifying the k-space trajectory or an M element complex array.
+  %     If Mx2, then the first/second column is kx/ky.  Otherwise, kx/ky is real/imag.
+  %     The units are normalized to [-0.5,0.5).
   % verbose - if set to true, displays informative statements
   %
   % Outputs:
@@ -78,11 +81,14 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
 
   switch alg
     case 'pruessman'
+      if numel( traj ) > 0 && numel( sImg ) == 0, error( 'sImg must be provided with traj' ); end
       senseMaps = mri_makeSensitivityMaps_pruessman( kData, L, mask, sigma, epsilon, sImg, traj, verbose );
     case 'simple'
+      if numel( traj ) > 0 && numel( sImg ) == 0, error( 'sImg must be provided with traj' ); end
       senseMaps = mri_makeSensitivityMaps_simple( kData, epsilon, sImg, traj );
     case 'sortaSimple'
-      senseMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon );
+      if numel( traj ) > 0 && numel( sImg ) == 0, error( 'sImg must be provided with traj' ); end
+      senseMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon, sImg, traj );
     case 'ying'
       senseMaps = mri_makeSensitivityMaps_ying( kData, img, polyOrder );
       % Note, this method was written according to the JSENSE paper. It produces horrible
@@ -199,7 +205,7 @@ function [senseMaps,coilRecons] = mri_makeSensitivityMaps_simple( kData, epsilon
 end
 
 
-function sMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon )
+function sMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon, sImg, traj )
 
   nCoils = size( kData, 3 );
   mask = mri_makeIntensityMask( kData, 'noiseCoords', [1 25 1 25], 'sigmaScalar', 5 );
@@ -207,7 +213,7 @@ function sMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon )
     sMaps = zeros( kData );
     return
   end
-  sMaps = mri_makeSensitivityMaps_simple( kData, epsilon );
+  sMaps = mri_makeSensitivityMaps_simple( kData, epsilon, sImg, traj );
   sMaps = bsxfun( @times, sMaps, mask );
   
   [ rMaskedIn,  cMaskedIn  ] = find( mask == 1 );
