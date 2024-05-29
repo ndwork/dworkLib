@@ -1,6 +1,6 @@
 
 function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
-  % [img,relRes] = mri_reconModelBased( kData, sMaps [, 'traj', traj, 'support', support ] )
+  % [img,relRes] = mri_reconModelBased( kData, sMaps [, 'support', support, 'traj', traj ] )
   %
   % img is the argmin of || F S x - b ||_2
   % F is either the FFT or the Non-uniform FFT, based on whether or not traj is supplied
@@ -16,6 +16,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   %   sMaps - a 3D array of size M x N x nCoils x S representing the sensitivity maps
   %
   % Optional Inputs:
+  % support - a 2D array of 1s and 0s indicating the support of the img
   % traj - by default, assumes Cartesian sampling.  If traj is supplied, then
   %   non-Cartesian sampling is assumed.
   %
