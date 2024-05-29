@@ -19,12 +19,14 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
   p.addParameter( 'doCheckAdjoints', false );
   p.addParameter( 'epsilon', [], @isnonnegative );
   p.addParameter( 'printEvery', [], @ispositive );
+  p.addParameter( 'tol', [], @ispositive );
   p.addParameter( 'verbose', true );
   p.addParameter( 'wavSplit', [], @isnumeric );
   p.parse( varargin{:} );
   doCheckAdjoints = p.Results.doCheckAdjoints;
   epsilon = p.Results.epsilon;
   printEvery = p.Results.printEvery;
+  tol = p.Results.tol;
   verbose = p.Results.verbose;
   wavSplit = p.Results.wavSplit;
 
@@ -104,10 +106,10 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
   f0 = kData( 1 : nu, : );
   normA = powerIteration( @applyA, rand( size( f0 ) ) );
 
-  tau = 1d-2 / normA;
+  tau = 1d-1 / normA;
 
   [fStar,objValues,relDiffs] = pdhg( f0(:), @proxh, @proxgConj, tau, 'A', @applyA, 'f', @h, 'g', @g, ...
-    'N', 10000, 'normA', normA, 'printEvery', printEvery, 'verbose', verbose );   %#ok<ASGLU>
+    'N', 10000, 'tol', tol, 'normA', normA, 'printEvery', printEvery, 'verbose', verbose );   %#ok<ASGLU>
 
   kRecon = zeros( sImg );
   kRecon( 1 : nu, : ) = reshape( fStar, sTopPortion );
