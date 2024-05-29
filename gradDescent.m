@@ -1,8 +1,8 @@
 
 function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
-  % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, 'alpha', alpha, 'beta', beta, ...
-  %   't', t, 'tol', tol, 'useLineSearch', useLineSearch, 'useMomentum', useMomentum, ...
-  %   'g', g, 'N', N, 'nMaxLineSearchIter', nMaxLineSearchIter, 'verbose', verbose ] )
+  % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, 'alpha', alpha, 'beta', beta, 't', t, ...
+  %   'tol', tol, 'useLineSearch', useLineSearch, 'useMomentum', useMomentum, 'g', g, 'N', N, ...
+  %   'nMaxLineSearchIter', nMaxLineSearchIter, 'printEvery', printEvery, 'verbose', verbose ] )
   %
   % This function implements the gradient descent method.
   % This method finds the x that minimizes a (sub)differentiable function g
@@ -23,6 +23,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % postOp - a function handle to a function that's called after the gradient step
   %   As an example, this could be used to implement the gradient projection method, where
   %   postOp is a handle to a function that does the projection.
+  % printEvery - verbose statements print out each printEvery iterations
   % t - step size (default is 1)
   %   Note, if g is Lipschitz with constant L, gradDescent converges with t = 1 / L.
   % tau - line search parameter for step size increase (default is 1.1)
@@ -112,9 +113,12 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   end
 
   for k = 0 : N-1
-    if numel( tol ) > 0  ||  calculateObjectiveValues == true, gx = g( x ); end
-
-    if calculateObjectiveValues == true, objectiveValues( k+1 ) = gx; end
+    if numel( tol ) > 0  ||  calculateObjectiveValues == true || ( useLineSearch == true && k == 0 )
+      if useLineSearch == false || k == 0
+        gx = g( x );
+      end
+      if calculateObjectiveValues == true, objectiveValues( k+1 ) = gx; end
+    end
 
     if ( numel( tol ) > 0 && tol ~= 0 ) || ( calculateRelDiffs == true ), lastX = x; end
 
@@ -135,13 +139,15 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
         while true  &&  lineSearchIter <= nMaxLineSearchIter 
           lineSearchIter = lineSearchIter + 1;
           xNew = x - t * gGradX;
-          if g( xNew ) < gx - alpha * t * norm( gGradX(:) )^2
+          gxNew = g( xNew );
+          if gxNew < gx - alpha * t * norm( gGradX(:) )^2
             break;
           end
           t = beta * t;
         end
         t = tau * t;
         x = xNew;
+        gx = gxNew;
       else
         x = x - t * gGradX;
       end
