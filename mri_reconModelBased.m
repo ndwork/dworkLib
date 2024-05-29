@@ -164,5 +164,12 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   elseif strcmp( optAlg, 'lsqr' )
     [img,optFlag,relRes] = lsqr( @applyE, kData(:), [], 1000, [], [], img0(:) );   %#ok<ASGLU>
   end
-  img = reshape( img, [ sImg nSlices ] );
+
+  if numel( support ) > 0
+    tmp = zeros( [ sImg nSlices ] );
+    tmp( support ~= 0 ) = img;
+    img = tmp;  clear tmp;
+  else
+    img = reshape( img, [ sImg nSlices ] );
+  end
 end
