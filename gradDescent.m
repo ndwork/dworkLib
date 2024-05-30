@@ -2,7 +2,8 @@
 function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, 'alpha', alpha, 'beta', beta, 't', t, ...
   %   'tol', tol, 'useLineSearch', useLineSearch, 'useMomentum', useMomentum, 'g', g, 'N', N, ...
-  %   'nMaxLineSearchIter', nMaxLineSearchIter, 'printEvery', printEvery, 'verbose', verbose ] )
+  %   'nMaxLineSearchIter', nMaxLineSearchIter, 'printEvery', printEvery, 'verbose', verbose, ...
+  %    'dispEvery', dispEvery, 'dispFunc', dispFunc ] )
   %
   % This function implements the gradient descent method.
   % This method finds the x that minimizes a (sub)differentiable function g
@@ -15,6 +16,8 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % Optional Inputs:
   % alpha - line search parameter for 
   % beta - line search parameter for step size reduction (default is 0.8)
+  % dispEvery - how often to call dispFunc function when verbose is true
+  % dispFunc - function to display x in iterations when verbose is true
   % g - a function handle representing the g function; accepts a vector x
   %   as input and returns a scalar.  This is needed to calculate the
   %   objective values.
@@ -55,6 +58,8 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p = inputParser;
   p.addParameter( 'alpha', 0.3, @(x) x > 0 && x < 0.5 );
   p.addParameter( 'beta', 0.8, @(x) x > 0 && x < 1 );
+  p.addParameter( 'dispEvery', 1, @ispositive );
+  p.addParameter( 'dispFunc', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 'nMaxLineSearchIter', 100, @ispositive );
@@ -69,6 +74,8 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.parse( varargin{:} );
   alpha = p.Results.alpha;
   beta = p.Results.beta;
+  dispEvery = p.Results.dispEvery;
+  dispFunc = p.Results.dispFunc;
   g = p.Results.g;
   N = p.Results.N;
   nMaxLineSearchIter = p.Results.nMaxLineSearchIter;
@@ -161,6 +168,8 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
       relDiff = norm( x(:) - lastX(:) ) / norm( x(:) );
     end
     if nargout > 2, relDiffs( k+1 ) = relDiff; end
+
+    if verbose == true  &&  mod( k+1, dispEvery ) == 0, dispFunc( x, k ); end
 
     if verbose == true  &&  mod( k+1, printEvery ) == 0
       verboseStr = [ 'gradDescent Iteration: ', num2str(k) ];
