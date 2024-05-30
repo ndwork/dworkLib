@@ -893,7 +893,7 @@ function testDworkLib
 
   %% mri_reconModelBased - Cartesian Sampling
   load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
-  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );
 
   sMaps = mri_makeSensitivityMaps( DATA );
 
@@ -903,6 +903,31 @@ function testDworkLib
   recon = mri_reconModelBased( DATA, sMaps );
   figure;  imshowscale( abs( recon ), 3 );
 
+
+  %% mri_reconModelBased - non-Cartesian Sampling
+  load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );
+  nCoils = size( DATA, 3 );
+
+  sMaps = mri_makeSensitivityMaps( DATA );
+
+  % Double vision spiral data from 2010 ISMRM Recon Challenge
+  reconChallengeDir = '/Users/nicholasdwork/Documents/Data/ismrmReconChallenge/doubleVision';
+  addpath( genpath( reconChallengeDir ) );
+  [ ~, ~, crdsDV, ~, ~ ] = readDataDV( );
+  % crdsDV has size ( kx/ky, nSamples, nInterleaves )
+  % dataDV has size ( nSamples, nInterleaves, nSlices, nCoils )
+
+  kx = squeeze( crdsDV( 1, :, : ) );
+  ky = squeeze( crdsDV( 2, :, : ) );
+  traj = [ ky(:) kx(:) ];
+
+  imgs = mri_reconIFFT( DATA, 'multiSlice', true );
+  fValues = iGrid( imgs, traj );
+  %figure;  showImageCube( abs( grid_2D( fValues, traj, size(DATA,[1 2]) ) ) );
+
+  recon = mri_reconModelBased( fValues, sMaps, 'traj', traj );
+  figure;  imshowscale( abs( recon ), 3 );
 
   %% mri_reconModelBased - non-Cartesian Sampling
   reconChallengeDir = '/Users/nicholasdwork/Documents/Data/ismrmReconChallenge/doubleVision';
@@ -923,7 +948,7 @@ function testDworkLib
   kData = kData / max( abs( kData(:) ) );
   sImg = size( trueImg );
   %sMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple', 'sImg', sImg, 'traj', kTraj );
-load( 'junk_sMaps.mat', 'sMaps' );
+load( 'junk.mat', 'sMaps' );
 
   trueImg = rot90( trueImg( :, :, sliceIndx ), -1 );
   trueImg = trueImg / mean( trueImg(:) );
@@ -934,7 +959,7 @@ load( 'junk_sMaps.mat', 'sMaps' );
 
   interleaveIndx = 1;
   nCoils = size( dataDV, 4 );
-  
+
   sampleStep = 2;
   interleaveStep = 2;
   kx = squeeze( crdsDV( 1, 1:sampleStep:end, interleaveIndx:interleaveStep:end ) );
@@ -944,7 +969,8 @@ load( 'junk_sMaps.mat', 'sMaps' );
   kData = reshape( kData, [], nCoils );
   kData = kData / max( abs( kData(:) ) );
 
-  recon = mri_reconModelBased( kData, sMaps, 'traj', kTraj, 'support', mask );
+  %recon = mri_reconModelBased( kData, sMaps, 'traj', kTraj, 'support', mask );
+  recon = mri_reconModelBased( kData, sMaps, 'traj', kTraj );
   figure;  imshowscale( abs( recon ), 3 );
 
 
