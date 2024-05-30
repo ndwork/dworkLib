@@ -83,6 +83,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   end
 
   if numel( traj ) == 0, dataMask = ( abs(kData) ~= 0 ); end
+
   function out = applyE( in, type )
     if nargin < 2 || strcmp( type, 'notransp' )
       if numel( support ) > 0
@@ -111,13 +112,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
     out = out(:);
   end
 
-  if numel( traj ) == 0
-    coilRecons0 = mri_reconIFFT( kData, 'multiSlice', true );
-    kData( dataMask == 1 );
-  else
-    coilRecons0 = grid_2D( kData, traj, sImg );
-  end
-  img0 = mri_reconRoemer( coilRecons0 );
+  img0 = zeros( sImg );
 
   doCheckAdjoint = false;
   if doCheckAdjoint == true
@@ -136,33 +131,28 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
     if checkE ~= 1, error( 'Adjoint check of E failed' ); end
   end
 
-  function out = g( in )
-    Ein = applyE( in );
-    if numel( traj ) > 0
-      out =  0.5 * real( dotP( Ein - kData(:), Ein - kData(:) ) );
-    else
-      out =  0.5 * real( dotP( Ein - kData(dataMask == 1), Ein - kData( dataMask == 1 ) ) );
-    end
+  if numel( traj ) > 0
+    b = kData(:);
+  else
+    b = kData( dataMask == 1 );
   end
 
-  if numel( support ) > 0
-    img0 = img0( support == 1 );
+  function out = g( in )
+    EinMb = applyE( in ) - b;
+    out =  0.5 * real( dotP( EinMb, EinMb ) );
   end
+
+  if numel( support ) > 0, img0 = img0( support == 1 ); end
 
   optAlg = 'lsqr';
   if strcmp( optAlg, 'cgs' )
-    [img,optFlag,relres] = cgs( @applyE, kData(:), [], 1000, [], [], [] );   %#ok<ASGLU>
+    [img,optFlag,relres] = cgs( @applyE, b, [], 1000, [], [], [] );   %#ok<ASGLU>
   elseif strcmp( optAlg, 'gradDescent' )
-    if numel( traj ) > 0
-      ETb = applyE( kData(:), 'transp' );
-    else
-      ETb = applyE( kData( dataMask == 1 ), 'transp' );
-    end
+    ETb = applyE( b, 'transp' );
     gGrad = @(x) applyE( applyE( x ), 'transp' ) - ETb;
-    [img,objValues,relDiffs] = gradDescent( img0(:), gGrad, 'useLineSearch', true, 'N', 1000, 'g', @g, 'verbose', true );   %#ok<ASGLU>
-    %[img,objValues,relDiffs] = gradDescent( img0(:), gGrad, 'useLineSearch', false, 't', 1d-6, 'N', 1000, 'g', @g, 'verbose', true );   %#ok<ASGLU>
+    [img,objValues,relDiffs] = gradDescent( img0(:), gGrad, 'useLineSearch', true, 'N', 100, 'g', @g, 'verbose', true );   %#ok<ASGLU>
   elseif strcmp( optAlg, 'lsqr' )
-    [img,optFlag,relRes] = lsqr( @applyE, kData(:), [], 1000, [], [], img0(:) );   %#ok<ASGLU>
+    [img,optFlag,relRes] = lsqr( @applyE, b, [], 1000, [], [], img0(:) );   %#ok<ASGLU>
   end
 
   if numel( support ) > 0
