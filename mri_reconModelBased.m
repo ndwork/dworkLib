@@ -154,7 +154,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
     titlenice([ 'Iteration ', num2str(iter) ]);
   end
 
-  optAlg = 'lsqr';
+  optAlg = 'gradDescent';
   if strcmp( optAlg, 'cgs' )
     [img,optFlag,relres] = cgs( @applyE, b, [], 1000, [], [], [] );   %#ok<ASGLU>
   elseif strcmp( optAlg, 'gradDescent' )
