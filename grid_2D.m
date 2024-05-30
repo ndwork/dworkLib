@@ -9,7 +9,7 @@ function recon = grid_2D( F, kTraj, N, varargin )
   % Inputs:
   %   F is a 1D array representing the Fourier values
   %   kTraj is a Mx2 array specifying the k-space trajectory or an M element complex array.
-  %     If Mx2, then the first/second column is kx/ky.  Otherwise, kx/ky is real/imag.
+  %     If Mx2, then the first/second column is ky/kx.  Otherwise, kx/ky is real/imag.
   %     The units are normalized to [-0.5,0.5).
   %   N is a 2 element array [Ny Nx] representing the number of grid points
   %

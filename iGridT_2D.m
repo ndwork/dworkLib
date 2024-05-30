@@ -11,7 +11,7 @@ function out = iGridT_2D( F, traj, N, varargin )
   % Inputs:
   %   F is a 1D array of M elements specifying the k-space data values
   %   traj is a Mx2 array specifying the k-space trajectory or an M element complex array.
-  %     If Mx2, then the first/second column is kx/ky.  Otherwise, kx/ky is real/imag.
+  %     If Mx2, then the first/second column is ky/kx.  Otherwise, kx/ky is real/imag.
   %     The units are normalized to [-0.5,0.5).
   %   N is the size of the output image
   %     If N is a scalar, then the final image is assumed to be square
@@ -58,7 +58,7 @@ function out = iGridT_2D( F, traj, N, varargin )
   elseif numel( alpha ) == 2, alphaY = alpha(1); alphaX = alpha(2);
   end
   
-  if ~isreal( traj ), traj = [ real( traj(:) )  imag( traj(:) )  ]; end
+  if ~isreal( traj ), traj = [ imag( traj(:) ) real( traj(:) ) ]; end
 
   % Make the Kaiser Bessel convolution kernel
   Gy = Ny;
