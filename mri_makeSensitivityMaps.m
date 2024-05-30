@@ -28,7 +28,7 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   %  valid data (and not just noise).  It has size ( kx, ky )
   % sigma - the standard deviation of the Gaussian weights to use when fitting a polynomial
   % traj is a Mx2 array specifying the k-space trajectory or an M element complex array.
-  %     If Mx2, then the first/second column is kx/ky.  Otherwise, kx/ky is real/imag.
+  %     If Mx2, then the first/second column is ky/kx.  Otherwise, kx/ky is real/imag.
   %     The units are normalized to [-0.5,0.5).
   % verbose - if set to true, displays informative statements
   %
