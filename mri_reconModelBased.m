@@ -32,9 +32,11 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   p = inputParser;
   p.addParameter( 'support', [] );
   p.addParameter( 'traj', [], @isnumeric );
+  p.addParameter( 'verbose', true );
   p.parse( varargin{:} );
   support = p.Results.support;
   traj = p.Results.traj;
+  verbose = p.Results.verbose;
 
   sImg = size( sMaps, [1 2] );
 
@@ -54,7 +56,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
     if nargin < 2 || strcmp( type, 'notransp' )
       out = bsxfun( @times, sMaps, in );
     else
-      out = sum( conj(sMaps) .* in, ndims(sMaps) );
+      out = sum( conj(sMaps) .* in, 3 );
     end
   end
 
@@ -93,7 +95,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
       else
         in = reshape( in, [ sImg nSlices ] );
       end
-      out = applyF( applyS( in ) );
+      out = applySF( in );
       if numel( traj ) == 0
         out = out( dataMask == 1 );
       end
@@ -104,7 +106,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
         in = tmp;  clear tmp;
       end
       in = reshape( in, sKData );
-      out = applyS( applyF( in, 'transp' ), 'transp' );
+      out = applySF( in, 'transp' );
       if numel( support ) > 0
         out = out( support ~= 0 );
       end
@@ -144,15 +146,24 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
 
   if numel( support ) > 0, img0 = img0( support == 1 ); end
 
+  if verbose == true, imgH = figure(); end
+
+  function dispFunc( x, iter )
+    figure( imgH );
+    showImageCube( reshape( abs(x), [ sImg nSlices ] ) );
+    titlenice([ 'Iteration ', num2str(iter) ]);
+  end
+
   optAlg = 'lsqr';
   if strcmp( optAlg, 'cgs' )
     [img,optFlag,relres] = cgs( @applyE, b, [], 1000, [], [], [] );   %#ok<ASGLU>
   elseif strcmp( optAlg, 'gradDescent' )
     ETb = applyE( b, 'transp' );
     gGrad = @(x) applyE( applyE( x ), 'transp' ) - ETb;
-    [img,objValues,relDiffs] = gradDescent( img0(:), gGrad, 'useLineSearch', true, 'N', 100, 'g', @g, 'verbose', true );   %#ok<ASGLU>
+    [img,objValues,relDiffs] = gradDescent( img0(:), gGrad, 'useLineSearch', true, 'N', 100, 'g', @g, ...
+      'dispFunc', @dispFunc, 'verbose', verbose );   %#ok<ASGLU>
   elseif strcmp( optAlg, 'lsqr' )
-    [img,optFlag,relRes] = lsqr( @applyE, b, [], 1000, [], [], img0(:) );   %#ok<ASGLU>
+    [img,optFlag,relRes] = lsqr( @applyE, b, [], 250, [], [], img0(:) );   %#ok<ASGLU>
   end
 
   if numel( support ) > 0
