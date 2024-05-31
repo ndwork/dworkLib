@@ -169,7 +169,9 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     end
     if nargout > 2, relDiffs( k+1 ) = relDiff; end
 
-    if verbose == true  &&  mod( k+1, dispEvery ) == 0, dispFunc( x, k ); end
+    if verbose == true  &&  numel( dispFunc ) > 0  &&  mod( k+1, dispEvery ) == 0
+      dispFunc( x, k );
+    end
 
     if verbose == true  &&  mod( k+1, printEvery ) == 0
       verboseStr = [ 'gradDescent Iteration: ', num2str(k) ];
