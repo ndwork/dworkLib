@@ -904,10 +904,30 @@ function testDworkLib
   figure;  imshowscale( abs( recon ), 3 );
 
 
-  %% mri_reconModelBased - non-Cartesian Sampling
+  %% mri_reconModelBased - non-Cartesian Sampling with trajectory
   load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
   DATA = squeeze( DATA ) / max( abs( DATA(:) ) );
   nCoils = size( DATA, 3 );
+
+  sMaps = mri_makeSensitivityMaps( DATA );
+
+  DATA( 1 : 2 : end, :, : ) = 0;
+  DATA( :, 1 : 2 : end, : ) = 0;
+  sampleMask = max( abs( DATA ), [], 3 ) ~= 0;
+
+  ks = size2fftCoordinates( size( DATA, [1 2] ) );
+  [ kxs, kys ] = meshgrid( ks{2}, ks{1} );
+  traj = [ kys( sampleMask == 1 )  kxs( sampleMask == 1 ) ];
+
+  fValues = reshape( DATA( DATA ~= 0 ), [], nCoils );
+
+  recon = mri_reconModelBased( fValues, sMaps, 'traj', traj );
+  figure;  imshowscale( abs( recon ), 3 );
+
+
+  %% mri_reconModelBased - non-Cartesian Sampling
+  load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );
 
   sMaps = mri_makeSensitivityMaps( DATA );
 
@@ -929,6 +949,7 @@ function testDworkLib
   recon = mri_reconModelBased( fValues, sMaps, 'traj', traj );
   figure;  imshowscale( abs( recon ), 3 );
 
+
   %% mri_reconModelBased - non-Cartesian Sampling
   reconChallengeDir = '/Users/nicholasdwork/Documents/Data/ismrmReconChallenge/doubleVision';
   addpath( genpath( reconChallengeDir ) );
@@ -948,7 +969,7 @@ function testDworkLib
   kData = kData / max( abs( kData(:) ) );
   sImg = size( trueImg );
   %sMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple', 'sImg', sImg, 'traj', kTraj );
-load( 'junk.mat', 'sMaps' );
+
 
   trueImg = rot90( trueImg( :, :, sliceIndx ), -1 );
   trueImg = trueImg / mean( trueImg(:) );
