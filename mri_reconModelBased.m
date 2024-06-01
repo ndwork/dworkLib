@@ -149,6 +149,11 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   if verbose == true, imgH = figure(); end
 
   function dispFunc( x, iter )
+    if numel( support ) > 0
+      tmp = zeros( [ sImg nSlices ] );
+      tmp( support ~= 0 ) = x;
+      x = tmp;  clear tmp;
+    end
     figure( imgH );
     showImageCube( reshape( abs(x), [ sImg nSlices ] ) );
     titlenice([ 'Iteration ', num2str(iter) ]);
