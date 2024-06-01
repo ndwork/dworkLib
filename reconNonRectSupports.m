@@ -1,6 +1,6 @@
 
 function recon = reconNonRectSupports( supports, kDataEvenCols, kDataOddCols )
-  % recon = reconNonRectSupport( supports, kDataEvenCols, kDataOddCols )
+  % recon = reconNonRectSupports( supports, kDataEvenCols, kDataOddCols )
   %
   % Inputs:
   % supports - a two-dimensional binary mask with 1 indicating which pixels are in the support
@@ -73,8 +73,8 @@ function recon = reconNonRectSupports( supports, kDataEvenCols, kDataOddCols )
   kyInner = size2fftCoordinates( nInnerRows );
   [ kxInnerMissingMesh, kyInnerMissingMesh ] = meshgrid( kxInnerMissing, kyInner );
   trajMissing = [ kyInnerMissingMesh(:) kxInnerMissingMesh(:) ];
-  nxInnerMissing = numel( kxInnerMissing );
   kMissing = iGrid_2D( coilReconsEvenCols, trajMissing );
+  nxInnerMissing = numel( kxInnerMissing );
   kMissing = reshape( kMissing, [ nInnerRows nxInnerMissing nCoils ] );
 
   kInner = zeros( nInnerRows, nCols, nCoils );
