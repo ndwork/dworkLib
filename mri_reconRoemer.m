@@ -6,7 +6,8 @@ function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
   %   "NMR Phased Array" by Roemer et al.
   %
   % Inputs:
-  % coilRecons is an array of size ( Ny, Nx, ..., nCoils ) of kSpace values
+  % coilRecons is an array of size ( Ny, Nx, nCoils, d1, d2, ... ) of kSpace values
+  %   Here, d1, ..., dN are optional dimensions
   %
   % Optional Inputs:
   % sMaps - array of sensitivity maps
@@ -34,11 +35,11 @@ function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
   sMaps = p.Results.sMaps;
 
   if numel( sMaps ) == 0
-    ssqRecon = sqrt( sum( coilRecons .* conj( coilRecons ), ndims(coilRecons) ) );
+    ssqRecon = sqrt( sum( coilRecons .* conj( coilRecons ), 3 ) );
     sMaps = bsxfun( @times, coilRecons, 1 ./ ssqRecon );
     sMaps( ~isfinite( sMaps ) ) = 0;
   end
 
-  recon = sum( bsxfun( @times, coilRecons, conj( sMaps ) ), ndims(coilRecons) );
+  recon = sum( bsxfun( @times, coilRecons, conj( sMaps ) ), 3 );
 end
 
