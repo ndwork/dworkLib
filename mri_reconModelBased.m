@@ -30,10 +30,12 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   % purpose.
 
   p = inputParser;
+  p.addParameter( 'showScale', 3 );
   p.addParameter( 'support', [] );
   p.addParameter( 'traj', [], @isnumeric );
   p.addParameter( 'verbose', true );
   p.parse( varargin{:} );
+  showScale = p.Results.showScale;
   support = p.Results.support;
   traj = p.Results.traj;
   verbose = p.Results.verbose;
@@ -155,7 +157,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
       x = tmp;  clear tmp;
     end
     figure( imgH );
-    showImageCube( reshape( abs(x), [ sImg nSlices ] ) );
+    showImageCube( reshape( abs(x), [ sImg nSlices ] ), showScale );
     titlenice([ 'Iteration ', num2str(iter) ]);
   end
 
