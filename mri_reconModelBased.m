@@ -1,9 +1,11 @@
 
-function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
-  % [img,relRes] = mri_reconModelBased( kData, sMaps [, 'support', support, 'traj', traj ] )
+function [img,relRes] = mri_reconModelBased( kData, varargin )
+  % [img,relRes] = mri_reconModelBased( kData [, sMaps, 'sImg', sImg, 'support', support, 'traj', traj ] )
   %
-  % img is the argmin of || F S x - b ||_2
+  % img is the argmin of || F S x - b ||_2 when support is not supplied
   % F is either the FFT or the Non-uniform FFT, based on whether or not traj is supplied
+  % When support is supplied, img is the argmin of || F S D^T x - b ||_2
+  % where D is the transformation that isolates the values of the image in the support
   %
   % Inputs:
   % For one slice,
@@ -30,22 +32,38 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   % purpose.
 
   p = inputParser;
+  p.addOptional( 'sMaps', [], @(x) isnumeric(x) || numel(x) == 0 );
+  p.addParameter( 'optAlg', 'lsqr', @(x) true );
+  p.addParameter( 'sImg', [], @(x) numel(x) == 0  ||  numel(x) == 2 );
   p.addParameter( 'showScale', 3 );
   p.addParameter( 'support', [] );
   p.addParameter( 'traj', [], @isnumeric );
   p.addParameter( 'verbose', true );
   p.parse( varargin{:} );
+  sMaps = p.Results.sMaps;
+  optAlg = p.Results.optAlg;
+  sImg = p.Results.sImg;
   showScale = p.Results.showScale;
   support = p.Results.support;
   traj = p.Results.traj;
   verbose = p.Results.verbose;
 
-  sImg = size( sMaps, [1 2] );
+  if numel( sMaps ) == 0
+    if numel( traj ) == 0
+      sImg = size( kData, [1 2] );
+    elseif numel( sImg ) == 0
+      error( 'sImg must be supplied for single-coil non-Cartesian reconstruction' );
+    end
+  else
+    sImg = size( sMaps, [1 2] );
+  end
 
   sKData = size( kData );
   if numel( traj ) > 0
+    nCoils = size( kData, 2 );
     nSlices = size( kData, 3 );
   else
+    nCoils = size( kDagta, 3 );
     nSlices = size( kData, 4 );
   end
 
@@ -97,7 +115,11 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
       else
         in = reshape( in, [ sImg nSlices ] );
       end
-      out = applySF( in );
+      if numel( sMaps ) > 0
+        out = applySF( in );
+      else
+        out = applyF( in );
+      end
       if numel( traj ) == 0
         out = out( dataMask == 1 );
       end
@@ -108,7 +130,11 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
         in = tmp;  clear tmp;
       end
       in = reshape( in, sKData );
-      out = applySF( in, 'transp' );
+      if numel( sMaps ) > 0
+        out = applySF( in, 'transp' );
+      else
+        out = applyF( in, 'transp' );
+      end
       if numel( support ) > 0
         out = out( support ~= 0 );
       end
@@ -121,12 +147,14 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
   doCheckAdjoint = false;
   if doCheckAdjoint == true
     innerProd = @(x,y) real( dotP( x, y ) );
-    [checkS,errS] = checkAdjoint( img0, @applyS, 'innerProd', innerProd );   %#ok<ASGLU>
-    if checkS ~= 1, error( 'Adjoint check of S failed' ); end
-    [checkF,errF] = checkAdjoint( repmat(img0,[1,1,8]), @applyF, 'innerProd', innerProd );   %#ok<ASGLU>
+    [checkF,errF] = checkAdjoint( repmat(img0,[1,1,nCoils]), @applyF, 'innerProd', innerProd );   %#ok<ASGLU>
     if checkF ~= 1, error( 'Adjoint check of F failed' ); end
-    [checkSF,errSF] = checkAdjoint( img0, @applySF, 'innerProd', innerProd );   %#ok<ASGLU>
-    if checkSF ~= 1, error( 'Adjoint check of SF failed' ); end
+    if numel( sMaps ) > 0
+      [checkS,errS] = checkAdjoint( img0, @applyS, 'innerProd', innerProd );   %#ok<ASGLU>
+      if checkS ~= 1, error( 'Adjoint check of S failed' ); end
+      [checkSF,errSF] = checkAdjoint( img0, @applySF, 'innerProd', innerProd );   %#ok<ASGLU>
+      if checkSF ~= 1, error( 'Adjoint check of SF failed' ); end
+    end
     if numel( support ) > 0
       [checkE,errE] = checkAdjoint( img0( support == 1 ), @applyE, 'innerProd', innerProd );   %#ok<ASGLU>
     else
@@ -148,7 +176,7 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
 
   if numel( support ) > 0, img0 = img0( support == 1 ); end
 
-  if verbose == true, imgH = figure(); end
+  if verbose == true  &&  strcmp( optAlg, 'gradDescent' ), imgH = figure(); end
 
   function dispFunc( x, iter )
     if numel( support ) > 0
@@ -161,7 +189,6 @@ function [img,relRes] = mri_reconModelBased( kData, sMaps, varargin )
     titlenice([ 'Iteration ', num2str(iter) ]);
   end
 
-  optAlg = 'gradDescent';
   if strcmp( optAlg, 'cgs' )
     [img,optFlag,relres] = cgs( @applyE, b, [], 1000, [], [], [] );   %#ok<ASGLU>
   elseif strcmp( optAlg, 'gradDescent' )
