@@ -31,7 +31,7 @@ function c = polyFit2( x, y, z, xOrder, yOrder, varargin )
 
   p = inputParser;
   p.addParameter( 'w', [], @isnumeric );
-  p.addParameter( 'cMask', [], @isnumeric );
+  p.addParameter( 'cMask', [], @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   w = p.Results.w;
   cMask = p.Results.cMask;
