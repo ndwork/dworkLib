@@ -6,8 +6,8 @@ function p = evaluatePoly2( c, x, y )
   % at points (x,y).
   %
   % Inputs:
-  % x - 1D array of values
-  % y - 1D array of values
+  % x - array of values
+  % y - array of values of the same size as x
   %
   % Outputs:
   % p = a 2 dimensional array of polynomial coefficients.
