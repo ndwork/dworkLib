@@ -94,7 +94,7 @@ function recon = reconNonRectSupports( supports, kDataEvenCols, kDataOddCols )
     coilReconsInner(:,:,coilIndx) = bsxfun( @times, coilReconsInner(:,:,coilIndx), innerRows(:,coilIndx) );
   end
 
-  coilRecons = coilReconsInner + coilReconsOuter;
+  coilRecons = ( coilReconsInner + coilReconsOuter ) .* supports;
 
   if nCoils > 1
     recon = mri_reconRoemer( coilRecons );
