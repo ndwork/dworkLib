@@ -1113,7 +1113,7 @@ function testDworkLib
   tau = 0.01 / s(1);
   [xStar,objValues,relDiffs] = pdhg( x0, proxf, proxgConj, tau, 'A', A, 'normA', normA, ...
     'N', 100000, 'f', f, 'g', g, 'printEvery', 1000, 'tol', 1d-99, 'verbose', true );   %#ok<ASGLU>
-  mse = norm( x(:) - xStar(:) )^2 / numel( x );
+  mse = calcMSE( x, xStar );
   disp( [ x xStar x-xStar ] );
   fprintf([ '\npdhg ran to completion with MSE ', num2str(mse), '\n' ]);
 
