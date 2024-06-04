@@ -1,5 +1,5 @@
 
-function out = mse( est, true )
+function out = calcMSE( est, true )
   % Calculates the mean squared error of an estimate
   %
   % out = mse( est, true )
