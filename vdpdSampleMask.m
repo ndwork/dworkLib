@@ -84,7 +84,6 @@ function out = makeSampleMask( m, sMask, startMask, Delta )
 
   dks = 1 ./ ( sMask - 1 );
 
-  Delta = 0.3;
   %r = @(x) max( ( ( LpNorms( x, 2, 2 ) + 0.2 ) / 100 ), min_r );
   r = @(x) ( LpNorms( x, 2, 2 ) + Delta ) / m;
   min_r = Delta / m;
