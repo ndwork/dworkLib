@@ -22,7 +22,7 @@ function [out,k] = findMinMSE( est, truth, varargin )
   p.parse( varargin{:} );
   verbose = p.Results.verbose;
 
-  f = @(k) mse( k*est, truth );
+  f = @(k) calcMSE( k*est, truth );
 
   LB = 0;
   UB = max( est(:) ) / mean( truth(:) ) * 10;
