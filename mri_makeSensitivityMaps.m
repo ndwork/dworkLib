@@ -222,14 +222,15 @@ function sMaps = mri_makeSensitivityMaps_sortaSimple( kData, epsilon, sImg, traj
   theseIndxs = sub2ind( sMask, rMaskedIn, cMaskedIn );
   thoseIndxs = sub2ind( sMask, rMaskedOut, cMaskedOut );
 
+  sMapsCoils = cell( 1, 1, nCoils );
   for coilIndx = 1 : nCoils
     maskedSenseMap = sMaps( :, :, coilIndx );
     theseSensed = maskedSenseMap( theseIndxs );
     SI = scatteredInterpolant( cMaskedIn, rMaskedIn, theseSensed, 'natural', 'nearest' );     
     maskedSenseMap( thoseIndxs ) = SI( cMaskedOut, rMaskedOut );
-    sMap = smoothImg( maskedSenseMap, 'gaussian', 5 );
-    sMaps( :, :, coilIndx ) = sMap;
+    sMapsCoils{1,1,coilIndx} = smoothImg( maskedSenseMap, 'gaussian', 5 );
   end
+  sMaps = cell2mat( sMapsCoils );
 end
 
 
