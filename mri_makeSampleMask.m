@@ -26,7 +26,9 @@ function mask = mri_makeSampleMask( sMask, nSamples, varargin )
   maskType = p.Results.maskType;
   startMask = p.Results.startMask;
 
-  if nSamples > prod(sMask), error( 'Too many samples requested.' ); end
+  nSamplesPossible = prod( sMask );
+
+  if nSamples > nSamplesPossible, error( 'Too many samples requested.' ); end
   if sum( startMask(:) ) > nSamples, error( 'Too many samples in start mask.' ); end
 
   mask = startMask;
