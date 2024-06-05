@@ -63,7 +63,7 @@ function [img,relRes] = mri_reconModelBased( kData, varargin )
     nCoils = size( kData, 2 );
     nSlices = size( kData, 3 );
   else
-    nCoils = size( kDagta, 3 );
+    nCoils = size( kData, 3 );
     nSlices = size( kData, 4 );
   end
 
