@@ -25,7 +25,7 @@ function [out,k] = findMinMSE( est, truth, varargin )
   f = @(k) calcMSE( k*est, truth );
 
   LB = 0;
-  UB = max( est(:) ) / mean( truth(:) ) * 10;
+  UB = max( abs(est(:)) ) / mean( abs(truth(:)) ) * 10;
 
   k = goldenSectionSearch( f, LB, UB, 'tol', 1d-6, 'verbose', verbose );
   out = f( k );
