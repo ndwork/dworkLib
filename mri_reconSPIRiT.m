@@ -71,7 +71,7 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
     proxTest = @(in, sc) projectOntoBall( in, sqrt(eps) );
 
     test1 = proxh(x0, 0);
-    test2 = proxAffine(proxTest, x0, @applyD, -1*y_data, 1);
+    test2 = proxAffine( proxTest, x0, @applyD, -1*y_data, 1 );
     
     err = norm(test1(:) - test2(:))/norm(test2(:));
     if abs(err) > 1e-6
@@ -91,20 +91,20 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   out = reshape( xStar, size(kData) );
 
   function out = proxh( in, sc )   %#ok<INUSD>
-    din = in(idx_acq) - y_data;
+    din = in( idx_acq ) - y_data;
     tmp_proj = projectOntoBall( din, sqrt(eps) );
     tmp2 = din - tmp_proj;
-    out = zeros(size(kData));
-    out(idx_acq) = tmp2;
+    out = zeros( size( kData ) );
+    out( idx_acq ) = tmp2;
     out = in(:) - out(:);
   end
 
   function out = applyG( in, op )
-    in = reshape(in, size(kData));
+    in = reshape( in, size( kData ) );
     if nargin < 2 || strcmp(op, 'notransp')
-      out = spirit_conv(in, weights);
+      out = spirit_conv( in, weights );
     else
-      out = spirit_conv_adj(in, weights);
+      out = spirit_conv_adj( in, weights );
     end
     out = out(:);
   end
@@ -261,36 +261,34 @@ end
 
 
 function out = spirit_conv(array, weights)
-  nCoils = size(array, 3);
-  out = 0 * array;
-  
-  for coil = 1:nCoils
-    wi = weights(:, :, :, coil);
-    for getCoil = 1:nCoils
-      wij = wi(:, :, getCoil);
-      res = filter2( wij, array(:, :, getCoil), 'same' );
-      out(:, :, coil) = out(:, :, coil) + res;
+  nCoils = size( array, 3 );
+  out = zeros( size( array ) );
+
+  for coil = 1 : nCoils
+    wi = weights( :, :, :, coil );
+    for getCoil = 1 : nCoils
+      wij = wi( :, :, getCoil );
+      res = filter2( wij, array( :, :, getCoil ), 'same' );
+      out( :, :, coil ) = out( :, :, coil ) + res;
     end
   end
-
 end
 
 
-function out = spirit_conv_adj(array, weights)
-  nCoils = size(array, 3);
-  out = 0*array;
-  
-  for coil = 1:nCoils
-    wi = squeeze(weights(:, :, coil, :));
-    for getCoil = 1:nCoils
-      wij = wi(:, :, getCoil);
-      wij_conj = conj(wij);
+function out = spirit_conv_adj( array, weights )
+  nCoils = size( array, 3);
+  out = zeros( size( array ) );
+
+  for coil = 1 : nCoils
+    wi = squeeze( weights( :, :, coil, : ) );
+    for getCoil = 1 : nCoils
+      wij = wi( :, :, getCoil );
+      wij_conj = conj( wij );
       %ker = flipud( fliplr(wij_conj) );
       ker = rot90( wij_conj, 2 );
-      res = filter2( ker, array(:, :, getCoil), 'same' );
-      out(:, :, coil) = out(:, :, coil) + res;
+      res = filter2( ker, array( :, :, getCoil ), 'same' );
+      out( :, :, coil ) = out( :, :, coil ) + res;
     end
   end
-
 end
 
