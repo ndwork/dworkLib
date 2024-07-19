@@ -63,9 +63,7 @@ function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
   %eps = 1e-2;
 
   %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
-  if numel( x0 ) == 0
-    x0 = kData;
-  end
+  if numel( x0 ) == 0, x0 = kData; end
 
   if checkProx == true
     proxTest = @(in, sc) projectOntoBall( in, sqrt(eps) );
