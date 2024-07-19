@@ -26,7 +26,7 @@ function mask = vdpdSampleMask( sMask, nSamples, varargin )
   end
 
   p = inputParser;
-  p.addParameter( 'Delta', 0.3, @ispositive );
+  p.addParameter( 'Delta', [], @ispositive );
   p.addParameter( 'maxIter', 100, @ispositive );
   p.addParameter( 'startMask', zeros( sMask ) );
   p.addParameter( 'verbose', true );
@@ -36,14 +36,14 @@ function mask = vdpdSampleMask( sMask, nSamples, varargin )
   startMask = p.Results.startMask;
   verbose = p.Results.verbose;
 
-  if sum( startMask(:) ~= 0 ) >= nSamples
-    error( 'startMask more than nSamples' );
-  end
+  if numel( Delta ) == 0, Delta = 0.3; end
 
-  nDiffSamples = @(in) nSamples - sum( sum( makeSampleMask( in, sMask, startMask ) ) );
+  if sum( startMask(:) ~= 0 ) >= nSamples, error( 'startMask more than nSamples' ); end
+
+  nDiffSamples = @(in) nSamples - sum( sum( makeSampleMask( in, sMask, startMask, Delta ) ) );
 
   m = binarySearch( nDiffSamples, 20, 500, 'tol', 0.1, 'verbose', verbose );
-  mask = makeSampleMask( m, sMask, startMask );
+  mask = makeSampleMask( m, sMask, startMask, Delta );
 
   if sum( mask(:) ) > nSamples
     newMaskIndxs = find( ( mask - startMask ) ~= 0 );
@@ -89,7 +89,7 @@ function out = makeSampleMask( m, sMask, startMask, Delta )
   min_r = Delta / m;
 
   ks = poissonDisc2( r, 'min_r', min_r )';
-  [~,iterSamples] = movePointsToGrid( ks, [-0.5, -0.5], 0.5-dks, sMask );
+  [ ~, iterSamples ] = movePointsToGrid( bsxfun( @minus, ks, 0.5*dks' ), [-0.5, -0.5], 0.5-dks, sMask );
 
   out = ( iterSamples > 0 ) | startMask;
 end

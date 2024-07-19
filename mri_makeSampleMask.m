@@ -19,10 +19,12 @@ function mask = mri_makeSampleMask( sMask, nSamples, varargin )
 
   p = inputParser;
   p.addOptional( 'vdSig', [], @ispositive );
+  p.addParameter( 'Delta', [] );
   p.addParameter( 'maskType', [], @(x) true );
   p.addParameter( 'startMask', zeros( sMask ), @(x) isnumeric(x) || islogical(x) );
   p.parse( varargin{:} );
   vdSig = p.Results.vdSig;
+  Delta = p.Results.Delta;
   maskType = p.Results.maskType;
   startMask = p.Results.startMask;
 
@@ -34,7 +36,7 @@ function mask = mri_makeSampleMask( sMask, nSamples, varargin )
   mask = startMask;
 
   if strcmp( maskType, 'VDPD' )
-    mask = vdpdSampleMask( sMask, nSamples, 'startMask', startMask );
+    mask = vdpdSampleMask( sMask, nSamples, 'startMask', startMask, 'Delta', Delta );
 
   else
 
