@@ -92,7 +92,7 @@ function err = computeLineError( pts, ks, c )
   %  if kIndx < numel( ks ), rPower = rPower .* rs; end
   %end
 
-  undistortedPts = applyRadialDistortion2Pts( pts, ks, c, 'dir', -1 );
+  undistortedPts = applyRadialDistortion2Pts( pts, ks, c, 'dir', 1 );
 
   % normalize the points
   %undistortedPts = normalizePts2D( undistortedPts );
