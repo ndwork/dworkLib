@@ -29,42 +29,25 @@ function outPts = applyRadialDistortion2Pts( pts, ks, c, varargin )
 
   p = inputParser;
   p.addParameter( 'dir', 1, @(x) x == 1 || x == -1 );
-  p.addParameter( 'tol', 1d-6, @(x) ispositive(x) && numel(x)==1 );
   p.parse( varargin{:} );
   dir = p.Results.dir;
-  tol = p.Results.tol;
 
-  rs = norms( pts, 2, 2 );
-  nPts = size( pts, 1 );
+  rs = LpNorms( bsxfun( @minus, pts, c' ), 2, 2 );
 
   outPts = pts;
+  Ls = findLs( rs, ks );
+
   if dir == 1
-
-    rOuts = rs;
-    Ls = findLs( rs, ks );
-    while true
-      for i = 1 : size( pts, 2 )
-        outPts(:,i) = c(i) + ( pts(:,i) - c(i) ) ./ Ls;
-      end
-
-      lastROuts = rOuts;
-      rOuts = norms( outPts, 2, 2 );
-
-      err = norm( rOuts - lastROuts ) / nPts;
-      if err < tol, break; end
-
-      meanRs = 0.5 * ( rOuts + lastROuts );
-      Ls = findLs( meanRs, ks );
-    end
-
-  else
-
-    Ls = findLs( rs, ks );   
     for i = 1 : size( pts, 2 )
       outPts(:,i) = c(i) + ( pts(:,i) - c(i) ) .* Ls;
     end
-  end
 
+  else
+    for i = 1 : size( pts, 2 )
+      outPts(:,i) = c(i) + ( pts(:,i) - c(i) ) ./ Ls;
+    end
+
+  end
 end
 
 
