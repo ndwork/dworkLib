@@ -67,6 +67,6 @@ function showFeaturesOnImg( features, varargin )
   
   if connect == true
     hold on;
-    plotnice( rFeatures(:,1), rFeatures(:,2) );
+    plotnice( rFeatures(:,1), rFeatures(:,2), color );
   end
 end
