@@ -48,5 +48,5 @@ function restart( varargin )
 
   close all;  clc;  clear;  clear global;
 
-  evalin( 'base', 'clear all' );
+  profile off
 end
