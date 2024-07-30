@@ -1,6 +1,6 @@
 
 function out = LpNorms( A, p, dim )
-  % out = norms( A [, p, dim ] )
+  % out = LpNorms( A [, p, dim ] )
   %
   % Calculates the Lp norm of A along dimension dim
   %
