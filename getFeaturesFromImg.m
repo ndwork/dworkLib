@@ -7,9 +7,8 @@ function [features,values] = getFeaturesFromImg( n, varargin )
   % scale - the scale of the displayed image (default is 1)
   %
   % Output:
-  % features - a 2 column array.  The first column are the x (or
-  % horizontal) coordinates, and the second column are the y (or
-  % vertical coordinates).
+  % features - a 2 column array.  The first column are the x (or horizontal) coordinates, and the second column 
+  %   are the y (or vertical coordinates).
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
