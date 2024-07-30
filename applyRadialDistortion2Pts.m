@@ -33,20 +33,23 @@ function outPts = applyRadialDistortion2Pts( pts, ks, c, varargin )
   dir = p.Results.dir;
 
   rs = LpNorms( bsxfun( @minus, pts, c' ), 2, 2 );
-
-  outPts = pts;
   Ls = findLs( rs, ks );
 
-  if dir == 1
-    for i = 1 : size( pts, 2 )
-      outPts(:,i) = c(i) + ( pts(:,i) - c(i) ) .* Ls;
-    end
+  function cost = findCostOfLs( Ls )
+    costPts = bsxfun( @plus, bsxfun( @times, bsxfun( @minus, pts, c' ), Ls ), c' );
+    outRs = LpNorms( bsxfun( @minus, costPts, c' ), 2, 2 );
+    outLs = findLs( outRs, ks );
+    cost = norm( Ls(:) - outLs(:) ).^2;
+  end
+
+  if dir == -1
+    % outPts are the "corrected" undistorted points
+    [ betterLs, searchErr, searchFlag ] = fminsearch( @findCostOfLs, Ls );   %#ok<ASGLU>
+    outPts = bsxfun( @plus, bsxfun( @times, bsxfun( @minus, pts, c' ), betterLs ), c' );
 
   else
-    for i = 1 : size( pts, 2 )
-      outPts(:,i) = c(i) + ( pts(:,i) - c(i) ) ./ Ls;
-    end
-
+    % outPts are distorted with radial distortion
+    outPts = bsxfun( @plus, bsxfun( @rdivide, bsxfun( @minus, pts, c' ), Ls ), c' );
   end
 end
 

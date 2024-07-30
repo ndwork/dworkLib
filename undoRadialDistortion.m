@@ -1,6 +1,6 @@
 
 function out = undoRadialDistortion( img, ks, varargin )
-  % out = undoRadialDistortion( img, k [, 'c', c, 'space', 'full',[] ] )
+  % out = undoRadialDistortion( img, k [, 'c', c, 'space', 'full'/[] ] )
   %
   % Written according to section 7.4 of Multiple View Geometry, 2nd edition
   % by Hartley and Zisserman
@@ -33,39 +33,57 @@ function out = undoRadialDistortion( img, ks, varargin )
   c = p.Results.c;
   space = p.Results.space;
 
-  if numel( c ) == 0,  c = zeros(2,1); end
+  if numel( c ) == 0,  c = [ 0; 0; ]; end
 
   sImg = size(img);
-  coords = size2imgCoordinates( sImg(1:2) );
+  nChannels = size( img, 3 );
 
+  coords = size2imgCoordinates( sImg(1:2) );
   [xs,ys] = meshgrid( coords{2}, coords{1} );
 
   sImg = size(img);
   if numel( space ) > 0 && strcmp( space, 'full' )
-    ptUndone = applyRadialDistortion2Pts( [xs(:) ys(:)], ks, c, 'dir', -1 );
-      % TODO:  Make this faster by just undoing corners
-    xUndone = ptUndone(:,1);
-    yUndone = ptUndone(:,2);
 
-    minX = floor( min( xUndone(:) ) );  maxX = ceil( max( xUndone(:) ) );
-    minY = floor( min( yUndone(:) ) );  maxY = ceil( max( yUndone(:) ) );
+    minY = min( ys(:) );  maxY = max( ys(:) );
+    minX = min( xs(:) );  maxX = max( xs(:) );
+    corners = [ [ minY, minX ]; ...
+                [ minY, maxX ]; ...
+                [ maxY, minX ]; ...
+                [ maxY, maxX ]; ];
+
+    ptsUndone = applyRadialDistortion2Pts( corners, ks, c, 'dir', -1 );
+    %ptsRedone = applyRadialDistortion2Pts( ptsUndone, ks, c, 'dir', 1 );  % should be same as corners
+
+    yUndone = ptsUndone(:,1);
+    xUndone = ptsUndone(:,2);
+
+    minUndoneY = floor( min( yUndone(:) ) );  maxUndoneY = ceil( max( yUndone(:) ) );
+    minUndoneX = floor( min( xUndone(:) ) );  maxUndoneX = ceil( max( xUndone(:) ) );
+
   else
-    minX = 1;  maxX = sImg(2);
-    minY = 1;  maxY = sImg(1);
+    minUndoneY = 1;  maxUndoneY = sImg(1);
+    minUndoneX = 1;  maxUndoneX = sImg(2);
   end
 
-  [xOuts,yOuts] = meshgrid( minX : maxX, minY : maxY );
-  sOut = [ maxY-minY+1 maxX-minX+1 size(img,3) ];
+  [ xOuts, yOuts ] = meshgrid( minUndoneX : maxUndoneX, minUndoneY : maxUndoneY );
+  sOut = [ maxUndoneY - minUndoneY + 1, maxUndoneX - minUndoneX + 1, nChannels ];
 
-  distortedOutPts = applyRadialDistortion2Pts( [xOuts(:) yOuts(:)], ks, c );
-  xDistorted = reshape( distortedOutPts(:,1), sOut(1:2) );
-  yDistorted = reshape( distortedOutPts(:,2), sOut(1:2) );
+  distortedOutPts = applyRadialDistortion2Pts( [ yOuts(:) xOuts(:) ], ks, c, 'dir', 1 );
+  yDistorted = reshape( distortedOutPts(:,1), sOut(1:2) );
+  xDistorted = reshape( distortedOutPts(:,2), sOut(1:2) );
+  
+  if nChannels > 1
 
-  out = zeros( sOut );
-  for colorIndx = 1 : size( img, 3 )
-   colorChannel = img(:,:,colorIndx);
-   tmp = interp2( xs, ys, colorChannel, xDistorted, yDistorted, 'linear', 0 );
-   out(:,:,colorIndx) = reshape( tmp, sOut(1:2) );
+    out = cell( 1, 1, nChannels );
+    parfor colorIndx = 1 : size( img, 3 )
+     colorChannel = img(:,:,colorIndx);
+     tmp = interp2( xs, ys, colorChannel, xDistorted, yDistorted, 'linear', 0 );
+     out{1,1,colorIndx} = reshape( tmp, sOut(1:2) );   %#ok<PFBNS>
+    end
+    out = cell2mat( out );
+
+  else
+    out = interp2( xs, ys, img, xDistorted, yDistorted, 'linear', 0 );
   end
 
 end

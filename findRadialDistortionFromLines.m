@@ -14,6 +14,8 @@ function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
   %
   % Optional Inputs:
   % order - the order of the parameters to identify (default is 1)
+  % c0 - the best estimate of the coordinate of the center of the image
+  % fixedCenter (true/false) - if true, then c0 is accepted
   %
   % Outputs:
   % ks - a 1D array specifying the radial distortion parameters
@@ -30,30 +32,46 @@ function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
 
   p = inputParser;
   p.addOptional( 'order', 1, @ispositive );
+  p.addParameter( 'c0', [], @(x) isnumeric(x) || numel(x) == 0 );
+  p.addParameter( 'fixedCenter', false );
   p.parse( varargin{:} );
   order = p.Results.order;
+  c0 = p.Results.c0;
+  fixedCenter = p.Results.fixedCenter;
 
   ks0 = zeros( order, 1 );
-  c0 = [0; 0;];
+  if numel( c0 ) == 0, c0 = [0; 0;]; end
 
   %err = computeLineError( lines{1}, ks0, c0 );
 
   function err = computeThisError( x )
-    %cThis = x(1:2);
-    %ksThis = x(3:end);
-    cThis = [0; 0;];
-    ksThis = x;
+    if fixedCenter == true
+      cThis = c0;
+      ksThis = x;
+    else
+      cThis = x(1:2);
+      ksThis = x(3:end);
+    end
+
     err = computeError( lines, ksThis, cThis );
   end
 
-  %x0 = [ c0; ks0; ];
-  x0 = ks0;
+  if fixedCenter == true
+    x0 = ks0;
+  else
+    x0 = [ c0; ks0; ];
+  end
+  
   [x,finalErr] = fminsearch( @computeThisError, x0 );   %#ok<ASGLU>
 
-  %c = x(1:2);
-  %ks = x(3:end);
-  c = [0; 0;];
-  ks = x;
+  if fixedCenter == true
+    c = c0;
+    ks = x;
+  else
+    c = x(1:2);
+    ks = x(3:end);
+  end
+
 end
 
 
@@ -62,22 +80,19 @@ function err = computeError( lines, ks, c )
   for i = 1 : numel( lines )
     err = err + computeLineError( lines{i}, ks, c ).^2;
   end
-  err = sqrt( err );
 end
 
 
 function err = computeLineError( pts, ks, c )
-  rs = sqrt( pts(:,1).^2 + pts(:,2).^2 );
-  rPower = rs;
-  Ls = ones( size( rs ) );
-  for kIndx = 1 : numel( ks )
-    Ls = Ls + ks(kIndx) .* rPower;
-    if kIndx < numel( ks ), rPower = rPower .* rs; end
-  end
+  %rs = LpNorms( bsxfun( @minus, pts, c(:)' ), 2 );
+  %rPower = rs;
+  %Ls = ones( size( rs ) );
+  %for kIndx = 1 : numel( ks )
+  %  Ls = Ls + ks(kIndx) .* rPower;
+  %  if kIndx < numel( ks ), rPower = rPower .* rs; end
+  %end
 
-  undistortedPts = pts;
-  undistortedPts(:,1) = c(1) + ( pts(:,1) - c(1) ) .* Ls;
-  undistortedPts(:,2) = c(2) + ( pts(:,2) - c(2) ) .* Ls;
+  undistortedPts = applyRadialDistortion2Pts( pts, ks, c, 'dir', -1 );
 
   % normalize the points
   %undistortedPts = normalizePts2D( undistortedPts );
