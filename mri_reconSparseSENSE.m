@@ -1,7 +1,7 @@
 
 function [recon,lambda] = mri_reconSparseSENSE( kData, sMaps, lambda, varargin )
   % recon = mri_reconSparseSENSE( kData, sMaps, lambda, [, 'img0', img0, 'nIter', nIter, ...
-  %   'reweightEpsilon', reweightEpsilon, 'noiseCov', noiseCov ] )
+  %   'noiseCov', noiseCov, 'reweightEpsilon', reweightEpsilon, 'wavSplit', wavSplit ] )
   %
   % This routine uses proximal gradient methods to minimize
   %   0.5 * || A y - b ||_2^2 + lambda || y ||_{w,1}
