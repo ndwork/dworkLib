@@ -2,6 +2,10 @@
 function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
   % k = findRadialDistortionFromLines( img, lines [, order ] )
   %
+  % The radial distortion is according to section 7.4 of Multiple View Geometry, 2nd edition
+  % by Hartley and Zisserman.
+  % x' = x_c + L(r)( x - x_c )   and   y' = y_c + L(r)( y - y_c )
+  %
   % Note: this function assumes the aspect ratio of point coordinates is 1.
   %
   % Inputs:
@@ -9,7 +13,7 @@ function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
   %   The element of each cell is a NL x 2 array where NL is the number of points for that line
   %
   % Optional Inputs:
-  % order - the order of the parameters to identify
+  % order - the order of the parameters to identify (default is 1)
   %
   % Outputs:
   % ks - a 1D array specifying the radial distortion parameters
@@ -48,8 +52,8 @@ function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
 
   %c = x(1:2);
   %ks = x(3:end);
-  ks = x;
   c = [0; 0;];
+  ks = x;
 end
 
 
