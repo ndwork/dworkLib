@@ -1,6 +1,6 @@
 
-function out = totalVariation( in )
-  % out = totalVariation( in )
+function out = totalVariation( in, varargin )
+  % out = totalVariation( in [, lambda ]  )
   %
   % Computes the L2L1 norm (the total variation) of in.
   %
@@ -17,6 +17,11 @@ function out = totalVariation( in )
     return
   end
 
-  gIn = norms( computGradient( in ) );
+  p = inputParser;
+  p.addOptional( 'lambda', 1, @positive );
+  p.parse( varargin{:} );
+  lambda = p.Results.lambda;
+
+  gIn = LpNorms( computeGradient( in ) );
   out = lambda * sum( gIn(:) );
 end
