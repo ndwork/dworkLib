@@ -1215,7 +1215,17 @@ function testDworkLib
 
   disp('powerIteration passed');
 
-  
+
+  %% proxConjL2L1
+  x = rand( 126, 126 );
+  [proxCheck,proxErr] = checkProxConj( x, @proxL2L1, @proxConjL2L1 );
+  if proxCheck == true
+    disp( 'proxConjL2L1 passed' );
+  else
+    error([ 'proxConjL2L1 failed with err: ', num2str(proxErr) ]);
+  end
+
+
   %% quadRoots
   a=2; b=0; c=-1;
   rs = quadRoots( a, b, c );

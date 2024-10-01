@@ -30,7 +30,7 @@ function out = proxConjL2L1( x, sigma, t )
     return;
   end
 
-  nx = norms( x );
+  nx = LpNorms( x );
   scalings = ones( size( nx ) );
   scalings( nx > t ) = t ./ nx( nx > t );
 
