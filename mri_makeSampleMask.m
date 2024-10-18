@@ -18,11 +18,12 @@ function mask = mri_makeSampleMask( sMask, nSamples, varargin )
   % purpose.
 
   p = inputParser;
+  p.addRequired( 'nSamples', @(x) mod(x,1)==0 && x>0 );  % check if it's a positive integer
   p.addOptional( 'vdSig', [], @ispositive );
   p.addParameter( 'Delta', [] );
   p.addParameter( 'maskType', [], @(x) true );
   p.addParameter( 'startMask', zeros( sMask ), @(x) isnumeric(x) || islogical(x) );
-  p.parse( varargin{:} );
+  p.parse( nSamples, varargin{:} );
   vdSig = p.Results.vdSig;
   Delta = p.Results.Delta;
   maskType = p.Results.maskType;
