@@ -1,5 +1,4 @@
 
-
 function wavSplit = makeWavSplit( sData, varargin )
   % Make the wav split to be used with the wavelet transforms
 
