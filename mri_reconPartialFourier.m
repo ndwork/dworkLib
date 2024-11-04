@@ -27,25 +27,24 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   p = inputParser;
   p.addParameter( 'op', 'notransp', @(x) true );
   p.addParameter( 'phases', [], @isnumeric );
+  p.addParameter( 'ramp', [], @isnumeric );
   p.addParameter( 'traj', [], @isnumeric );
   p.parse( varargin{:} );
   phases = p.Results.phases;
   op = p.Results.op;
+  ramp = p.Results.ramp;
   traj = p.Results.traj;
 
   if numel( traj ) == 0
-    % Cartesian sampling
-    [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op );
-
+    [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op, ramp );
   else
-    % Non-Cartesian sampling
-    [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, traj, op );
+    [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, traj, op, ramp, traj );
   end
 
 end
 
 
-function [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op )
+function [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op, ramp )
 
   Ny = size( in, 1 );
   ys = size2imgCoordinates( Ny );
@@ -57,11 +56,13 @@ function [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, 
 
   firstY = centerIndx - ceil( ( sFSR(1) - 1 ) / 2 );
   lastY = centerIndx + floor( ( sFSR(1) - 1 ) / 2 );
-  m = 2 / ( lastY - firstY );
-  ramp = m * ys + 1.0;
-  ramp( 1 : firstY ) = 0;
-  ramp( lastY : end ) = 2;
-  ramp = 2 - ramp;
+  if numel( ramp ) == 0
+    m = 2 / ( lastY - firstY );
+    ramp = m * ys + 1.0;
+    ramp( 1 : firstY ) = 0;
+    ramp( lastY : end ) = 2;
+    ramp = 2 - ramp;
+  end
 
   nCoils = size( in, 3 );
 
@@ -109,6 +110,6 @@ end
 
 
 
-function [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, op, traj )
+function [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, op, ramp, traj )
   error( 'I still need to implement this' )
 end

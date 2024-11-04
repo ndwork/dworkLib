@@ -878,8 +878,8 @@ function testDworkLib
   samplePattern( FSR == 1 ) = 1;
   dataPF = bsxfun( @times, DATA, samplePattern );
 
-  coilRecons = mri_reconPartialFourier( dataPF, sFSR );
-  coilPhases = angle( coilRecons );
+  [ coilRecons, phaseImg ] = mri_reconPartialFourier( dataPF, sFSR );
+  coilPhases = angle( phaseImg );
 
   reconPF = mri_reconRoemer( coilRecons );
 
@@ -889,6 +889,16 @@ function testDworkLib
   figure;
   subplot(1,2,1);  imshow( abs( trueRecon ), [] );  title( 'Fully-sampled Recon' );
   subplot(1,2,2);  imshow( abs( reconPF ), [] );  title( 'Partial Fourier Recon' );
+
+  applyP = @(in,op) mri_reconPartialFourier( in, sFSR, 'phases', coilPhases, 'op', op );
+
+  innerProd = @(x,y) real( dotP( x, y ) );
+  [chkP, errChkP] = checkAdjoint( dataPF, applyP, 'innerProd', innerProd );
+  if chkP == false
+    error(['Check for adjoint of P failed with error ', num2str(errChkP) ]);
+  else
+    disp( 'Check for adjoint of P passed.' );
+  end
 
 
   %% mri_reconModelBased - Cartesian Sampling
