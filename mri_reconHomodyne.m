@@ -1,6 +1,6 @@
 
-function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
-  % out = mri_reconPartialFourier( in, sFSR [, 'phases', phases, 'op', op ] )
+function [out, phaseImg] = mri_reconHomodyne( in, sFSR, varargin )
+  % out = mri_reconHomodyne( in, sFSR [, 'phases', phases, 'op', op ] )
   %
   % Written according to "Partial k-space Reconstruction" by John Pauly
   %
@@ -36,15 +36,15 @@ function [out, phaseImg] = mri_reconPartialFourier( in, sFSR, varargin )
   traj = p.Results.traj;
 
   if numel( traj ) == 0
-    [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op, ramp );
+    [out, phaseImg] = mri_reconHomodyne_Cartesian( in, sFSR, phases, op, ramp );
   else
-    [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, traj, op, ramp, traj );
+    [out, phaseImg] = mri_reconHomodyne_NonCartesian( in, sFSR, phases, traj, op, ramp, traj );
   end
 
 end
 
 
-function [out, phaseImg] = mri_reconPartialFourier_Cartesian( in, sFSR, phases, op, ramp )
+function [out, phaseImg] = mri_reconHomodyne_Cartesian( in, sFSR, phases, op, ramp )
 
   Ny = size( in, 1 );
   ys = size2imgCoordinates( Ny );
@@ -110,6 +110,6 @@ end
 
 
 
-function [out, phaseImg] = mri_reconPartialFourier_NonCartesian( in, sFSR, phases, op, ramp, traj )
+function [out, phaseImg] = mri_reconHomodyne_NonCartesian( in, sFSR, phases, op, ramp, traj )
   error( 'I still need to implement this' )
 end
