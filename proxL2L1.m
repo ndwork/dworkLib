@@ -24,7 +24,7 @@ function out = proxL2L1( in, t, weights )
   if nargin > 2, t = t .* weights; end
 
   nDimsIn = ndims( in );
-  normsIn = norms( in, 2, nDimsIn );
+  normsIn = LpNorms( in, 2, nDimsIn );
 
   scalingFactors = t ./ normsIn;
   scalingFactors( normsIn <= t ) = 1;

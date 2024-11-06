@@ -27,6 +27,6 @@ function out = normL2L1( in, varargin )
   p.parse( varargin{:} );
   ws = p.Results.ws;
   
-  normsL2 = norms( in, 2, ndims(in) );
+  normsL2 = LpNorms( in, 2, ndims(in) );
   out = sum( ws(:) .* normsL2(:) );
 end
