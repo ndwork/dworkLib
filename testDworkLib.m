@@ -864,7 +864,7 @@ function testDworkLib
   end
 
 
-  %% mri_reconPartialFourier
+  %% mri_reconHomodyne
 
   load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
   DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
@@ -878,7 +878,7 @@ function testDworkLib
   samplePattern( FSR == 1 ) = 1;
   dataPF = bsxfun( @times, DATA, samplePattern );
 
-  [ coilRecons, phaseImg ] = mri_reconPartialFourier( dataPF, sFSR );
+  [ coilRecons, phaseImg ] = mri_reconHomodyne( dataPF, sFSR );
   coilPhases = angle( phaseImg );
 
   reconPF = mri_reconRoemer( coilRecons );
@@ -890,7 +890,7 @@ function testDworkLib
   subplot(1,2,1);  imshow( abs( trueRecon ), [] );  title( 'Fully-sampled Recon' );
   subplot(1,2,2);  imshow( abs( reconPF ), [] );  title( 'Partial Fourier Recon' );
 
-  applyP = @(in,op) mri_reconPartialFourier( in, sFSR, 'phases', coilPhases, 'op', op );
+  applyP = @(in,op) mri_reconHomodyne( in, sFSR, 'phases', coilPhases, 'op', op );
 
   innerProd = @(x,y) real( dotP( x, y ) );
   [chkP, errChkP] = checkAdjoint( dataPF, applyP, 'innerProd', innerProd );
@@ -899,6 +899,36 @@ function testDworkLib
   else
     disp( 'Check for adjoint of P passed.' );
   end
+
+
+  %% mri_reconHomodyneCS
+
+  load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
+
+  vdSigFrac = 0.3;
+  sampleFraction = 0.3;
+  epsilon = 0;
+
+  sImg = size( DATA, [ 1 2 ] );
+  nSamples = round( sampleFraction * prod( sImg ) );
+  vdSig = round( vdSigFrac * sImg );
+
+  wavSplit = makeWavSplit( sImg, 'minSplitSize', 0.25*max(sImg) );
+  [ fsr, sFSR ] = mri_makeFullySampledCenterRegion( sImg, wavSplit );
+  sampleMask = mri_makeSampleMask( sImg, nSamples, vdSig, 'startMask', fsr > 0 );
+  sampleMask ( ceil( ( sImg(1) + 1 ) / 2 ) + round( sFSR(1) / 2 ) : end, :, : ) = 0;
+
+  kData = bsxfun( @times, DATA, sampleMask );
+  nCoils = size( DATA, 3 );
+  recons = cell(1,1,nCoils);
+  parfor coilIndx = 1 : nCoils
+    recons{1,1,coilIndx} = mri_reconHomodyneCS( kData(:,:,coilIndx), sFSR, 'epsilon', epsilon, ...
+      'tol', 1d-5, 'printEvery', 100 );
+  end
+  recons = cell2mat( recons );
+  recon = mri_reconRoemer( recons );
+  figure;  imshowscale( abs( recon ), 3 );
 
 
   %% mri_reconModelBased - Cartesian Sampling
@@ -1005,34 +1035,22 @@ function testDworkLib
   figure;  imshowscale( abs( recon ), 3 );
 
 
-  %% mri_reconHomodyneCS
-
+  %% mri_reconRoemer
   load( '/Users/nicholasdwork/Documents/Data/espiritData/brain_8ch.mat', 'DATA' )
-  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );  % assumes one slice.
+  DATA = squeeze( DATA ) / max( abs( DATA(:) ) );
 
-  vdSigFrac = 0.3;
-  sampleFraction = 0.3;
-  epsilon = 0;
+  coilRecons = mri_reconIFFT( DATA );
+  [~,sMaps] = mri_reconRoemer( coilRecons );
 
-  sImg = size( DATA, [ 1 2 ] );
-  nSamples = round( sampleFraction * prod( sImg ) );
-  vdSig = round( vdSigFrac * sImg );
+  R = @(x) mri_reconRoemer( x, 'sMaps', sMaps );
+  RT = @(y) mri_reconRoemer( y, 'sMaps', sMaps, 'op', 'transp' );
 
-  wavSplit = makeWavSplit( sImg, 'minSplitSize', 0.25*max(sImg) );
-  [ fsr, sFSR ] = mri_makeFullySampledCenterRegion( sImg, wavSplit );
-  sampleMask = mri_makeSampleMask( sImg, nSamples, vdSig, 'startMask', fsr > 0 );
-  sampleMask ( ceil( ( sImg(1) + 1 ) / 2 ) + round( sFSR(1) / 2 ) : end, :, : ) = 0;
-
-  kData = bsxfun( @times, DATA, sampleMask );
-  nCoils = size( DATA, 3 );
-  recons = cell(1,1,nCoils);
-  parfor coilIndx = 1 : nCoils
-    recons{1,1,coilIndx} = mri_reconHomodyneCS( kData(:,:,coilIndx), sFSR, 'epsilon', epsilon, ...
-      'tol', 1d-5, 'printEvery', 100 );
+  [ chkR, errChkR ] = checkAdjoint( rand( size( coilRecons ) ), R, RT );
+  if chkR == false
+    error([ 'mri_reconRoemer failed test with error ', num2str(errChkR) ]);
+  else
+    disp( 'mri_reconRoemer passed the test' );
   end
-  recons = cell2mat( recons );
-  recon = mri_reconRoemer( recons );
-  figure;  imshowscale( abs( recon ), 3 );
 
 
   %% nonlocal mean

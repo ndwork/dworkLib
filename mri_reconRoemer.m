@@ -1,19 +1,19 @@
 
-function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
-  % [recon,sMaps] = mri_reconRoemer( coilRecons [, 'sMaps', sMaps ] )
+function [out,sMaps] = mri_reconRoemer( in, varargin )
+  % [out,sMaps] = mri_reconRoemer( in [, 'sMaps', sMaps, 'op', 'transp' or'notransp' ] )
   %
   % Perform an optimal coil combination according to equation [32] of
   %   "NMR Phased Array" by Roemer et al.
   %
   % Inputs:
-  % coilRecons is an array of size ( Ny, Nx, nCoils, d1, d2, ... ) of kSpace values
+  % in is an array of size ( Ny, Nx, nCoils, d1, d2, ... ) of kSpace values when op is 'notransp'
   %   Here, d1, ..., dN are optional dimensions
   %
   % Optional Inputs:
   % sMaps - array of sensitivity maps
   %
   % Output:
-  % recon is the reconstructed image
+  % out is the reconstructed image when op is 'notransp'
   %
   % Written by Nicholas Dwork - Copyright 2021
   %
@@ -25,21 +25,33 @@ function [recon,sMaps] = mri_reconRoemer( coilRecons, varargin )
   % purpose.
 
   if nargin < 1
-    disp( 'Usage:  recon = mri_reconRoemer( coilRecons [, ''sMaps'', sMaps ] )' );
+    disp([ 'Usage:  recon = mri_reconRoemer( in [, ''sMaps'', sMaps, ', ...
+           '''op'', ''transp'' or ''notransp'' ] )' ]);
     return;
   end
 
   p = inputParser;
+  p.addParameter( 'op', [] );
   p.addParameter( 'sMaps', [], @isnumeric );
   p.parse( varargin{:} );
+  op = p.Results.op;
   sMaps = p.Results.sMaps;
 
+  if numel( op ) == 0, op = 'notransp'; end
+
   if numel( sMaps ) == 0
-    ssqRecon = sqrt( sum( coilRecons .* conj( coilRecons ), 3 ) );
-    sMaps = bsxfun( @times, coilRecons, 1 ./ ssqRecon );
+    if strcmp( op, 'transp' ), error( 'Must supply sMaps for transpose operation' ); end
+    ssqRecon = sqrt( sum( in .* conj( in ), 3 ) );
+    sMaps = bsxfun( @times, in, 1 ./ ssqRecon );
     sMaps( ~isfinite( sMaps ) ) = 0;
   end
 
-  recon = sum( bsxfun( @times, coilRecons, conj( sMaps ) ), 3 );
+  if strcmp( op, 'notransp' )
+    out = sum( in .* conj( sMaps ), 3 );
+  elseif strcmp( op, 'transp' )
+    out = bsxfun( @times, sMaps, in );
+  else
+    error( 'Incorrect value of op supplied' );
+  end
 end
 
