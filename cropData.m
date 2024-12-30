@@ -27,7 +27,7 @@ function out = cropData( data, N )
   end
 
   nD = ndims( data );
-  if numel(N) == 1, N = N * ones(nD,1); end
+  if isscalar(N), N = N * ones(nD,1); end
 
   sData = size(data);
   subIndxs = cell(nD,1);
