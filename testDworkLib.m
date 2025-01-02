@@ -173,6 +173,64 @@ function testDworkLib
   end
   disp( 'circConv test passed' );
 
+  %% circConv1
+  m = 7;
+  n = 20;
+  A = rand(m,1) + 1i * rand(m,1);
+  K = rand(n,1) + 1i * rand(n,1);
+
+  cConv_A_K = circConv1( A, K );
+
+  cConv_A_K_woFFT = zeros(max(m,n),1);
+
+  A = padData( A, max( m, n ) );
+  K = padData( K, max( m, n ) );
+
+  flipK = flip( K );
+  if mod( numel(K), 2 ) == 0
+    flipK = circshift( flipK, 1 );
+  end
+
+  for i = 0 : max(m,n)-1
+    cConv_A_K_woFFT( i+1 ) = sum( A .* circshift( flipK, i ) );
+  end
+  cConv_A_K_woFFT = fftshift( cConv_A_K_woFFT );
+
+  %disp([ cConv_A_K, cConv_A_K_byHand ]);
+  if norm( cConv_A_K - cConv_A_K_woFFT ) > 1d-8
+    error( 'circConv1 test failed' );
+  else
+    disp( 'circConv1 test passed' );
+  end
+
+
+  %% circConv1 - adjoint
+  m = 7;
+  n = 20;
+  A = rand(m,1) + 1i * rand(m,1);
+  K = rand(n,1) + 1i * rand(n,1);
+
+  f = @( x, op ) circConv1( A, x, op );
+
+  [ circConv1Chk, chkErr ] = checkAdjoint( K, f );
+  if circConv1Chk == false
+    error([ 'circConv1 adjoint test failed with error: ', num2str( chkErr ) ]);
+  end
+  disp( 'circConv1 adjoint test passed' );
+
+  %% circConv2
+  A = rand( 63, 126 ) + 1i * rand( 63, 126 );
+
+  f = @( x ) circConv2( A, x );
+  fAdj = @( x ) circConv2( A, x, 'transp' );
+
+  [circConv2Chk,chkErr] = checkAdjoint( A, f, 'fAdj', fAdj );
+  if circConv2Chk == false
+    error([ 'circConv2 adjoint test failed with error: ', num2str( chkErr ) ]);
+  end
+  disp( 'circConv2 adjoint test passed' );
+
+
   %% contoursToPolyhedron
   contours = cell(3, 1);
   contours{1} = [[0 0]; [0 1]; [1 1];  [0.7 0.7]; [1 0];];
