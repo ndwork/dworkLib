@@ -152,26 +152,25 @@ function testDworkLib
   a = rand( 64, 128 );
   k = rand( 6, 7 );
   out1 = cropData( conv2( a, k, 'same' ), size(k) );
-  out2 = cropData( circConv( k, a ), size(k) );
+  out2 = cropData( circConv( a, k ), size(k) );
   circConvErr = norm( out1(:) - out2(:) ) / norm( out1(:) );
-  if circConvErr < 1d-8
+  if circConvErr < 1d-12
     disp( 'circConv test passed' );
   else
     error([ 'circConv test failed with err: ', num2str(circConvErr) ]);
   end
 
   %% circConv adjoint
-  img = rand( 64, 128 );
-  filt = rand( 6, 7 );
+  sA = [ 17, 24, 18, 29 ];
+  A = rand( sA ) + 1i * rand( sA );
 
-  blur = @(x) circConv( x, filt );
-  blurT = @(x) circConv( x, filt, 'transp' );
+  f = @( x, op ) circConv( A, x, op );
+  [circConvAdjCheck,checkErr] = checkAdjoint( A, f );
 
-  [blurCheck,checkErr] = checkAdjoint( img, blur, 'fAdj', blurT );
-  if blurCheck == false
+  if circConvAdjCheck == false
     error([ 'circConv adjoint test failed with error: ', num2str( checkErr ) ]);
   end
-  disp( 'circConv test passed' );
+  disp( 'circConv adjoint test passed' );
 
   %% circConv1
   m = 7;

@@ -1,20 +1,22 @@
 
-function out = circConv( inArray, kernel, op )
-  % out = circConv( inArray, kernel [, op ] )
+function out = circConv( A, K, op )
+  % out = circConv( A, K [, op, 'notransp/transp' ] )
   %
   % Calculates the circular convolution of inArray with kernel.
   %   The origin of inArray is the first element.
   %   The origin of kernel is the center element.
   %
-  % Inputs:
-  % inArray - a 2D array
-  % kernel - a small 2D array
-  %
   % Optional Inputs:
   % op - either 'notransp' (default) or 'transp'
   %
+  % Inputs:
+  % A - a (possibly) multidimensional array
+  % K - a (possibly) multidimensional array of the same number of dimensions as a
+  %     sometimes referred to as the convolution kernel
+  %
   % Outputs:
-  % out - a 2D array
+  % out - an array of size equal to the maximum size of a and b in each dimension that
+  %       represents the result of a circular convolution  
   %
   % Written by Nicholas Dwork - Copyright 2021
   %
@@ -24,32 +26,24 @@ function out = circConv( inArray, kernel, op )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  if nargin < 3, op = 'notransp'; end
-
-  sA = size( inArray );
-  sK = size( kernel );
-  newSize = max( sA, sK );
-
-  pad1 = zeros( newSize );
-  pad2 = zeros( newSize );
-  str2eval1 = 'pad1( 1:sA(1)';
-  str2eval2 = 'pad2( 1:sK(1)';
-  for dim = 2 : numel( sA )
-    str2eval1 = [ str2eval1, ', 1:sA(', num2str(dim), ')' ];   %#ok<AGROW>
-    str2eval2 = [ str2eval2, ', 1:sK(', num2str(dim), ')' ];   %#ok<AGROW>
-  end
-  str2eval1 = [ str2eval1, ' ) = inArray;' ];
-  str2eval2 = [ str2eval2, ' ) = kernel;' ];
-  
-  eval( str2eval1 );
-  eval( str2eval2 );
-
-  pad2 = circshift( pad2, -floor( sK / 2 ) );
-  
-  if strcmp( op, 'transp' )
-    pad2 = flipAboutIndx( pad2, ones( 1, ndims( pad2 ) ) );
+  if nargin < 1
+    disp( 'Usage:  out = circConv( A, K [, op, ''notransp/transp'' )' );
+    if nargout > 0, out = []; end
+    return
   end
 
-  out = ifftn( fftn( pad1 ) .* fftn( pad2 ) );
+  sA = size( A );
+  sK = size( K );
+
+  sOut = max( sA, sK );
+  padA = padData( A, sOut );
+  padK = padData( K, sOut );
+
+  if nargin > 2  &&  strcmp( op, 'transp' )
+    padA = flipAllDims( conj( padA ) );
+    padA = circshift( padA, int8( mod( sOut, 2 ) == 0 ) );
+  end
+
+  out = fftshift( ifftn( fftn( ifftshift( padA ) ) .* fftn( ifftshift( padK ) ) ) );
 end
 
