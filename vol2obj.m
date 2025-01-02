@@ -3,6 +3,8 @@ function vol2obj( vol, varargin )
   % vol2obj( vol [, 'filename', filename, 'nTransparencies', nTransparencies, 'thresh',
   %   thresh, 'verbose', true/false );
   %
+  % Converts a 3D array into an obj file
+  %
   % Written by Nicholas Dwork - Copyright 2023
   %
   % https://github.com/ndwork/dworkLib.git
