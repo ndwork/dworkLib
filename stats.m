@@ -13,31 +13,40 @@ function stats( data )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( 'Usage: stats( data )' );
+    return
+  end
+
   function arrayStats( data, preText )
     if nargin < 2, preText = ''; end
 
-    subs = cell(1,ndims(data));
+    subs = cell( 1, ndims(data) );
 
-    [minData,minIndx] = min( data(:) );
-    [subs{:}] = ind2sub(size(data),minIndx);
-    for i=1:numel(subs), subs{i} = num2str(subs{i}); end
+    [ minData, minIndx ] = min( data(:) );
     nMinLocs = sum( data(:) == minData );
     if nMinLocs > 1
       disp([ preText, 'Min: ', num2str(minData), '.  There are ', num2str(nMinLocs), ...
         ' locations with this value.' ]);
+      minLocs = find( data(:) == minData );
+      disp([ preText, '  1D Indices: ', num2str( minLocs' ) ])
     else
+      [ subs{:} ] = ind2sub( size(data), minIndx );
+      for i=1:numel(subs), subs{i} = num2str( subs{i} ); end
       minLoc = [ '(', strjoin(subs, ', '), ')' ];
       disp([ preText, 'Min: ', num2str(minData), ' at ', minLoc ]);
     end
 
     [maxData,maxIndx] = max( data(:) );
-    [subs{:}] = ind2sub(size(data),maxIndx);
-    for i=1:numel(subs), subs{i} = num2str(subs{i}); end
     nMaxLocs = sum( data(:) == maxData );
     if nMaxLocs > 1
       disp([ preText, 'Max: ', num2str(maxData), '.  There are ', num2str(nMaxLocs), ...
         ' locations with this value.' ]);
+      maxLocs = find( data(:) == maxData );
+      disp([ preText, '  1D Indices: ', num2str( maxLocs' ) ])
     else
+      [subs{:}] = ind2sub(size(data),maxIndx);
+      for i=1:numel(subs), subs{i} = num2str(subs{i}); end
       maxLoc = [ '(', strjoin(subs, ', '), ')' ];
       disp([ preText, 'Max: ', num2str(maxData), ' at ', maxLoc ]);
     end
@@ -63,7 +72,7 @@ function stats( data )
   if numel( data ) == 0, return; end
 
   imagData = imag(data);
-  if max( abs(imagData(:)) ~= 0 )
+  if any( abs( imagData(:) ) ~= 0 )
     disp('Mag: ');
     arrayStats( abs(double(data)), '  ' );
     disp('Phase: ');
