@@ -218,7 +218,8 @@ function testDworkLib
   disp( 'circConv1 adjoint test passed' );
 
   %% circConv2
-  A = rand( 63, 126 ) + 1i * rand( 63, 126 );
+  sA = [ 63 126 3 ];
+  A = rand( sA ) + 1i * rand( sA );
 
   f = @( x ) circConv2( A, x );
   fAdj = @( x ) circConv2( A, x, 'transp' );
