@@ -8,6 +8,7 @@ function out = circConv( A, K, op )
   %
   % Optional Inputs:
   % op - either 'notransp' (default) or 'transp'
+  %         If 'transp' is set, calculates the adjoint of f(x) = circConv( A, x )
   %
   % Inputs:
   % A - a (possibly) multidimensional array
