@@ -186,9 +186,7 @@ function testDworkLib
   K = padData( K, max( m, n ) );
 
   flipK = flip( K );
-  if mod( numel(K), 2 ) == 0
-    flipK = circshift( flipK, 1 );
-  end
+  if mod( numel(K), 2 ) == 0, flipK = circshift( flipK, 1 ); end
 
   for i = 0 : max(m,n)-1
     cConv_A_K_woFFT( i+1 ) = sum( A .* circshift( flipK, i ) );
@@ -196,8 +194,9 @@ function testDworkLib
   cConv_A_K_woFFT = fftshift( cConv_A_K_woFFT );
 
   %disp([ cConv_A_K, cConv_A_K_byHand ]);
-  if norm( cConv_A_K - cConv_A_K_woFFT ) > 1d-8
-    error( 'circConv1 test failed' );
+  relErrCircConv1 = norm( cConv_A_K - cConv_A_K_woFFT ) / norm( cConv_A_K_woFFT );
+  if relErrCircConv1 > 1d-8
+    error([ 'circConv1 test failed with error, ', num2str(relErrCircConv1) ]);
   else
     disp( 'circConv1 test passed' );
   end
@@ -217,7 +216,7 @@ function testDworkLib
   end
   disp( 'circConv1 adjoint test passed' );
 
-  %% circConv2
+  %% circConv2 - adjoint
   sA = [ 63 126 3 ];
   A = rand( sA ) + 1i * rand( sA );
 
