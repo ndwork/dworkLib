@@ -41,7 +41,7 @@ function out = circConv( A, K, op )
   padK = padData( K, sOut );
 
   if nargin > 2  &&  strcmp( op, 'transp' )
-    padA = flipAllDims( conj( padA ) );
+    padA = flipDims( conj( padA ) );
     padA = circshift( padA, int8( mod( sOut, 2 ) == 0 ) );
   end
 
