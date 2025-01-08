@@ -22,6 +22,7 @@ function stats( data )
     if nargin < 2, preText = ''; end
 
     subs = cell( 1, ndims(data) );
+    n2Display = 15;
 
     [ minData, minIndx ] = min( data(:) );
     nMinLocs = sum( data(:) == minData );
@@ -29,7 +30,11 @@ function stats( data )
       disp([ preText, 'Min: ', num2str(minData), '.  There are ', num2str(nMinLocs), ...
         ' locations with this value.' ]);
       minLocs = find( data(:) == minData );
-      disp([ preText, '  1D Indices: ', num2str( minLocs' ) ])
+      if nMinLocs > n2Display
+        disp([ preText, '  1D Indices: ', num2str( minLocs(1:n2Display)' ), ' ...' ])
+      else
+        disp([ preText, '  1D Indices: ', num2str( minLocs' ) ])
+      end
     else
       [ subs{:} ] = ind2sub( size(data), minIndx );
       for i=1:numel(subs), subs{i} = num2str( subs{i} ); end
@@ -43,7 +48,11 @@ function stats( data )
       disp([ preText, 'Max: ', num2str(maxData), '.  There are ', num2str(nMaxLocs), ...
         ' locations with this value.' ]);
       maxLocs = find( data(:) == maxData );
-      disp([ preText, '  1D Indices: ', num2str( maxLocs' ) ])
+      if nMaxLocs > n2Display
+        disp([ preText, '  1D Indices: ', num2str( maxLocs(1:n2Display)' ), ' ...' ])
+      else
+        disp([ preText, '  1D Indices: ', num2str( maxLocs' ) ])
+      end
     else
       [subs{:}] = ind2sub(size(data),maxIndx);
       for i=1:numel(subs), subs{i} = num2str(subs{i}); end
