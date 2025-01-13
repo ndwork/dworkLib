@@ -4,14 +4,12 @@ function senseMaps = mri_makeSensitivityMaps( kData, varargin )
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'pruessman', [, 'L', L, ...
   %     'mask', mask, 'sImg', sImg, 'sigma', sigma, 'traj', traj, 'verbose', true/false ] )
   % or
-  %   senseMaps = mri_makeSensitivityMaps( kData, img, 'alg', 'ying' [, 'polyOrder', polyOrder ] );
-  % or
   %   senseMaps = mri_makeSensitivityMaps( kData, 'alg', 'simple' [, 'epsilon', epsilon, 'sImg', sImg, 'traj', traj ] );
   % or
   %   senseMaps = mri_makeSensitivityMaps( kData, img, 'alg', 'ying' [, 'polyOrder', polyOrder, ...
   %     'verbose', true/false );
   %
-  % Options are to either use the method of (1) or (2, default)
+  % Options are to either use the method of (1, default) or (2)
   % 1) Created using the method of "SENSE: Sensitivity Encoding for Fast MRI" by
   %    Pruessmann et al., 1999
   % 2) Created using the method of "Joint image reconstruction and sensitivity estimation
