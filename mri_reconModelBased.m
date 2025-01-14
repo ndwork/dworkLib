@@ -31,8 +31,17 @@ function [img,relRes] = mri_reconModelBased( kData, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp([ 'Usage:  [img,relRes] = mri_reconModelBased( kData [, sMaps, ''sImg'', sImg, ', ...
+           '''support'', support, ''traj'', traj ] )' ]);
+    if nargout > 0, img = []; end
+    if nargout > 1, relRes = []; end
+    return
+  end
+
   p = inputParser;
   p.addOptional( 'sMaps', [], @(x) isnumeric(x) || numel(x) == 0 );
+  p.addParameter( 'doCheckAdjoint', false );
   p.addParameter( 'optAlg', 'lsqr', @(x) true );
   p.addParameter( 'sImg', [], @(x) numel(x) == 0  ||  numel(x) == 2 );
   p.addParameter( 'showScale', 3 );
@@ -41,6 +50,7 @@ function [img,relRes] = mri_reconModelBased( kData, varargin )
   p.addParameter( 'verbose', true );
   p.parse( varargin{:} );
   sMaps = p.Results.sMaps;
+  doCheckAdjoint = p.Results.doCheckAdjoint;
   optAlg = p.Results.optAlg;
   sImg = p.Results.sImg;
   showScale = p.Results.showScale;
@@ -65,6 +75,10 @@ function [img,relRes] = mri_reconModelBased( kData, varargin )
   else
     nCoils = size( kData, 3 );
     nSlices = size( kData, 4 );
+  end
+
+  if nCoils > 1  &&  numel( sMaps ) == 0
+    error( 'You must pass in sMaps when nCoils > 1' );
   end
 
   if ismatrix( support ) && nSlices > 1
@@ -144,11 +158,10 @@ function [img,relRes] = mri_reconModelBased( kData, varargin )
 
   img0 = zeros( sImg );
 
-  doCheckAdjoint = false;
   if doCheckAdjoint == true
     innerProd = @(x,y) real( dotP( x, y ) );
     [checkF,errF] = checkAdjoint( repmat(img0,[1,1,nCoils]), @applyF, 'innerProd', innerProd );   %#ok<ASGLU>
-    if checkF ~= 1, error( 'Adjoint check of F failed' ); end
+    if checkF ~= 1, error([ 'Adjoint check of F failed with error, ', num2str(errF) ]); end
     if numel( sMaps ) > 0
       [checkS,errS] = checkAdjoint( img0, @applyS, 'innerProd', innerProd );   %#ok<ASGLU>
       if checkS ~= 1, error( 'Adjoint check of S failed' ); end
