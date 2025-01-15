@@ -2,7 +2,7 @@
 function out = proxL2Sq( v, t, b, A )
   % out = proxL2Sq( v, t, b, A )
   %
-  % Evaluate the proximal operator of tf where f(x) = t/2 || A x - b ||_2^2
+  % Evaluate the proximal operator of tf where f(x) = 1/2 || A x - b ||_2^2
   %
   % Inputs:
   % x - the argument of the proximal operator

@@ -2,7 +2,7 @@
 function out = proxL2( x, t )
   % out = proxL2( x, t )
   %
-  % Calculates the proximal operator of f(x) = t * L2( x )
+  % Calculates the proximal operator of tf where f(x) = || x ||_2
   %
   % Inputs:
   % x - a 1D array
