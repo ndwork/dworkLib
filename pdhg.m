@@ -19,6 +19,8 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   % N - the number of iterations that ADMM will perform (default is 100)
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
+  % sigma - one of the two step sizes
+  % tau - one of the two step sizes
   % theta - acceleration parameter
   % verbose - true or false
   % z - initial value of dual variable
