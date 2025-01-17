@@ -1,292 +1,189 @@
-function out = mri_reconSPIRiT( kData, kernel_sz, acr_sz, varargin )
+
+function img = mri_reconSpirit( kData, sACR, wSize, varargin )
+  % img = mri_reconSpirit( kData, sACR, wSize )
   %
-  % *********************
-  %   Input Parameters:
-  % *********************
+  % Inputs:
+  % kData - a complex matrix of size M x N x C, where C is the number of coils
+  %   Uncollected data will have a value of 0.
+  % sACR - a scalar or a 2 element array that specifies the size of the autocalibration region.
+  %  If it's a scalar, then the size is assumed to be [ sACR sACR ].
+  % wSize - either a scalar or a two element array of odd vlaues that specifies the size of the interpolation 
+  %   kernel.  If wSize is a scalar, then the kernel is assumed to have size [ wSize wSize ].
   %
-  %    kData:  A 3D (size ny x nx x ncoils) array of measured k-space. The
-  %    assumption in GRAPPA is that there is a fully sampled region in the
-  %    center of the image. The center point convention is as follows:
-  %
-  %    if our array is odd size, we choose the center point
-  %           o o o x o o o
-  %    if our array is even size, we choose length / 2 + 1
-  %           o o o x o o 
-  %
-  %    kernel_sz: a 2 element vector containing the dimensions of the kernel.
-  %    We use MATLAB dimensions, so it's [row column]
-  %    For example, a 3x1 kernel will fit inside a 5x5 ACR as:
-  %                 x o o o o
-  %                 x o o o o
-  %                 x o o o o
-  %                 o o o o o 
-  %                 o o o o o 
-  %    acr_sz: A 2 element vector containing the dimensions of the ACR. ACR
-  %    must be odd sized in both directions.
-  %
-  % Written by Alex McManus - Copyright 2022
-  %
-  % https://github.com/ndwork/dworkLib.git
-  %
-  % This software is offered under the GNU General Public License 3.0.  It is offered without any
-  % warranty expressed or implied, including the implied warranties of merchantability or fitness
-  % for a particular purpose.
+  % Outputs
+  % img - a 2D complex array of size M x N that is the output image.
+
+  if nargin < 3
+    disp( 'Usage: img = mri_reconSpirit( kData, sACR, wSize [, ''epsilon'', epsilon ] )' );
+    if nargout > 0, img = []; end
+    return;
+  end
 
   p = inputParser;
-  p.addParameter( 'alg', 'fista_wLS', @(x) true );
-  p.addParameter( 'checkProx', false );
-  p.addParameter( 'eps', 0, @(x) numel(x) == 0 || isnonnegative(x) );
-  p.addParameter( 'verbose', false );
-  p.addParameter( 'weights', [], @isnumeric );
-  p.addParameter( 'x0', [], @isnumeric );
+  p.addParameter( 'doChecks', false );
+  p.addParameter( 'epsilon', [], @isnonnegative );
   p.parse( varargin{:} );
-  alg = p.Results.alg;
-  eps = p.Results.eps;
-  checkProx = p.Results.checkProx;
-  verbose = p.Results.verbose;
-  weights = p.Results.weights;
-  x0 = p.Results.x0;
+  doChecks = p.Results.doChecks;
+  epsilon = p.Results.epsilon;
 
-  if numel( kernel_sz ) == 1, kernel_sz = [ kernel_sz kernel_sz ]; end
-  if numel( eps ) == 0, eps = 0; end
+  if min( mod( wSize, 2 ) ) < 1, error( 'wSize elements must be odd' ); end
+  if isscalar( sACR ), sACR = [ sACR sACR ]; end
+  if isscalar( wSize ), wSize = [ wSize wSize ]; end
+  [ M, N, nCoils ] = size( kData );
 
-  nCoils = size( kData, 3 );
-  
-  if numel( weights ) == 0
-    acr = cropData( kData, [ acr_sz nCoils ] );
-    weights = mri_reconSPIRiT_get_weights( acr, kernel_sz );
-  end
-
-  idx_acq = kData~=0;
-
-  y_data = kData(idx_acq);
-  %eps = 1e-2;
-
-  %x0 = mri_reconGRAPPA( kData, kernel_sz, acr_sz );
-  if numel( x0 ) == 0, x0 = kData; end
-
-  if checkProx == true
-    proxTest = @(in, sc) projectOntoBall( in, sqrt(eps) );
-
-    test1 = proxh(x0, 0);
-    test2 = proxAffine( proxTest, x0, @applyD, -1*y_data, 1 );
-    
-    err = norm(test1(:) - test2(:))/norm(test2(:));
-    if abs(err) > 1e-6
-      error('Something wrong with proximal operator');
-    end
-  end
-
-  if strcmp( alg, 'fista' )
-    [xStar, objVal, relDiffs] = fista(0*x0(:), @grad_g, @proxh, 'g', @normG, 'h', @h, 'N', 100, ...
-      'verbose', verbose, 't', 0.05 );   %#ok<ASGLU>
-
-  elseif strcmp( alg, 'fista_wLS' )
-    [xStar, objVal, relDiffs] = fista_wLS( x0(:), @g, @grad_g, @proxh, 'h', @h, 'N', 100, ...
-      'verbose', verbose, 't0', 0.01);   %#ok<ASGLU>
-  end
-
-  out = reshape( xStar, size(kData) );
-
-  function out = proxh( in, sc )   %#ok<INUSD>
-    din = in( idx_acq ) - y_data;
-    tmp_proj = projectOntoBall( din, sqrt(eps) );
-    tmp2 = din - tmp_proj;
-    out = zeros( size( kData ) );
-    out( idx_acq ) = tmp2;
-    out = in(:) - out(:);
-  end
-
-  function out = applyG( in, op )
-    in = reshape( in, size( kData ) );
-    if nargin < 2 || strcmp(op, 'notransp')
-      out = spirit_conv( in, weights );
-    else
-      out = spirit_conv_adj( in, weights );
-    end
-    out = out(:);
-  end
-
-  function out = h(x)
-    out = normIndicator( x, y_data, sqrt(eps) );
-  end
-
-  function out = normIndicator( x, y, r )
-    dx = x( idx_acq );
-    if norm(dx - y) < r
-      out = 0;
-    else
-      out = Inf;
-    end
-  end
-
-  % function out = projB( x, y, r )
-  %   dxy = x - y;
-  %   if norm(dxy) < r
-  %     out = x;
-  %   else
-  %     out = dxy * (r / norm(dxy)) + y;
-  %   end
-  % end
-
-  function out = g( in )
-    tmpg = applyG( in );
-    out = 0.5 * norm( tmpg(:) - in(:) )^2;
-  end
-
-  function out = grad_g(in)
-    tmpgrad = applyG( in ) - in;
-    out = applyG( tmpgrad, 'transp' ) - tmpgrad;
-    out = out(:);
-  end
-
-  function out = applyD( in, op )  % Apply the sampling mask
-    if strcmp( op, 'transp' )
-      out = 0 * kData;
-      out(idx_acq) = in;
-    else
-      out = in(idx_acq);
-    end
-  end
-
-end
-
-
-%-------------------------
-%--- Support Functions ---
-%-------------------------
-
-function out = mri_reconSPIRiT_get_points( pt_idx, array, kernel_sz )
-  % mri_reconSPIRiT_get_points helper function to retrieve correct points
-  % This function is used both to set up the weights and get the appropriate points and
-  % to interpolate with when filling in k-space.
-  % It's slightly different than the GRAPPA version because of the points we need to grab
-  %
-  % What about if we know that the kernel is square and just need the size
-  %
-  % Author: Alex McManus
-  % *********************
-  %   Input Parameters:
-  % *********************
-  %
-  %     pt_idx: A 3 element vector containing the [row column coilidx] of a specific
-  %     point. Coil index matters here since for solving for the weights, we
-  %     use the point at [row column] from the other coils.
-  %         NOTE: this is different than grappa
-  %
-  %     array: the full 3D (ny x nx x ncoils) kspace data
-  %
-  %     kernel_sz: a 2 element array containing the [row column] size of the
-  %     kernel. for spirit we'll always use this kernel completely filled in
-  %     except for the center point
-  %
-  % *********************
-  %   Output Variables:
-  % ********************* 
-  %
-  %    out: the set of points for the input pt_idx over all the coils
-
-  py = pt_idx(1);
-  px = pt_idx(2);
-  
-  k_y = kernel_sz(1);
-  k_x = kernel_sz(2);
-
-  kdy = (k_y - 1) / 2;
-  kdx = (k_x - 1) / 2;
-
-  ypts = py-kdy:py+kdy;
-  xpts = px-kdx:px+kdx;
-
-  pts = array(ypts, xpts, :);
-  out = pts(:);
-end
-
-
-function [W, A, B] = mri_reconSPIRiT_get_weights(acr, kernel_sz)
-  %new_spirit_get_weights lets try this again
-  
-  % auto-calibration region dimensions
-  szAcrY = size(acr, 1);
-  szAcrX = size(acr, 2);
-  ncoils = size(acr, 3);
-  
-  % kernel dimensions
-  szKerY = kernel_sz(1);
-  szKerX = kernel_sz(2);
-  
-  n = szKerY*szKerX;
-  
-  % centering
-  center_y = (szKerY - 1)/2;
-  center_x = (szKerX - 1)/2;
-  
-  % number of sliding kernel fits in the ACR
-  numfits_x = szAcrX - szKerX + 1;
-  numfits_y = szAcrY - szKerY + 1;
-  
-  npoints = szKerY*szKerX*ncoils;
-  W = zeros([kernel_sz ncoils ncoils]);
-  A = zeros([numfits_x*numfits_y npoints]);
-  
-  for coilIdx = 1:ncoils
-    B = zeros( [numfits_x*numfits_y 1] );
-    b_idx = 1;
-    for x = 1:numfits_x
-      for y = 1:numfits_y
-        B(b_idx) = acr( y + center_y, x + center_x, coilIdx);
-        pts = mri_reconSPIRiT_get_points([y+center_y x+center_x coilIdx], acr, kernel_sz);
-        A(b_idx, :) = pts;
-        b_idx = b_idx + 1;
+  %-- Find the interpolation coefficients w
+  acr = cropData( kData, [ sACR(1) sACR(2) nCoils ] );
+  w = zeros( wSize(1), wSize(2), nCoils, nCoils );   % Interpolation coefficients
+  for coilIndx = 1 : nCoils
+    A = zeros( (  sACR(2) - wSize(2) + 1 ) * ( sACR(1) - wSize(1) + 1 ), wSize(1) * wSize(2) * nCoils - 1 );
+    if size( A, 1 ) < size( A, 2 ), error( 'The size of the ACR is too small for this size kernel' ); end
+    y = zeros( size(A,1), 1 );
+    pt2RemoveIndx = ceil( wSize(1)/2 ) + floor( wSize(2)/2 ) * wSize(1) + ( coilIndx - 1 ) * wSize(2) * wSize(1);
+    aIndx = 1;
+    for i = ceil( wSize(2)/2 ) : sACR(2) - floor( wSize(2)/2 )
+      for j = ceil( wSize(1)/2 ) : sACR(1) - floor( wSize(1)/2 )
+        subACR = acr( j - floor( wSize(2)/2 ) : j + floor( wSize(2)/2 ), ...
+                               i - floor( wSize(2)/2 ) : i + floor( wSize(2)/2 ), : );
+        subACR = subACR(:);
+        y( aIndx ) = subACR( pt2RemoveIndx );
+        subACR = [ subACR( 1 : pt2RemoveIndx-1 ); subACR( pt2RemoveIndx + 1 : end ); ];
+        A( aIndx, : ) = transpose( subACR );
+        aIndx = aIndx + 1;
       end
     end
-  
-    dk = zeros([szKerY szKerX ncoils]); 
-    dk((end+1)/2, (end+1)/2, coilIdx) = 1;
-    smp = ones(size(dk));
-    smp( dk == 1 ) = 0;
-    idxA = find(smp);
-  
-    A2 = A(:, idxA);
-    rk = A2 \ B;
-    
-    ker = zeros(size(dk));
-    ker(idxA) = rk;
-
-    W(:, :, :, coilIdx) = ker;
+    wCoil = A \ y(:);
+    wCoil = [ wCoil( 1 : pt2RemoveIndx - 1 ); 0; wCoil( pt2RemoveIndx : end ); ];
+    w( :, :, :, coilIndx ) = reshape( wCoil, [ wSize nCoils ] );
   end
+
+  %-- Use the interpolation coefficients to estimate the missing data
+  function out = applyW( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = zeros( M, N, nCoils );
+      for c = 1 : nCoils
+        tmp = circConv2( flipDims( w(:,:,:,c), 'dims', [1 2] ), in );
+        out(:,:,c) = sum( tmp, 3 );
+      end
+    else
+      out = zeros( M, N, nCoils );
+      for c = 1 : nCoils
+        tmp = repmat( in(:,:,c), [ 1 1 nCoils ] );
+        out = out + circConv2( flipDims( w(:,:,:,c), 'dims', [1 2] ), tmp, 'transp' );
+      end
+    end
+  end
+
+  if doChecks == true
+    [chkW,errChkW] = checkAdjoint( rand( M, N, nCoils ) + 1i * rand( M, N, nCoils ), @applyW );
+    if chkW == true
+      disp( 'Check of W Adjoint passed' );
+    else
+      error([ 'Check of W Adjoint failed with error ', num2str(errChkW) ]);
+    end
+  end
+
+  if numel( epsilon ) == 0 || epsilon == 0
+    img = mri_reconSpirit_eps0( @applyW, kData, doChecks );
+  else
+    img = mri_reconSpirit_epsNonzero( @applyW, kData, epsilon );
+  end
+
+end
+
+function img = mri_reconSpirit_eps0( applyW, kData, doChecks )
+  % minimize || W k - k ||_2 over kEst
+  %   where k = toMatrix( D )^T kCollected + ( toMatrix( D^C ) )^T kEst
+  %
+  %   Here, D is a set of sample indices and k are the sample values that were collected.
+  %   D^C is the complement of D
+  %   That is, k = kData( D^C ).
+  %
+  % Equivalently, we want to minimize || ( W - I ) k ||_2 over kEst.
+  % Equivalently, minimize || ( W - I ) ( toMatrix( D^C ) )^T kEst + ( W - I ) toMatrix( D )^T kCollected ||_2.
+  % Equivalently, minimize || ( W - I ) ( toMatrix( D^C ) )^T kEst + ( W - I ) kData ||_2.
+
+  [ M, N, nCoils ] = size( kData );
+
+  sampleMask = kData ~= 0;
+  nSamples = sum( sampleMask(:) );
+  nEst = numel( sampleMask ) - nSamples;
+
+  % ( W - I ) ( toMatrix( D^C ) )^T kEst == ( W - I ) kEstMatrix
+  kEstMatrix = zeros( M, N, nCoils );
+  function out = applyA( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      kEstMatrix( not( sampleMask ) ) = in;
+      out = applyW( kEstMatrix ) - kEstMatrix;
+    else
+      in = reshape( in, [ M N nCoils] );
+      tmp = applyW( in, 'transp' ) - in;
+      out = tmp( not( sampleMask ) );
+    end
+    out = out(:);
+  end
+
+  if doChecks == true
+    k0 = rand( nEst, 1 ) + 1i * rand( nEst, 1 );
+    [chkA,errChkA] = checkAdjoint( k0, @applyA );
+    if chkA == true
+      disp( 'Check of A Adjoint passed' );
+    else
+      error([ 'Check of A Adjoint failed with error ', num2str(errChkA) ]);
+    end
+  end
+
+  % b = -( W - I ) toMatrix( D )^T kCollected
+  b = applyW( kData ) - kData;  b = -b(:);
+
+  k0 = zeros( nEst, 1 );
+  tol = 1d-6;
+  nMaxIter = 1000;
+  [ kStar, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( @applyA, b, tol, nMaxIter, [], [], k0(:) );   %#ok<ASGLU>
+
+  kOut = kData;
+  kOut( not( sampleMask ) ) = kStar;
+  img = mri_reconRoemer( mri_reconIFFT( kOut, 'dims', [ 1 2 ] ) );
 end
 
 
-function out = spirit_conv(array, weights)
-  nCoils = size( array, 3 );
-  out = zeros( size( array ) );
+function img = mri_reconSpirit_epsNonzero( applyW, kData, epsilon )
+  % k = kCollected  U  kEst
+  %
+  % minimize (1/2) || W k - k ||_2^2 over k
+  % subject to || D k - kCollected ||_2 <= epsilon
+  %   where k = toMatrix( D )^T kCollected + ( toMatrix( D^C ) )^T kEst
+  %
+  %   Here, D is a set of sample indices and k are the sample values that were collected.
+  %   D^C is the complement of D
+  %   That is, k = kData( D^C ).
+  %
+  % Equivalently, we want to minimize || ( W - I ) k ||_2 over kEst.
+  % Equivalently, minimize || ( W - I ) ( toMatrix( D^C ) )^T kEst + ( W - I ) toMatrix( D )^T kCollected ||_2.
+  % Equivalently, minimize || ( W - I ) ( toMatrix( D^C ) )^T kEst + ( W - I ) kData ||_2.
 
-  for coil = 1 : nCoils
-    wi = weights( :, :, :, coil );
-    for getCoil = 1 : nCoils
-      wij = wi( :, :, getCoil );
-      res = filter2( wij, array( :, :, getCoil ), 'same' );
-      out( :, :, coil ) = out( :, :, coil ) + res;
-    end
+  function out = g( in )
+    out = 0.5 * norm( applyW( in ) - in, 'fro' )^2;
   end
-end
 
-
-function out = spirit_conv_adj( array, weights )
-  nCoils = size( array, 3);
-  out = zeros( size( array ) );
-
-  for coil = 1 : nCoils
-    wi = squeeze( weights( :, :, coil, : ) );
-    for getCoil = 1 : nCoils
-      wij = wi( :, :, getCoil );
-      wij_conj = conj( wij );
-      %ker = flipud( fliplr(wij_conj) );
-      ker = rot90( wij_conj, 2 );
-      res = filter2( ker, array( :, :, getCoil ), 'same' );
-      out( :, :, coil ) = out( :, :, coil ) + res;
-    end
+  function out = gGrad( in )
+    tmp = applyW( in ) - in;
+    out = applyW( tmp, 'transp' ) - tmp;
   end
+
+  sampleMask = kData ~= 0;
+  kCollected = kData( sampleMask == 1 );
+  function out = h( in )
+    diffEst = norm( in( sampleMask == 1 ) - kCollected(:) );
+    out = indicatorFunction( diffEst, [ 0, epsilon ] );
+  end
+
+  function out = proxth( in, t )   %#ok<INUSD>
+    out = in;
+    out( sampleMask == 1 ) = projectOntoBall( in( sampleMask == 1 ) - kCollected(:), epsilon ) + kCollected(:);
+  end
+
+  [ kStar, objValues ] = fista_wLS( kData, @g, @gGrad, @proxth, 'h', @h, 'verbose', true );   %#ok<ASGLU>
+
+  img = mri_reconRoemer( mri_reconIFFT( kStar, 'dims', [ 1 2 ] ) );
 end
 
