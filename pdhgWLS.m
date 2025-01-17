@@ -17,8 +17,9 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % beta - line search parameter
   % f - to determine the objective values, f must be provided
   % g - to determine the objective values, g must be provided
-  % N - the number of iterations that CP will perform (default is 100)
-  % y - the initial values of y in the CP iterations
+  % N - the number of iterations that PDHG will perform (default is 100)
+  % tau - the step size parameter that gets altered with line search (default is 1)
+  % y - the initial values of y in the PDHG iterations
   %
   % Outputs:
   % xStar - the optimal point
@@ -45,7 +46,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   
   p = inputParser;
   p.addParameter( 'A', [] );
-  p.addParameter( 'beta', 0.8, @ispositive );
+  p.addParameter( 'beta', 1, @ispositive );
   p.addParameter( 'delta', 0.99, @(x) x>0 && x<1 );
   p.addParameter( 'doCheckAdjoint', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.addParameter( 'f', [] );
@@ -73,6 +74,11 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   theta = p.Results.theta;
   y = p.Results.y;
   verbose = p.Results.verbose;
+
+  if nargout > 1
+    if numel( f ) == 0, error( 'Must supply f to calculate the objective values' ); end
+    if numel( g ) == 0, error( 'Must supply g to calculate the objective values' ); end
+  end
 
   if numel( tau ) == 0, tau = 1; end
 
