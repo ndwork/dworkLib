@@ -34,8 +34,7 @@ function padded = padData( data, N, varargin )
   circ = p.Results.circ;
 
   sData = size(data);
-  tooSmall = max( sData > N );
-  if tooSmall>0, error('Padded size is too small.'); end
+  if any( sData > N ), error('Padded size is too small.'); end
 
   if numel( padValue ) > 0 && circ == true
     error( 'Cannot specify a padding value and circular padding' );
@@ -130,7 +129,6 @@ function padded = padData( data, N, varargin )
   end
 
 end
-
 
 
 function minIndx = findMinIndx( N, nData )
