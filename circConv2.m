@@ -33,20 +33,21 @@ function out = circConv2( A, K, op )
   sA = size( A );
   sK = size( K );
 
-  sOut = max( sA, sK );
-  padA = padData( A, sOut );
-  padK = padData( K, sOut );
-
-  if nargin > 2 && strcmp( op, 'transp' )
-    padA = flipDims( conj( padA ), 'dims', [ 1 2 ] );
-    if mod( size( padA, 1 ), 2 ) == 0
-      padA = circshift( padA, 1, 1 );
-    end
-    if mod( size( padA, 2 ), 2 ) == 0
-      padA = circshift( padA, 1, 2 );
-    end
+  sOut = max( sA(1:2), sK(1:2) );
+  if any( sA(1:2) ~= sOut )
+    sA_new = [ sOut sA(3:end) ];
+    A = padData( A, sA_new );
+  end
+  if any( sK(1:2) ~= sOut )
+    sK_new = [ sOut sK(3:end) ];
+    K = padData( K, sK_new );
   end
 
-  out = fftshift2( ifft2( fft2( ifftshift2( padA ) ) .* fft2( ifftshift2( padK ) ) ) );
+  if nargin > 2 && strcmp( op, 'transp' )
+    A = flipDims( conj( A ), 'dims', [ 1 2 ] );
+  end
+
+  %out = fftshift2( ifft2( fft2( ifftshift2( A ) ) .* fft2( ifftshift2( K ) ) ) );
+  out = fftshift2( ifft2( bsxfun( @times, fft2( ifftshift2( A ) ), fft2( ifftshift2( K ) ) ) ) );
 end
 
