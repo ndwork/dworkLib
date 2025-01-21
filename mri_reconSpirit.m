@@ -12,6 +12,14 @@ function img = mri_reconSpirit( kData, sACR, wSize, varargin )
   %
   % Outputs
   % img - a 2D complex array of size M x N that is the output image.
+  %
+  % Written by Nicholas Dwork - Copyright 2025
+  %
+  % https://github.com/ndwork/dworkLib.git
+  %
+  % This software is offered under the GNU General Public License 3.0.  It
+  % is offered without any warranty expressed or implied, including the
+  % implied warranties of merchantability or fitness for a particular purpose.
 
   if nargin < 3
     disp( 'Usage: img = mri_reconSpirit( kData, sACR, wSize [, ''epsilon'', epsilon ] )' );
@@ -22,9 +30,11 @@ function img = mri_reconSpirit( kData, sACR, wSize, varargin )
   p = inputParser;
   p.addParameter( 'doChecks', false );
   p.addParameter( 'epsilon', [], @isnonnegative );
+  p.addParameter( 'verbose', false );
   p.parse( varargin{:} );
   doChecks = p.Results.doChecks;
   epsilon = p.Results.epsilon;
+  verbose = p.Results.verbose;
 
   if min( mod( wSize, 2 ) ) < 1, error( 'wSize elements must be odd' ); end
   if isscalar( sACR ), sACR = [ sACR sACR ]; end
@@ -33,42 +43,18 @@ function img = mri_reconSpirit( kData, sACR, wSize, varargin )
 
   %-- Find the interpolation coefficients w
   acr = cropData( kData, [ sACR(1) sACR(2) nCoils ] );
-  w = zeros( wSize(1), wSize(2), nCoils, nCoils );   % Interpolation coefficients
-  for coilIndx = 1 : nCoils
-    A = zeros( (  sACR(2) - wSize(2) + 1 ) * ( sACR(1) - wSize(1) + 1 ), wSize(1) * wSize(2) * nCoils - 1 );
-    if size( A, 1 ) < size( A, 2 ), error( 'The size of the ACR is too small for this size kernel' ); end
-    y = zeros( size(A,1), 1 );
-    pt2RemoveIndx = ceil( wSize(1)/2 ) + floor( wSize(2)/2 ) * wSize(1) + ( coilIndx - 1 ) * wSize(2) * wSize(1);
-    aIndx = 1;
-    for i = ceil( wSize(2)/2 ) : sACR(2) - floor( wSize(2)/2 )
-      for j = ceil( wSize(1)/2 ) : sACR(1) - floor( wSize(1)/2 )
-        subACR = acr( j - floor( wSize(2)/2 ) : j + floor( wSize(2)/2 ), ...
-                               i - floor( wSize(2)/2 ) : i + floor( wSize(2)/2 ), : );
-        subACR = subACR(:);
-        y( aIndx ) = subACR( pt2RemoveIndx );
-        subACR = [ subACR( 1 : pt2RemoveIndx-1 ); subACR( pt2RemoveIndx + 1 : end ); ];
-        A( aIndx, : ) = transpose( subACR );
-        aIndx = aIndx + 1;
-      end
-    end
-    wCoil = A \ y(:);
-    wCoil = [ wCoil( 1 : pt2RemoveIndx - 1 ); 0; wCoil( pt2RemoveIndx : end ); ];
-    w( :, :, :, coilIndx ) = reshape( wCoil, [ wSize nCoils ] );
-  end
+  w = findW( acr, wSize );
 
   %-- Use the interpolation coefficients to estimate the missing data
+  flipW = padData( flipDims( w, 'dims', [1 2] ), [ M N nCoils nCoils ] );
   function out = applyW( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
-      out = zeros( M, N, nCoils );
-      for c = 1 : nCoils
-        tmp = circConv2( flipDims( w(:,:,:,c), 'dims', [1 2] ), in );
-        out(:,:,c) = sum( tmp, 3 );
-      end
+      out = sum( circConv2( flipW, in ), 3 );
+      out = squeeze( out );
     else
       out = zeros( M, N, nCoils );
       for c = 1 : nCoils
-        tmp = repmat( in(:,:,c), [ 1 1 nCoils ] );
-        out = out + circConv2( flipDims( w(:,:,:,c), 'dims', [1 2] ), tmp, 'transp' );
+        out = out + circConv2( flipW(:,:,:,c), in(:,:,c), 'transp' );
       end
     end
   end
@@ -85,9 +71,42 @@ function img = mri_reconSpirit( kData, sACR, wSize, varargin )
   if numel( epsilon ) == 0 || epsilon == 0
     img = mri_reconSpirit_eps0( @applyW, kData, doChecks );
   else
-    img = mri_reconSpirit_epsNonzero( @applyW, kData, epsilon );
+    img = mri_reconSpirit_epsNonzero( @applyW, kData, epsilon, verbose );
   end
+end
 
+function [w, gammas] = findW( acr, wSize )
+  %-- Find the interpolation coefficients w
+  sACR = size( acr );
+  nCoils = sACR( 3 );
+
+  w = cell( 1, 1, 1, nCoils );
+  gammas = zeros( nCoils, 1 );
+  parfor coilIndx = 1 : nCoils
+    A = zeros( (  sACR(2) - wSize(2) + 1 ) * ( sACR(1) - wSize(1) + 1 ), ...
+                  wSize(1) * wSize(2) * nCoils - 1 );   %#ok<PFBNS>
+    if size( A, 1 ) < size( A, 2 ), error( 'The size of the ACR is too small for this size kernel' ); end
+    b = zeros( size(A,1), 1 );
+    pt2RemoveIndx = ceil( wSize(1)/2 ) + floor( wSize(2)/2 ) * wSize(1) + ( coilIndx - 1 ) * wSize(2) * wSize(1);
+    aIndx = 1;
+    for i = ceil( wSize(2)/2 ) : sACR(2) - floor( wSize(2)/2 )
+      for j = ceil( wSize(1)/2 ) : sACR(1) - floor( wSize(1)/2 )
+        subACR = acr( j - floor( wSize(2)/2 ) : j + floor( wSize(2)/2 ), ...
+                               i - floor( wSize(2)/2 ) : i + floor( wSize(2)/2 ), : );   %#ok<PFBNS>
+        subACR = subACR(:);
+        b( aIndx ) = subACR( pt2RemoveIndx );
+        subACR = [ subACR( 1 : pt2RemoveIndx-1 ); subACR( pt2RemoveIndx + 1 : end ); ];
+        A( aIndx, : ) = transpose( subACR );
+        aIndx = aIndx + 1;
+      end
+    end
+    wCoil = A \ b(:);
+    gammas( coilIndx ) = norm( A * wCoil - b )^2 / numel(b);
+    wCoil = [ wCoil( 1 : pt2RemoveIndx - 1 ); 0; wCoil( pt2RemoveIndx : end ); ];
+    w{1,1,1,coilIndx} = reshape( wCoil, [ wSize nCoils ] );
+  end
+  w = cell2mat( w );
+  %gammas = mean( gammas ) / nCoils;
 end
 
 function img = mri_reconSpirit_eps0( applyW, kData, doChecks )
@@ -146,7 +165,7 @@ function img = mri_reconSpirit_eps0( applyW, kData, doChecks )
 end
 
 
-function img = mri_reconSpirit_epsNonzero( applyW, kData, epsilon )
+function img = mri_reconSpirit_epsNonzero( applyW, kData, epsilon, verbose )
   % k = kCollected  U  kEst
   %
   % minimize (1/2) || W k - k ||_2^2 over k
@@ -182,7 +201,7 @@ function img = mri_reconSpirit_epsNonzero( applyW, kData, epsilon )
     out( sampleMask == 1 ) = projectOntoBall( in( sampleMask == 1 ) - kCollected(:), epsilon ) + kCollected(:);
   end
 
-  [ kStar, objValues ] = fista_wLS( kData, @g, @gGrad, @proxth, 'h', @h, 'verbose', true );   %#ok<ASGLU>
+  [ kStar, objValues ] = fista_wLS( kData, @g, @gGrad, @proxth, 'h', @h, 'verbose', verbose );   %#ok<ASGLU>
 
   img = mri_reconRoemer( mri_reconIFFT( kStar, 'dims', [ 1 2 ] ) );
 end
