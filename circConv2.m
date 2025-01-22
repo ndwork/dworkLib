@@ -1,11 +1,14 @@
 
-function out = circConv2( A, K, op )
-  % out = circConv2( A, K [, op ] )
+function out = circConv2( A, K, varargin )
+  % out = circConv2( A, K [, op, 'ndimsOut', ndimsOut ] )
   %
   % Calculates the two-dimensional circular convolution of A and K
   %
   % Optional Inputs:
   % op - either 'notransp' (default) or 'transp'
+  % ndimsOut - the number of dimensions of the output, used when 'transp' is set
+  %   This is used when the inputs of the forward operator have different dimensions
+  %   By default, assumes the same dimensions as max( ndims(A), ndims(K) )
   %
   % Inputs:
   % A - a (possibly) multidimensional array
@@ -24,11 +27,18 @@ function out = circConv2( A, K, op )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular purpose.
 
-  if nargin < 1
+  if nargin < 2
     disp( 'Usage:  out = circConv2( A, K [, op, ''notransp''/''transp'' ] )' );
     if nargout > 0, out = []; end
     return
   end
+
+  p = inputParser;
+  p.addOptional( 'op', 'notransp', @(x) true );
+  p.addParameter( 'ndimsOut', [], @ispositive );
+  p.parse( varargin{:} );
+  op = p.Results.op;
+  ndimsOut = p.Results.ndimsOut;
 
   sA = size( A );
   sK = size( K );
@@ -49,5 +59,9 @@ function out = circConv2( A, K, op )
 
   %out = fftshift2( ifft2( fft2( ifftshift2( A ) ) .* fft2( ifftshift2( K ) ) ) );
   out = fftshift2( ifft2( bsxfun( @times, fft2( ifftshift2( A ) ), fft2( ifftshift2( K ) ) ) ) );
+
+  if nargin > 2 && strcmp( op, 'transp' ) && numel( ndimsOut ) > 0
+    out = sum( out, ndimsOut+1 : ndims(out) );
+  end
 end
 
