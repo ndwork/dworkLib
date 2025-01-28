@@ -104,7 +104,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   calculateObjectiveValues = false;
   if nargout > 1
     if numel(h) == 0
-      warning('fista_wLS.m - Cannot calculate objective values without h function handle');
+      warning('fista_wLS - Cannot calculate objective values without h function handle');
     else
       objectiveValues = zeros( N+1, 1 );
       calculateObjectiveValues = true;

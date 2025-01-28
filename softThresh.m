@@ -21,10 +21,12 @@ function out = softThresh( in, thresh )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2
-    disp( 'Usage: out = softThresh( in, thresh )' );
+  if nargin < 1
+    disp( 'Usage: out = softThresh( in [, thresh ] )' );
     return
   end
+
+  if nargin < 2, thresh = 1; end
 
   if thresh == 0
 

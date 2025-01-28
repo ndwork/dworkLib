@@ -15,7 +15,8 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % Optional Inputs:
   % A - if A is not provided, it is assumed to be the identity
   % beta - line search parameter
-  % f - to determine the objective values, f must be provided
+  % f - to determine the objective values
+  %     If if is empty, it is assumed it is the 0 function
   % g - to determine the objective values, g must be provided
   % N - the number of iterations that PDHG will perform (default is 100)
   % tau - the step size parameter that gets altered with line search (default is 1)
@@ -76,7 +77,6 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   verbose = p.Results.verbose;
 
   if nargout > 1
-    if numel( f ) == 0, error( 'Must supply f to calculate the objective values' ); end
     if numel( g ) == 0, error( 'Must supply g to calculate the objective values' ); end
   end
 
@@ -111,7 +111,11 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
 
   for optIter = 1 : N
     if nargout > 1
-      objValues( optIter ) = f( x ) + g( applyA( x ) );
+      if numel( f ) == 0
+        objValues( optIter ) = g( applyA( x ) );
+      else
+        objValues( optIter ) = f( x ) + g( applyA( x ) );
+      end
     end
 
     if verbose == true
@@ -126,8 +130,10 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
     end
 
     lastX = x;
-    tmp = lastX - tau * applyAT( y );
-    x = proxf( tmp, tau );
+    x = lastX - tau * applyAT( y );
+    if numel( proxf ) > 0
+      x = proxf( x, tau );
+    end
 
     lastTau = tau;
     tau = tau * sqrt( 1 + theta );
@@ -155,7 +161,6 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
       normATdiffy = sqrt( innerProd( ATdiffy(:), ATdiffy(:) ) );
       normDiffy = sqrt( innerProd( diffy(:), diffy(:) ) );
 
-      %if tau * sqrt( beta ) * norm( ATdiffy(:) ) <= delta * norm( diffy(:) )
       if tau * sqrt( beta ) * normATdiffy <= delta * normDiffy
         break
       end
