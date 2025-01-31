@@ -1,8 +1,8 @@
 
 function out = proxL1Complex( in, thresh, weights, b )
-  % out = proxL1Complex( in, thresh [, weights ] )
+  % out = proxL1Complex( in, thresh [, weights, b ] )
   %
-  % Returns the proximal operator of f(x) = thresh * L1( x - b ), where
+  % Returns the proximal operator of f(x) = thresh * L1( x - b )_weights, where
   %   x is a complex vector.
   %
   % Inputs:
@@ -23,17 +23,30 @@ function out = proxL1Complex( in, thresh, weights, b )
   % purpose.
 
   if nargin < 2
-    disp( 'Usage:  out = proxL1Complex( in, thresh [, weights ] )' );
+    disp( 'Usage:  out = proxL1Complex( in, thresh [, weights, b ] )' );
     return;
   end
 
-  if nargin > 2, thresh = thresh .* weights; end
-  if nargin < 4, b = 0; end
+  if nargin > 2  &&  numel( weights ) > 0
+    thresh = thresh .* weights;
+  end
 
-  magIn = abs( in - b );
-  scalingFactors = thresh ./ magIn;
+  if nargin < 4
+    magIn = abs( in );
+  else
+    magIn = abs( in - b );
+  end
 
-  out = zeros( size( in ) );
-  out( magIn > thresh ) = in( magIn > thresh ) .* ( 1 - scalingFactors( magIn > thresh ) );
-  out = out + b;
+  if isreal( in )
+    out = sign(in) .* max( magIn - thresh, 0 );
+
+  else
+    magOut = max( magIn - thresh, 0 );
+    out = zeros( size( in ) );
+    out( magIn > thresh ) = in( magIn > thresh ) ./ magIn( magIn > thresh ) .* magOut( magIn > thresh );
+  end
+
+  if nargin >= 4
+    out = out + b;
+  end
 end
