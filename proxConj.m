@@ -14,5 +14,5 @@ function out = proxConj( proxf, in, sigma )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  out = in - sigma * proxf( in / sigma, 1/sigma );
+  out = in - sigma * proxf( in / sigma, 1 / sigma );
 end
