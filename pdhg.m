@@ -107,7 +107,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   end
 
   maxAbsX = max( abs( x(:) ) );
-  xBar = zeros( size (x) );
+  xBar = x;
   if numel( z ) == 0, z = 0; end
   
   optIter = 0;
@@ -122,15 +122,21 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
     lastMaxAbsX = maxAbsX;
 
     ATz = applyAT( z );
-    xTmp = x - tau * ATz;
-    x = proxf( xTmp, tau );
+    x = x - tau * ATz;
+    if numel( proxf ) > 0
+      x = proxf( x, tau );
+    end
 
     xBar = x + theta * ( x - lastX );
 
     maxAbsX = max( abs( x(:) ) );
 
     if nargout > 1
-      fx = f( x );
+      if numel( f ) > 0
+        fx = f( x );
+      else
+        fx = 0;
+      end
       gAx = g( applyA( x ) );
       objValues( optIter ) = fx + gAx;
     end
