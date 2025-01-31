@@ -92,7 +92,7 @@ function [nrm,flag] = pI_fh( applyM, x, maxIters, tolerance, verbose )
   lambda = 0;
   flag = 1;
   for iter = 1:maxIters
-    MtMx = applyM( applyM(x), 'transp' );
+    MtMx = applyM( applyM(x, 'notransp'), 'transp' );
     lambdaPrev = lambda;
     lambda = norm( MtMx(:), 2 );
     if lambda==0, break; end
