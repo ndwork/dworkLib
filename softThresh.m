@@ -1,6 +1,6 @@
 
 function out = softThresh( in, thresh )
-  % out = softThresh( in, thresh )
+  % out = softThresh( in [, thresh )
   %
   % Applies the proximal operator of the L1 norm (proxL1)
   %
@@ -34,15 +34,14 @@ function out = softThresh( in, thresh )
 
   elseif isreal( in )
 
-    out = sign(in) .* max( ( abs(in) - thresh ), 0 );
+    out = sign(in) .* max( abs(in) - thresh, 0 );
 
   else
 
     magIn = abs( in );
     magOut = max( ( magIn - thresh ), 0 );
-    out = in ./ magIn .* magOut;
-    out( magIn == 0 ) = 0;
-
+    out = zeros( size( in ) );
+    out( magIn > thresh ) = in( magIn > thresh ) .* magOut( magIn > thresh ) ./ magIn( magIn > thresh );
   end
 
 end
