@@ -13,9 +13,9 @@ function wavSplit = makeWavSplit( sData, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if nargin < 2
+  if nargin < 1
     disp( 'Usage: wavSplit = makeWavSplit( sData [, minSplitSize ] )' );
-    if nargout > 1, wavSplit = []; end
+    if nargout > 0, wavSplit = []; end
     return
   end
 
@@ -27,7 +27,7 @@ function wavSplit = makeWavSplit( sData, varargin )
   nDims = numel( sData );
   nPows = zeros( 1, nDims );
 
-  if numel( minSplitSize ) == 1
+  if isscalar( minSplitSize )
     minSplitSize = minSplitSize * ones( nDims, 1 );
   end
 
