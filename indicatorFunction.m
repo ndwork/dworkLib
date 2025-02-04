@@ -1,4 +1,3 @@
-
 function out = indicatorFunction( in, S )
   % out = indicatorFunction( in, S )
   %
@@ -6,9 +5,12 @@ function out = indicatorFunction( in, S )
   %
   % Inputs:
   % in - an array (of any size)
+  %
+  % Optional Inputs:
   % S - A two element array specifying the interval for the indicator function
   %     If a single sided bound is desired, set S with Inf.  For example, if
-  %     in must be non-negative, set S to [ 0, Inf ];
+  %     in must be non-negative, set S to [ 0, Inf ]
+  %     default is [ 0 0 ]
   %
   % Outputs:
   % out - 0 or Inf
@@ -21,6 +23,8 @@ function out = indicatorFunction( in, S )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  if nargin < 2, S = [0 0]; end
 
   if min( in ) >= min( S ) && max( in ) <= max( S )
     out = 0;
