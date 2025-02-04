@@ -28,7 +28,7 @@ function out = softThresh( in, thresh )
 
   if nargin < 2, thresh = 1; end
 
-  if thresh == 0
+  if max( abs( thresh ) )== 0
 
     out = in;
 
