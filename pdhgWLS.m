@@ -55,6 +55,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'innerProd', [] );
+  p.addParameter( 'metricNames', [] );
   p.addParameter( 'metrics', [] );
   p.addParameter( 'mu', 0.8, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
@@ -71,6 +72,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   f = p.Results.f;
   g = p.Results.g;
   innerProd = p.Results.innerProd;
+  metricNames = p.Results.metricNames;
   metrics = p.Results.metrics;
   mu = p.Results.mu;
   N = p.Results.N;
@@ -110,6 +112,12 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   if nMetrics == 1  &&  isa( metrics, "function_handle" )
     metrics = { metrics };
   end
+  if isa( metricNames, "char" )
+    metricNames = { metricNames };
+  end
+  if numel( metricNames ) > 0  &&  numel( metricNames ) ~= nMetrics
+    error( 'Must either supply no metric names or the same number as metrics' );
+  end
 
   if doCheckAdjoint == true
     [adjointCheckPassed,adjCheckErr] = checkAdjoint( x, applyA, applyAT );
@@ -136,7 +144,11 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
         if nMetrics > 0
           for mIndx = 1 : nMetrics
             mValue = metrics{ mIndx }( x );
-            dispStr = [ dispStr, ',  metric ', indx2str(mIndx,nMetrics), ': ', num2str(mValue) ];   %#ok<AGROW>
+            if numel( metricNames ) > 0
+              dispStr = [ dispStr, ',  ', metricNames{mIndx}, ': ', num2str(mValue) ];   %#ok<AGROW>
+            else
+              dispStr = [ dispStr, ',  metric ', indx2str(mIndx,nMetrics), ': ', num2str(mValue) ];   %#ok<AGROW>
+            end
           end
         end
       end
