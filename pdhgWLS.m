@@ -18,6 +18,8 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % f - to determine the objective values
   %     If if is empty, it is assumed it is the 0 function
   % g - to determine the objective values, g must be provided
+  % metrics - either a function handle or a cell array of function handles for functions that
+  %           should be run on every iteration and the values reported when verbose is true
   % N - the number of iterations that PDHG will perform (default is 100)
   % tau - the step size parameter that gets altered with line search (default is 1)
   % y - the initial values of y in the PDHG iterations
@@ -38,8 +40,8 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   if nargin < 3
     disp( 'Usage:   [xStar,objValues] = pdhgWLS( x, proxf, proxgConj [, ... ' );
   	disp( '           ''N'', N, ''A'', A, ''beta'', beta, ''f'', f, ''g'', g, ... ' );
-    disp( '           ''mu'', mu, ''tau'', tau, ''theta'', theta, ''y'', y, ... ' );
-    disp( '           ''verbose'', verbose ] ) ' );
+    disp( '           ''metrics'', metrics, ''mu'', mu, ''tau'', tau, ''theta'', theta, ... ' );
+    disp( '           ''y'', y, ''verbose'', verbose ] ) ' );
     xStar = [];
     if nargout > 1, objValues = []; end
     return;
@@ -53,6 +55,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'innerProd', [] );
+  p.addParameter( 'metrics', [] );
   p.addParameter( 'mu', 0.8, @(x) x>0 && x<1 );
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'printEvery', 1, @ispositive );
@@ -68,6 +71,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   f = p.Results.f;
   g = p.Results.g;
   innerProd = p.Results.innerProd;
+  metrics = p.Results.metrics;
   mu = p.Results.mu;
   N = p.Results.N;
   printEvery = p.Results.printEvery;
@@ -102,6 +106,11 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
     y(:) = 0;
   end
 
+  nMetrics = numel( metrics );
+  if nMetrics == 1  &&  isa( metrics, "function_handle" )
+    metrics = { metrics };
+  end
+
   if doCheckAdjoint == true
     [adjointCheckPassed,adjCheckErr] = checkAdjoint( x, applyA, applyAT );
     if ~adjointCheckPassed, error([ 'checkAdjoint failed with error ', num2str(adjCheckErr) ]); end
@@ -120,13 +129,18 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
 
     if verbose == true
       if mod( optIter, printEvery ) == 0 || optIter == 1
+        dispStr = [ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ];
         if nargout > 1
-          disp([ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N), ',  ', ...
-            'objective value: ', num2str( objValues( optIter ),'%15.13f' ) ]);
-        else
-          disp([ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ]);
+          dispStr = [ dispStr, ',  objective value: ', num2str( objValues( optIter ),'%15.13f' ) ];   %#ok<AGROW>
+        end
+        if nMetrics > 0
+          for mIndx = 1 : nMetrics
+            mValue = metrics{ mIndx }( x );
+            dispStr = [ dispStr, ',  metric ', indx2str(mIndx,nMetrics), ': ', num2str(mValue) ];   %#ok<AGROW>
+          end
         end
       end
+      disp( dispStr );
     end
 
     lastX = x;
