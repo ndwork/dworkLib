@@ -32,8 +32,8 @@ function out = upsample2( img, U, varargin )
   S = p.Results.S;
   sOut = p.Results.sOut;
 
-  if numel(U) == 1, U = U * ones( 2, 1 ); end
-  if numel(S) == 1, S = S * ones( 2, 1 ); end
+  if isscalar(U), U = U * ones( 2, 1 ); end
+  if isscalar(S), S = S * ones( 2, 1 ); end
 
   sImg = size( img );
   if numel( op ) == 0 || strcmp( op, 'notransp' )
