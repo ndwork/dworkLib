@@ -1,6 +1,6 @@
 
-function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
-  % [xStar,objValues] = pdhgWLS( x, proxf, proxgConj [, ...
+function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin )
+  % [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj [, ...
   %   'N', N, 'A', A, 'beta', beta, 'f', f, 'g', g, 'mu', mu, 'tau', tau, ...
   %   'theta', theta, 'y', y, 'verbose', verbose ] )
   %
@@ -38,11 +38,11 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
   % purpose.
 
   if nargin < 3
-    disp( 'Usage:   [xStar,objValues] = pdhgWLS( x, proxf, proxgConj [, ... ' );
+    disp( 'Usage:   [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj [, ... ' );
   	disp( '           ''N'', N, ''A'', A, ''beta'', beta, ''f'', f, ''g'', g, ... ' );
     disp( '           ''metrics'', metrics, ''mu'', mu, ''tau'', tau, ''theta'', theta, ... ' );
     disp( '           ''y'', y, ''verbose'', verbose ] ) ' );
-    xStar = [];
+    if nargout > 0, xStar = []; end
     if nargout > 1, objValues = []; end
     return;
   end
@@ -124,15 +124,19 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
     if ~adjointCheckPassed, error([ 'checkAdjoint failed with error ', num2str(adjCheckErr) ]); end
   end
 
-  if nargout > 1, objValues = zeros( N+1, 1 ); end
+  if nargout > 1
+    fx = 0;
+    objValues = zeros( N+1, 1 );
+  end
+  if nargout > 2
+    metricValues = zeros( N+1, nMetrics );
+  end
 
   for optIter = 1 : N
     if nargout > 1
-      if numel( f ) == 0
-        objValues( optIter ) = g( applyA( x ) );
-      else
-        objValues( optIter ) = f( x ) + g( applyA( x ) );
-      end
+      if numel( f ) > 0, fx = f( x ); end
+      gAx = g( applyA( x ) );
+      objValues( optIter ) = fx + gAx;
     end
 
     if verbose == true
@@ -144,6 +148,7 @@ function [xStar,objValues] = pdhgWLS( x, proxf, proxgConj, varargin )
         if nMetrics > 0
           for mIndx = 1 : nMetrics
             mValue = metrics{ mIndx }( x );
+            if nargout > 2, metricValues( optIter+1, mIndx ) = mValue; end
             if numel( metricNames ) > 0
               dispStr = [ dispStr, ',  ', metricNames{mIndx}, ': ', num2str(mValue) ];   %#ok<AGROW>
             else

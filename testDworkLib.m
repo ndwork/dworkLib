@@ -1226,19 +1226,43 @@ function testDworkLib
 
   %% pdhgWLS
   fprintf('\nTesting pdhgWLS: \n');
-  %minimize ||Ax - b||_2^2 + lambda ||x||
-  A = rand( 7, 3 ) * 100;
-  x = rand( 3, 1 ) * 1;
-  x0 = rand( size( x ) );
+  %minimize || A x - b ||_2^2 + lambda ||x||_1
+  nA = 7;
+  nX = 3;
+  A = rand( nA, nX ) * 100;
+  x = rand( nX, 1 ) * 1;
   b = A * x;
-  lambda = 1;
-  f = @(x) lambda * norm( x, 1 );
-  g = @(x) 0.5 * norm( x - b, 2 )^2;
-  proxf = @(x,t) softThresh( x, t * lambda );
-  proxgConj = @(x,gamma) proxConjL2Sq( x, gamma, 1, b );
-  xStar = pdhgWLS( x0, proxf, proxgConj, 'A', A, 'N', 10000, 'f', f, 'g', g );   %#ok<NASGU>
-  err = norm( x(:) - xStar(:) );
-  fprintf('\npdhgWLS ran to completion\n');
+  lambda = 0.1;
+  x0 = rand( size( x ) );
+
+  g_fista = @(x) 0.5 * norm( A * x - b, 'fro' )^2;
+  gGrad_fista = @(x) A'*A*x - A'*b;
+  h_fista = @(x) lambda * norm( x(:), 1 );
+  proxh_fista = @(x,t) softThresh( x, t * lambda );
+  x_fista = fista_wLS( x0, g_fista, gGrad_fista, proxh_fista, 'h', h_fista, 'N', 1000 );
+  
+  % f = @(x) lambda * norm( x, 1 );
+  % g = @(x) 0.5 * norm( x - b, 2 )^2;
+  % proxf = @(x,t) softThresh( x, t * lambda );
+  % proxgConj = @(x,gamma) proxConjL2Sq( x, gamma, 1, b );
+  % x_pdhg = pdhgWLS( x0, proxf, proxgConj, 'A', A, 'N', 1000, 'f', f, 'g', g );
+
+  f_2 = @(x) 0;
+  proxf_2 = @(x,t) x;
+  g_2 = @(x) 0.5 * norm( x(1:nA) - b, 2 )^2 + lambda * norm( x(nA+1:end), 1 );
+  proxg_2 = @(x,t) [ proxL2Sq( x(1:nA), t, b ); ...
+                     softThresh( x(nA+1:end), t * lambda ); ];
+  proxgConj_2 = @(in,sigma) proxConj( proxg_2, in, sigma );
+  B = [ A; eye( nX ); ];
+  x_pdhg_2 = pdhgWLS( x0, proxf_2, proxgConj_2, 'A', B , 'N', 10000, 'f', f_2, 'g', g_2 );
+
+  err = norm( x_fista(:) - x_pdhg_2(:) ) / norm( x_fista(:) );
+  if err > 1d-5
+    disp( [ x_fista x_pdhg_2 ] );
+    error([ 'Test of pdhgWLS failed with error ', num2str(err) ]);
+  else
+    disp( 'Test of pdhgWLS passed' );
+  end
 
   
   %% plotnice
