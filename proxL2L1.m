@@ -6,7 +6,7 @@ function out = proxL2L1( in, t, weights )
   %   L2L1 is the (possibly weighted) L2,L1 norm.
   %
   % Inputs:
-  % in - three dimensional array
+  % in - multidimensional array
   % thresh - the thresholding value
   %
   % Optional Inputs:
@@ -23,13 +23,12 @@ function out = proxL2L1( in, t, weights )
 
   if nargin > 2, t = t .* weights; end
 
-  nDimsIn = ndims( in );
-  normsIn = LpNorms( in, 2, nDimsIn );
+  normsIn = LpNorms( in, 2 );
 
-  scalingFactors = t ./ normsIn;
-  scalingFactors( normsIn <= t ) = 1;
+  % Next line is soft thresholding on the norms
+  % uses the fact that a norm is real and positive
+  normsOut = max( normsIn - t, 0 );
 
-  projsOntoL2Ball = bsxfun( @times, in, scalingFactors );
-
-  out = in - projsOntoL2Ball;
+  out = bsxfun( @times, bsxfun( @rdivide, in, normsIn ), normsOut );
+  out( ~isfinite( out ) ) = 0;
 end
