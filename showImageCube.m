@@ -40,8 +40,8 @@ function imH = showImageCube( cube, varargin )
   end
   
   p = inputParser;
-  p.addOptional( 'scale', 1, @isnumeric );
-  p.addParameter( 'border', 1, @isnumeric );
+  p.addOptional( 'scale', 1, @ispositive );
+  p.addParameter( 'border', 1, @ispositive );
   p.addParameter( 'borderValue', 'max', @(x) true);
   p.addParameter( 'nImgsPerRow', [], @isnumeric );
   p.addParameter( 'range', [] );
@@ -66,8 +66,6 @@ function imH = showImageCube( cube, varargin )
     ar = 1.5;  % desired aspect ratio
     nImgsPerRow = ceil( sqrt( nImgs * sCube(1) * ar / sCube(2) ) );
   end
-
-  if scale <= 0, error('scale must be positive'); end
   
   if scale ~= 1
     newCube = zeros( scale * sCube(1), scale * sCube(2), nImgs );
@@ -75,7 +73,7 @@ function imH = showImageCube( cube, varargin )
       newCube(:,:,imgIndx) = imresize( cube(:,:,imgIndx), scale, 'nearest' );
     end
     varargin{1} = 1;
-    showImageCube( newCube, varargin{:} );
+    imH = showImageCube( newCube, varargin{:} );
     return;
   end
   
