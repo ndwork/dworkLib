@@ -60,7 +60,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   p.addParameter( 'delta', 0.99, @(x) x>0 && x<1 );
   p.addParameter( 'doCheckAdjoint', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.addParameter( 'dsc', false );
-  p.addParameter( 'dscThresh', 1d-6, @ispositive );
+  p.addParameter( 'dscThresh', 1d-8, @ispositive );
   p.addParameter( 'f', [] );
   p.addParameter( 'g', [] );
   p.addParameter( 'innerProd', [] );
@@ -166,7 +166,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   end
 
   relDiff = @(x,lastX) norm( x(:) - lastX(:) ) / norm( lastX(:) );
-  if numel( dsc ) > 0  &&  dsc == true
+  if numel( dsc ) > 0  && ~isa( dsc, "function_handle" ) &&  dsc == true
     dsc = relDiff;
   end
 
@@ -233,7 +233,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
         dispStr = [ dispStr, ',  dscValue: ', num2str(dscValue) ];   %#ok<AGROW>
         disp( dispStr );
       end
-      if dscValue < dscThresh, break; end
+      if dscValue < dscThresh  &&  optIter > 1, break; end
     else
       disp( dispStr );
     end
