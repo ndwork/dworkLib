@@ -62,7 +62,11 @@ function [img,relRes] = mri_reconModelBased( kData, varargin )
     if numel( traj ) == 0
       sImg = size( kData, [1 2] );
     elseif numel( sImg ) == 0
-      error( 'sImg must be supplied for single-coil non-Cartesian reconstruction' );
+      if numel( support ) > 0
+        sImg = size( support );
+      else
+        error( 'Either sImg or support must be supplied for single-coil non-Cartesian reconstruction' );
+      end
     end
   else
     sImg = size( sMaps, [1 2] );
