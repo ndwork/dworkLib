@@ -1,6 +1,6 @@
 
 function out = projectOntoBall( x, r, p )
-  % Project onto a ball of radius r
+  % Project onto a ball of radius r with respect to the Lp norm.
   %
   % out = projectOntoBall( x, r [, p ] )
   %
@@ -9,7 +9,7 @@ function out = projectOntoBall( x, r, p )
   % r - the radius of the ball to project onto
   %
   % Optional inputs:
-  % p - projection with respect to the Lp norm.
+  % p - either a positive real scalar, Inf, -Inf, or 'fro'
   %
   % Outputs:
   % out - a 1D array that is the projected vector
