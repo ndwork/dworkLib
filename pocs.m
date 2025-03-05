@@ -22,13 +22,32 @@ function out = pocs( in, projections, varargin )
 
   p = inputParser;
   p.addOptional( 'nMaxIter', 100, @ispositive );
+  p.addParameter( 'sequential', false );
   p.parse( varargin{:} );
   nMaxIter = p.Results.nMaxIter;
+  sequential = p.Results.sequential;
 
   out = in;
-  for iter = 1 : nMaxIter
-    for pIndx = 1 : numel( projections )
-      out = projections{ pIndx }( out );
+
+  nProjections = numel( projections );
+
+  if sequential
+
+    for iter = 1 : nMaxIter
+      for pIndx = 1 : nProjections
+        out = projections{ pIndx }( out );
+      end
+    end
+
+  else
+    sIn = size( in );
+    projectionOutputs = cell( 1, nProjections );
+    for iter = 1 : nMaxIter
+      for pIndx = 1 : nProjections
+        projOutput = projections{ pIndx }( out );
+        projectionOutputs{ pIndx } = projOutput(:);
+      end
+      out = reshape( mean( cell2mat( projectionOutputs ), 2 ), sIn );
     end
   end
 
