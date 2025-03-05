@@ -43,7 +43,7 @@ function out = pocs( in, projections, varargin )
     sIn = size( in );
     projectionOutputs = cell( 1, nProjections );
     for iter = 1 : nMaxIter
-      for pIndx = 1 : nProjections
+      parfor pIndx = 1 : nProjections
         projOutput = projections{ pIndx }( out );
         projectionOutputs{ pIndx } = projOutput(:);
       end
