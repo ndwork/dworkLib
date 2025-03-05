@@ -17,6 +17,10 @@ function out = proxCompositionAffine( proxf, x, A, b, alpha, t )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if numel( b ) == 0, b = 0; end
+  if numel( alpha ) == 0, alpha = 1; end
+  if numel( t ) == 0, t = 1; end
+
   if isa( A, 'function_handle' )
     Ax = A( x );
     out = x - alpha * A( Ax + b - proxf( Ax + b, t/alpha ) , 'transp' );
