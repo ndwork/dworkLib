@@ -321,7 +321,9 @@ function img = mriRecon( kData, varargin )
     end
   end
 
-  if numel( epsSupport ) > 0, radSupportBall = sqrt( epsSupport * (nSupportC - 1) ); end
+  if numel( support ) > 0  &&  numel( epsSupport ) > 0
+    radSupportBall = sqrt( epsSupport * (nSupportC - 1) );
+  end
   function out = projOutsideSupportOntoBall( in )
     out = in;
     out( support == 0 ) = projectOntoBall( applyPC( in ), radSupportBall );
@@ -1108,18 +1110,19 @@ function img = mriRecon( kData, varargin )
           [img,objectiveValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth );   %#ok<ASGLU>
   
         else
-          % minimize || M F PT x - b ||_2
           if numel( optAlg ) == 0, optAlg = 'pocs'; end
           if strcmp( optAlg, 'lsqr' )
+            % minimize || M F PT x - b ||_2
             img0 = applyP( img0 );
             [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
               @apply_vMFPT, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
             img = applyP( img, 'transp' );
           elseif strcmp( optAlg, 'pocs' )
+            % minimize 1 subject to Pc x = 0  and  M F x = b
             proj1 = @(in) applyF( applyF( in ) .* ( 1 - sampleMask ) + kData, 'inv' );
             proj2 = @(in) in .* support;
             projections = { proj1, proj2 };
-            img = pocs( zeros( sImg ), projections, 10 );
+            img = pocs( zeros( sImg ), projections );
           end
         end
   
