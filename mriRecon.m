@@ -1111,18 +1111,32 @@ function img = mriRecon( kData, varargin )
   
         else
           if numel( optAlg ) == 0, optAlg = 'pocs'; end
-          if strcmp( optAlg, 'lsqr' )
-            % minimize || M F PT x - b ||_2
-            img0 = applyP( img0 );
-            [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-              @apply_vMFPT, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
-            img = applyP( img, 'transp' );
-          elseif strcmp( optAlg, 'pocs' )
+          if strcmp( optAlg, 'pocs' )
             % minimize 1 subject to Pc x = 0  and  M F x = b
             proj1 = @(in) applyF( applyF( in ) .* ( 1 - sampleMask ) + kData, 'inv' );
             proj2 = @(in) in .* support;
-            projections = { proj1, proj2 };
-            img = pocs( zeros( sImg ), projections );
+            projections = { proj2, proj1 };
+            img = pocs( img0, projections );
+
+          elseif strcmp( optAlg, 'gd' )
+            % minimize 0.5 * || M F PT x - b ||_2^2
+            PFTMTb = applyMFPT( b, 'transp' );
+            g = @(in) 0.5 * norm( applyMFPT(in) - b )^2;
+            gGrad = @(in) applyMFPT( applyMFPT( in ), 'transp' ) - PFTMTb;
+            [img,oVals,relDiffs] = gradDescent( applyP(img0), gGrad, 'g', g, 'useLineSearch', true );   %#ok<ASGLU>
+
+          elseif strcmp( optAlg, 'lsqr' )
+            % minimize || M F PT x - b ||_2
+            % Note: DOESN'T WORK!!!  This problem is not appropriate for LSQR
+            img0 = applyP( img0 );
+            if nCoils == 1
+              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                @applyMFPT, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
+            else
+              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                @apply_vMFPT, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
+            end
+            img = applyP( img, 'transp' );
           end
         end
   
