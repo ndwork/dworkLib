@@ -4,30 +4,6 @@ function img = mriRecon( kData, varargin )
   %       'lambda', lambda, 'Psi', Psi 'sACR', sACR, 'sMaps', sMaps, 'support', support, 
   %       'verbose', verbose, 'wSize', wSize ] )
   %
-  % If nCoils == 1
-  %  By default, reconstructs with an inverse Fast Fourier transform
-  %
-  %  If support is supplied, then solves the following problem
-  %    minimize || M F PT x - b ||_2
-  %  where P is the matrix that extracts the pixels within the support into a vector
-  %
-  %  If epsSupport is also supplied, then solves the following problem
-  %    minimize || M F x - b ||_2  subject to  Var( Pc x ) <= epsSupport
-  %  where Pc is the complement matrix to P.  It extracts the pixels outside the support into a vector.
-  %
-  %
-  % If nCoils > 1
-  %   By default, reconstructs with Roemer reconstruction
-  %
-  % If sMaps is supplied, requires nCoils > 1 and reconstructs by solving the following problem
-  %   minimize || M F S x - b ||_2
-  %
-  % If support is supplied, reconstructs by solving the following problem
-  %   minimize || M F PT x - b ||_2
-  %
-  % If support is supplied, reconstructs by solving the following problem
-  %   minimize || M F S PT x - b ||_2
-  %
   % Inputs:
   % kData - an array of size M x N x C where C is the number of coils
   %         and uncollected data have value 0.
@@ -883,12 +859,8 @@ function img = mriRecon( kData, varargin )
                 proxg = @(in,t) projectOntoEpsBalls( in - b ) + b;
                 proxgConj = @(in,s) proxConj( proxg, in, s );
   
-                metric1 = f;
-                metric2 = @(in) abs( norm( applyA( in ) - b, 2 ) - ballRadius );
-                metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
   
               end
 
