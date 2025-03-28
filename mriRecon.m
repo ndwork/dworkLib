@@ -86,6 +86,7 @@ function img = mriRecon( kData, varargin )
   nImg = prod( sImg );
   nCoils = size( kData, 3 );
 
+  if isscalar( epsData ), epsData = epsData * ones( nCoils, 1 ); end
   if isscalar( sACR ), sACR = [ sACR sACR ]; end
   if isscalar( wSize ), wSize = [ wSize wSize ]; end
 
@@ -145,6 +146,7 @@ function img = mriRecon( kData, varargin )
 
   b = applyM( kData );
   nb = numel( b );
+  nbPerCoil = nb / nCoils;
 
   %-- Function definitions
 
@@ -321,16 +323,37 @@ function img = mriRecon( kData, varargin )
     end
   end
 
+  function out = indicatorEpsData( in )
+    out = 0;
+    bTmp = reshape( b, [], nCoils );
+    in = reshape( in, [], nCoils );
+    for c = 1 : nCoils
+      out = indicatorFunction( norm( in - bTmp(:,c) )^2 / ( nbPerCoil-1 ), [ 0 epsData(c) ] );
+      if out ~= 0, break; end
+    end
+  end
+
+  epsBallRadiuses = sqrt( epsData * (nbPerCoil-1) );
+  function out = projectOntoEpsBalls( in )
+    % proximal operator of indicator( || x ||_2 /  <= ballRadius(c) )
+    in = reshape( in, nbPerCoil, nCoils );
+    out = zeros( nbPerCoil, nCoils );
+    for c = 1 : nCoils
+      out(:,c) = projectOntoBall( in(:,c), epsBallRadiuses(c) );
+    end
+    out = out(:);
+  end
+
   if numel( support ) > 0  &&  numel( epsSupport ) > 0
-    radSupportBall = sqrt( epsSupport * (nSupportC - 1) );
+    supportBallRadius = sqrt( epsSupport * (nSupportC - 1) );
   end
   function out = projOutsideSupportOntoBall( in )
     out = in;
-    out( support == 0 ) = projectOntoBall( applyPC( in ), radSupportBall );
+    out( support == 0 ) = projectOntoBall( applyPC( in ), supportBallRadius );
   end
 
   if numel( wSize ) > 0
-    radBallsSpiritReg = sqrt( epsSpiritReg * ( nImg - 1 ) );
+    ballRadiusesSpiritReg = sqrt( epsSpiritReg * ( nImg - 1 ) );
   end
   function out = proxSpiritReg( in, t )   %#ok<INUSD>
     % indicator( || in ||_2^2 / (nImg-1) <= epsSpiritReg(coilIndx) ) is equivalent to
@@ -338,7 +361,7 @@ function img = mriRecon( kData, varargin )
     in = reshape( in, sKData );
     out = zeros( sKData );
     for c = 1 : nCoils
-      out(:,:,c) = projectOntoBall( in(:,:,c), radBallsSpiritReg(c), 'fro' );
+      out(:,:,c) = projectOntoBall( in(:,:,c), ballRadiusesSpiritReg(c), 'fro' );
     end
     out = out(:);
   end
@@ -349,7 +372,7 @@ function img = mriRecon( kData, varargin )
     x = reshape( x, sKData );
     xNorms = LpNorms( reshape( x, [], nCoils ), 2, 1 );
     out = 0;
-    if any( ( xNorms.^2 / ( nImg - 1 ) ) > radBallsSpiritReg )
+    if any( ( xNorms.^2 / ( nImg - 1 ) ) > ballRadiusesSpiritReg )
       out = Inf;
     end
   end
@@ -358,7 +381,7 @@ function img = mriRecon( kData, varargin )
     WmIFSin = applyWmIFS(in);
     violations = zeros(nCoils,1);
     for c = 1 : nCoils
-      violations(c) = abs( norm( WmIFSin(:,:,c), 'fro' ) - radBallsSpiritReg(c) );
+      violations(c) = abs( norm( WmIFSin(:,:,c), 'fro' ) - ballRadiusesSpiritReg(c) );
     end
     out = max( violations );
   end
@@ -656,18 +679,17 @@ function img = mriRecon( kData, varargin )
 
             if numel( wSize ) > 0
               % minimize || Psi x ||_1
-              % subject to  || M F S x - b ||_2^2 / (nb-1) <= epsData
+              % subject to  || M F S(c) x - b ||_2^2 / (nbPerCoil-1) <= epsData(c)
               %        and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
               %        and  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+
+              g1 = @( in ) indicatorEpsData( in );
+              proxg1 = @(in,t) projectOntoEpsBalls( in - b ) + b;
 
               if oPsi == true
                 applyA = @(in,op) concat_MFS_WmIFS_I( in, op );
                 f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
                 proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
-                g1 = @( in ) indicatorFunction( norm( in - b )^2 / (nb-1), [ 0 epsData ] );
-                % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
-                radBall = sqrt( epsData * (nb-1) );
-                proxg1 = @(in,t) projectOntoBall( in - b, radBall ) + b;
                 g2 = @spiritReg;
                 proxg2 = @proxSpiritReg;
                 g3 = @(in) indicatorFunction( ...
@@ -678,16 +700,16 @@ function img = mriRecon( kData, varargin )
                 n3 = n2 + nImg;
                 g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) ) + g3( in(n2+1:n3) );
                 proxg = @(in,t) [ proxg1( in(1:n1), t );  ...
-                                  proxg2(in(n1+1:n2)); ...
+                                  proxg2( in(n1+1:n2) ); ...
                                   proxg3( in(n2+1:n3) ); ];
                 proxgConj = @(in,s) proxConj( proxg, in, s );
     
                 metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
                 metric2 = @metricSpiritRegViolation;
                 metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'violation' };
+                metricNames = { 'sparsity', 'spirit violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', 10000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'N', nMaxIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
               else
                 applyA = @(in,op) concat_Psi_MFS_WmIFS( in, op );
@@ -696,10 +718,6 @@ function img = mriRecon( kData, varargin )
                 proxf = @(in,t) projOutsideSupportOntoBall( in );
                 g0 = @(in) norm( in(:), 1 );
                 proxg0 = @proxL1Complex;
-                g1 = @(in) indicatorFunction( norm( in - b )^2 / (nb-1), [ 0 epsData ] );
-                % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
-                radBall = sqrt( epsData * (nb-1) );
-                proxg1 = @(in,t) projectOntoBall( in - b, radBall ) + b;
                 g2 = @spiritReg;
                 proxg2 = @proxSpiritReg;
                 n0 = nKData;
@@ -714,26 +732,26 @@ function img = mriRecon( kData, varargin )
                 metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
                 metric2 = @metricSpiritRegViolation;
                 metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'violation' };
+                metricNames = { 'sparsity', 'spirit violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', 1000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'N', nMaxIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
               end
             else
 
               if numel( epsData ) > 0
-                % minimize || Psi x ||_1  subject to  || M F S x - b ||_2^2 / ( Nb - 1 ) <= epsData
+                % minimize || Psi x ||_1  subject to  || M F S(c) x - b(c) ||_2^2 / ( nbPerCoil - 1 ) <= epsData(c)
                 %                                and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
   
+                g1 = @( in ) indicatorEpsData( in );
+                proxg1 = @(in,t) projectOntoEpsBalls( in - b ) + b;
+
                 if oPsi == true
                   f = @(in) normL2L1( Psi( in ) );
                   proxf = @(in,t) proxCompositionAffine( @proxL2L1, in, Psi, 0, 1, t );
                   applyA = @concat_MFS_Pc;
-                  g1 = @(in) indicatorFunction( ...
-                    norm( in - b, 'fro' )^2 / (nb-1), [ 0 epsData ] );
                   g2 = @(in) indicatorFunction( ...
                     norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
                   g = @(in) g1( in(1:nb) ) + g2( in(nb+1:end) );
-                  proxg1 = @(in,t) projectOntoBall( in - b, sqrt( epsData * (nb-1) ) ) + b;
                   proxg2 = @(in,t) projOutsideSupportOntoBall( in, sqrt( epsSupport * (nImg-nSupport-1) ) );
                   proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
@@ -746,13 +764,10 @@ function img = mriRecon( kData, varargin )
                     norm( in(nb+1:end), 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
                   proxf = @(in,t) projOutsideSupportOntoBall( in );
                   g0 = @(in) normL2L1( in );
-                  g1 = @(in) indicatorFunction( ...
-                    norm( in(1:nb) - b, 'fro' )^2 / (nb-1), [ 0 epsData ] );
                   n1 = nImg;
                   n2 = n1 + nb;
                   g = @(in) g0(1:n1) + g1( in(n1+1:n2) );
                   proxg0 = @proxL2L1;
-                  proxg1 = @(in,t) projectOntoBall( in - b, sqrt( epsData * (nb-1) ) ) + b;
                   proxg = @(in,t) [ proxg0( in(1:n1) ); ...
                                     proxg1( in(n1+1:n2), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
@@ -787,29 +802,30 @@ function img = mriRecon( kData, varargin )
 
             else
               % minimize || Psi x ||_1
-              % subject to  || M F S x - b ||_2^2 / (nb-1) <= epsData
+              % subject to  || M F S(c) x - b ||_2^2 / (nbPerCoil-1) <= epsData(c)
               %        and  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+
+              g1 = @( in ) indicatorEpsData( in );
+              proxg1 = @(in,t) projectOntoEpsBalls( in - b ) + b;
+              g2 = @spiritReg;
+              proxg2 = @proxSpiritReg;
+
+              metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
+              metric2 = @metricSpiritRegViolation;
+              metrics = { metric1, metric2 };
+              metricNames = { 'sparsity', 'violation' };
 
               if oPsi == true
                 applyA = @(in,op) concat_MFS_WmIFS( in, op );
                 f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
                 proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
-                g1 = @( in ) indicatorFunction( norm( in - b )^2 / (nb-1), [ 0 epsData ] );
                 % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
-                radBall = sqrt( epsData * (nb-1) );
-                proxg1 = @(in,t) projectOntoBall( in - b, radBall ) + b;
-                g2 = @spiritReg;
-                proxg2 = @proxSpiritReg;
                 n1 = nb;
                 n2 = n1 + nKData;
                 g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
                 proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2)) ];
                 proxgConj = @(in,s) proxConj( proxg, in, s );
     
-                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-                metric2 = @metricSpiritRegViolation;
-                metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
                   'N', 1000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
@@ -819,12 +835,6 @@ function img = mriRecon( kData, varargin )
                 proxf = [];
                 g0 = @(in) norm( in, 1 );
                 proxg0 = @proxL1Complex;
-                g1 = @( in ) indicatorFunction( norm( in - b )^2 / (nb-1), [ 0 epsData ] );
-                % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
-                radBall = sqrt( epsData * (nb-1) );
-                proxg1 = @(in,t) projectOntoBall( in - b, radBall ) + b;
-                g2 = @spiritReg;
-                proxg2 = @proxSpiritReg;
                 n0 = nKData;
                 n1 = n0 + nb;
                 n2 = n1 + nKData;
@@ -834,10 +844,6 @@ function img = mriRecon( kData, varargin )
                                   proxg2(in(n1+1:n2)) ];
                 proxgConj = @(in,s) proxConj( proxg, in, s );
 
-                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-                metric2 = @metricSpiritRegViolation;
-                metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
                   'N', 1000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
               end
@@ -868,18 +874,17 @@ function img = mriRecon( kData, varargin )
                 end
   
               else  % if numel( lambda ) > 0  &&  lambda > 0
-                % minimize || Psi x ||_1  subject to  || M F S x - b ||_2^2 / ( nb - 1 ) <= epsData
+                % minimize || Psi x ||_1  subject to  || M F S(c) x - b ||_2^2 / ( nbPerCoil - 1 ) <= epsData(c)
+
                 applyA = @applyMFS;
                 f = @(in) norm( vPsi( in ), 1 );
                 proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t );
-                g = @(in) indicatorFunction( norm( in - b, 2 )^2 / ( nb - 1 ), [0 epsData] );
-                % || M F S x - b ||_2^2 / ( Nb - 1 ) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData ( Nb -1 ) )
-                radBall = sqrt( epsData * ( nb - 1 ) );
-                proxg = @(in,t) projectOntoBall( in - b, radBall ) + b;
+                g = @( in ) indicatorEpsData( in );
+                proxg = @(in,t) projectOntoEpsBalls( in - b ) + b;
                 proxgConj = @(in,s) proxConj( proxg, in, s );
   
                 metric1 = f;
-                metric2 = @(in) abs( norm( applyA( in ) - b, 2 ) - radBall );
+                metric2 = @(in) abs( norm( applyA( in ) - b, 2 ) - ballRadius );
                 metrics = { metric1, metric2 };
                 metricNames = { 'sparsity', 'violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
@@ -909,15 +914,14 @@ function img = mriRecon( kData, varargin )
         else % if numel( support ) > 0
 
           if numel( epsData ) > 0
-            % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / ( Nb - 1 ) < epsData
+            % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / ( npPerCoil - 1 ) < epsData(c)
 
             if oPsi == true
               applyA = @applyMF;
               f = @(in) normL2L1( Psi( in ) );
               proxf = @(in,t) proxCompositionAffine( @proxL2L1, in, Psi, 0, 1, t );
-              g = @(in) indicatorFunction( norm( in - b, 2 )^2 / nb, [ 0 epsData ] );
-              % || M F x - b ||_2^2 / nb <= epsData  <==>  || M F x - b ||_2 <= sqrt( epsData * nb )
-              proxg = @(in,t) projectOntoBall( in - b, sqrt( nb * epsData ) ) + b;
+              g = @( in ) indicatorEpsData( in );
+              proxg = @(in,t) projectOntoEpsBalls( in - b ) + b;
               proxgConj = @(in,s) proxConj( proxg, in, s );
               [y, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
                 'beta', 1, 'tau', tau, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
@@ -928,10 +932,10 @@ function img = mriRecon( kData, varargin )
               f = [];
               proxf = [];
               g1 = @(in) normL2L1( in );
-              g2 = @(in) indicatorFunction( norm( in - b, 2 )^2 / (nb-1), [ 0 epsData ] );
+              g2 = @( in ) indicatorEpsData( in );
               g = @(in) g1( reshape(in(1:nKData), sKData) ) + g2( in(nKData+1:end) );
               proxg1 = @(in,t) proxL2L1( reshape( in, sKData ), t );
-              proxg2 = @(in,t) projectOntoBall( in - b, sqrt( epsData * (nb-1) ) ) + b;
+              proxg2 = @(in,t) projectOntoEpsBalls( in - b ) + b;
               proxg = @(in,t) [ proxg1( in(1:nKData), t ); ...
                                 proxg2( in(nKData+1:end), t ); ];
               proxgConj = @(in,s) proxConj( proxg, in, s );
@@ -975,8 +979,7 @@ function img = mriRecon( kData, varargin )
           end
 
         else
-          % minimize || Psi x ||_1  subject to  || M F x - b ||_2^2 / (nb - 1) <= epsData
-          % || M F x - b ||_2^2 / (nb - 1) <= epsData  <==>  || M F x - b ||_2 <= sqrt( epsData (nb-1) )
+          % minimize || Psi x ||_1  subject to  || M F x - b ||_2^2 / (nbPerCoil - 1) <= epsData(c)
           % if A = M F the A AT = M F FT MT = a scaled identity matrix
           if oPsi == true
             % Solve this problem with ADMM
