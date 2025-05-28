@@ -321,11 +321,11 @@ function img = mriRecon( kData, varargin )
   end
 
   if numel( support ) > 0  &&  numel( epsSupport ) > 0
-    supportBallRadius = sqrt( epsSupport * (nSupportC - 1) );
+    outsideSupportBallRadius = sqrt( epsSupport * (nSupportC - 1) );
   end
   function out = projOutsideSupportOntoBall( in )
     out = in;
-    out( support == 0 ) = projectOntoBall( applyPC( in ), supportBallRadius );
+    out( support == 0 ) = projectOntoBall( applyPC( in ), outsideSupportBallRadius );
   end
 
   if numel( wSize ) > 0
@@ -365,11 +365,11 @@ function img = mriRecon( kData, varargin )
 
   %-- Concatenated functions
 
-  function out = concat_MFS_Pc( in, op )
+  function out = concat_MFS_I( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
-      out = [ reshape( applyMFS(in), [], 1 );  applyPC(in) ];
+      out = [ reshape( applyMFS(in), [], 1 );  in(:) ];
     else
-      out = applyMFS( in(1:nb), op ) + applyPC( in(nb+1:end), op );
+      out = applyMFS( in(1:nb), op ) + reshape( in(nb+1:end), sImg );
     end
   end
 
@@ -625,11 +625,11 @@ function img = mriRecon( kData, varargin )
           error([ 'Check of vMFSPT adjoint failed with error ', num2str(errChk_vMFSPT) ]);
         end
 
-        [ chk_MFS_Pc, errChk_MFS_Pc ] = checkAdjoint( rand( sImg ) + 1i * rand( sImg ), @concat_MFS_Pc );
-        if chk_MFS_Pc == true
-          disp( 'Check of concat_MFS_Pc adjoint passed' );
+        [ chk_MFS_I, errChk_MFS_I ] = checkAdjoint( rand( sImg ) + 1i * rand( sImg ), @concat_MFS_I );
+        if chk_MFS_I == true
+          disp( 'Check of concat_MFS_I adjoint passed' );
         else
-          error([ 'Check of concat_MFS_Pc adjoint failed with error ', num2str(errChk_MFS_Pc) ]);
+          error([ 'Check of concat_MFS_I adjoint failed with error ', num2str(errChk_MFS_I) ]);
         end
       end
     end
@@ -724,11 +724,11 @@ function img = mriRecon( kData, varargin )
                 if oPsi == true
                   f = @(in) normL2L1( Psi( in ) );
                   proxf = @(in,t) proxCompositionAffine( @proxL2L1, in, Psi, 0, 1, t );
-                  applyA = @concat_MFS_Pc;
+                  applyA = @concat_MFS_I;
                   g2 = @(in) indicatorFunction( ...
                     norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
                   g = @(in) g1( in(1:nb) ) + g2( in(nb+1:end) );
-                  proxg2 = @(in,t) projOutsideSupportOntoBall( in, sqrt( epsSupport * (nImg-nSupport-1) ) );
+                  proxg2 = @(in,t) projOutsideSupportOntoBall( in );
                   proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
@@ -945,7 +945,7 @@ function img = mriRecon( kData, varargin )
             FTMTb = applyF( kData, 'transp' );
             gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
             proxth = @(in,t) proxCompositionAffine( in, Psi, [], 1, t * lambda );
-            [img,objectiveValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth );   %#ok<ASGLU>
+            img = fista_wLS( img0, g, gGrad, proxth );
 
           else
           end
@@ -978,8 +978,8 @@ function img = mriRecon( kData, varargin )
             STFTMTb = applyFS( kData, 'transp' );
             %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - STFTMTb;
             gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - STFTMTb;
-            proxth = @(in) projOutsideSupportOntoBall( in, sqrt( epsSupport * (nSupportC - 1) ) );
-            [img,objectiveValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth );   %#ok<ASGLU>
+            proxth = @(in,t) projOutsideSupportOntoBall( in );
+            img = fista_wLS( img0, g, gGrad, proxth );   %#ok<ASGLU>
   
           else  % if epsSupport > 0
 
@@ -1019,12 +1019,26 @@ function img = mriRecon( kData, varargin )
 
           else
 
-            % minimize || M F S x ||_2
+            % minimize || M F S x - b ||_2
+
             img0 = mri_reconRoemer( img0 );
             b = applyM( kData );
-            [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-              @apply_vMFS, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
-            img = reshape( img, sImg );
+
+            if numel( optAlg ) == 0, optAlg = 'gd'; end
+
+            if strcmp( optAlg, 'gd' )
+              SHFHMTb = applyMFS( b, 'transp' );
+              g = @(in) 0.5 * norm( applyMFS(in) - b )^2;
+              gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - SHFHMTb;
+              [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true );   %#ok<ASGLU>
+
+            elseif strcmp( optAlg, 'lsqr' )
+              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                @apply_vMFS, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
+              img = reshape( img, sImg );
+            else
+              error( 'Unrecognized optimization algorithm' );
+            end
           end
   
         end
@@ -1045,7 +1059,7 @@ function img = mriRecon( kData, varargin )
               FTMTb = applyF( kData, 'transp' );
               gGrad = @(in) applyF( applyF( in ) .* sampleMaskSlice, 'transp' ) - FTMTb;
               proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
-              [coilImg,objectiveValues,relDiffs] = fista_wLS( coilImg0, g, gGrad, proxth );   %#ok<ASGLU>
+              coilImg = fista_wLS( coilImg0, g, gGrad, proxth );   %#ok<ASGLU>
               coilImgs{ 1, 1, coilIndx } = coilImg;
             end
             coilImgs = cell2mat( coilImgs );
@@ -1082,7 +1096,7 @@ function img = mriRecon( kData, varargin )
           %gGrad = @(in) applyMF( applyMF( in ), 'transp' ) - FTMTb;
           gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
           proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
-          [img,objectiveValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth );   %#ok<ASGLU>
+          img = fista_wLS( img0, g, gGrad, proxth );
   
         else
           if numel( optAlg ) == 0, optAlg = 'pocs'; end
