@@ -25,7 +25,7 @@ function out = projectOntoBall( x, r, p )
 
   xNorm = norm( x, p );
 
-  if xNorm < r
+  if xNorm <= r
     out = x;
   else
     out = x * ( r / xNorm );
