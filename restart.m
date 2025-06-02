@@ -46,6 +46,10 @@ function restart( varargin )
     error( 'Unknown argument passed to restart' );
   end
 
+  % Close any GUI windows that are open
+  fh = findall( 0, 'type', 'figure' );
+  close( fh );
+
   close all;  clc;  clear;  clear global;
 
   profile off
