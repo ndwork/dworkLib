@@ -282,9 +282,9 @@ function img = mriRecon( kData, varargin )
   function out = applyWmIFS( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
       FSin = applyFS( in );
-      out = applyW( FSin ) - FSin;
+      out = applyWmI( FSin );
     else
-      out = applyFS( applyW( in, 'transp' ) - in, 'transp' );
+      out = applyFS( applyWmI( in, 'transp' ), 'transp' );
     end
   end
 
@@ -323,7 +323,7 @@ function img = mriRecon( kData, varargin )
   end
 
   if numel( support ) > 0  &&  numel( epsSupport ) > 0
-    outsideSupportBallRadius = sqrt( epsSupport * (nSupportC - 1) );
+    outsideSupportBallRadius = sqrt( epsSupport * nSupportC );
   end
   function out = projOutsideSupportOntoBall( in )
     out = in;
@@ -331,11 +331,11 @@ function img = mriRecon( kData, varargin )
   end
 
   if numel( wSize ) > 0
-    ballRadiusesSpiritReg = sqrt( epsSpiritReg * ( nImg - 1 ) );
+    ballRadiusesSpiritReg = sqrt( epsSpiritReg * nImg );
   end
-  function out = proxSpiritReg( in, t )   %#ok<INUSD>
-    % indicator( || in ||_2^2 / (nImg-1) <= epsSpiritReg(coilIndx) ) is equivalent to
-    % indicator( || in(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * (nImg-1) ) )
+  function out = proxIndSpiritReg( in, t )   %#ok<INUSD>
+    % indicator( || in ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
+    % indicator( || in(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
     in = reshape( in, sKData );
     out = zeros( sKData );
     for c = 1 : nCoils
@@ -344,13 +344,13 @@ function img = mriRecon( kData, varargin )
     out = out(:);
   end
 
-  function out = spiritReg( x )
+  function out = indicatorSpiritReg( x )
     % indicator( || x ||_2^2 / (nImg-1) <= epsSpiritReg(coilIndx) ) is equivalent to
     % indicator( || x(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * (nImg-1) ) )
     x = reshape( x, sKData );
     xNorms = LpNorms( reshape( x, [], nCoils ), 2, 1 );
     out = 0;
-    if any( ( xNorms.^2 / ( nImg - 1 ) ) > ballRadiusesSpiritReg )
+    if any( ( xNorms.^2 / nImg ) > ballRadiusesSpiritReg )
       out = Inf;
     end
   end
@@ -640,7 +640,7 @@ function img = mriRecon( kData, varargin )
   %-- Reconstruct the image
 
   tol = 1d-6;
-  nMaxIter = 1000;
+  nMaxIter = 2500;
 
   if cs == true
 
@@ -668,8 +668,8 @@ function img = mriRecon( kData, varargin )
                 applyA = @(in,op) concat_MFS_WmIFS_I( in, op );
                 f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
                 proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
-                g2 = @spiritReg;
-                proxg2 = @proxSpiritReg;
+                g2 = @indicatorSpiritReg;
+                proxg2 = @proxIndSpiritReg;
                 g3 = @(in) indicatorFunction( ...
                   norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
                 proxg3 = @(in,t) projOutsideSupportOntoBall( in );
@@ -696,8 +696,8 @@ function img = mriRecon( kData, varargin )
                 proxf = @(in,t) projOutsideSupportOntoBall( in );
                 g0 = @(in) norm( in(:), 1 );
                 proxg0 = @proxL1Complex;
-                g2 = @spiritReg;
-                proxg2 = @proxSpiritReg;
+                g2 = @indicatorSpiritReg;
+                proxg2 = @proxIndSpiritReg;
                 n0 = nKData;
                 n1 = n0 + nb;
                 n2 = n1 + nKData;
@@ -785,8 +785,8 @@ function img = mriRecon( kData, varargin )
 
               g1 = @( in ) indicatorEpsData( in );
               proxg1 = @(in,t) projectOntoEpsBalls( in - b ) + b;
-              g2 = @spiritReg;
-              proxg2 = @proxSpiritReg;
+              g2 = @indicatorSpiritReg;
+              proxg2 = @proxIndSpiritReg;
 
               metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
               metric2 = @metricSpiritRegViolation;
@@ -988,8 +988,8 @@ function img = mriRecon( kData, varargin )
               proxf = @(in,t) projOutsideSupportOntoBall( in );
               g1 = @( x ) 0.5 * norm( x - b )^2;
               proxg1 = @(in,t) proxL2Sq( in, t, b );
-              g2 = @spiritReg;
-              proxg2 = @proxSpiritReg;
+              g2 = @indicatorSpiritReg;
+              proxg2 = @proxIndSpiritReg;
               g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
               proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2)) ];
               proxgConj = @(in,s) proxConj( proxg, in, s );
@@ -1039,16 +1039,14 @@ function img = mriRecon( kData, varargin )
             proxf = [];
             g1 = @( x ) 0.5 * norm( x - b )^2;
             proxg1 = @(in,t) proxL2Sq( in, t, b );
-            g2 = @spiritReg;
-            proxg2 = @proxSpiritReg;
+            g2 = @indicatorSpiritReg;
+            proxg2 = @proxIndSpiritReg;
             g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
             proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2)) ];
             proxgConj = @(in,s) proxConj( proxg, in, s );
 
-            metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-            metric2 = @metricSpiritRegViolation;
-            metrics = { metric1, metric2 };
-            metricNames = { 'sparsity', 'violation' };
+            metrics = { @metricSpiritRegViolation };
+            metricNames = { 'violation' };
             [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
               'N', 10000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
 
@@ -1070,8 +1068,6 @@ function img = mriRecon( kData, varargin )
               [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
                 @apply_vMFS, b, tol, nMaxIter, [], [], img0(:) );   %#ok<ASGLU>
               img = reshape( img, sImg );
-            else
-              error( 'Unrecognized optimization algorithm' );
             end
           end
   
