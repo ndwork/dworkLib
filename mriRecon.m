@@ -25,7 +25,8 @@ function img = mriRecon( kData, varargin )
   % purpose.
 
   p = inputParser;
-  p.addParameter( 'doChecks', true );
+  p.addParameter( 'debug', false );
+  p.addParameter( 'doChecks', false );
   p.addParameter( 'epsData', [], @isnonnegative );
   p.addParameter( 'epsSpiritReg', [], @isnonnegative );
   p.addParameter( 'epsSupport', 0, @isnonnegative );
@@ -39,6 +40,7 @@ function img = mriRecon( kData, varargin )
   p.addParameter( 'verbose', true );
   p.addParameter( 'wSize', [], @ispositive );
   p.parse( varargin{:} );
+  debug = p.Results.debug;
   doChecks = p.Results.doChecks;
   epsData = p.Results.epsData;
   epsSpiritReg = p.Results.epsSpiritReg;
@@ -357,7 +359,7 @@ function img = mriRecon( kData, varargin )
     WmIFSin = applyWmIFS(in);
     violations = zeros(nCoils,1);
     for c = 1 : nCoils
-      violations(c) = abs( norm( WmIFSin(:,:,c), 'fro' ) - ballRadiusesSpiritReg(c) );
+      violations(c) = max( norm( WmIFSin(:,:,c), 'fro' ) - ballRadiusesSpiritReg(c), 0 );
     end
     out = max( violations );
   end
@@ -973,13 +975,46 @@ function img = mriRecon( kData, varargin )
         if numel( support ) > 0
   
           if epsSupport > 0
-            % minimize || M F S x - b ||_2 subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
-            g = @(in) 0.5 * norm( applyMFS( in ) - b, 2 )^2;
-            STFTMTb = applyFS( kData, 'transp' );
-            %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - STFTMTb;
-            gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - STFTMTb;
-            proxth = @(in,t) projOutsideSupportOntoBall( in );
-            img = fista_wLS( img0, g, gGrad, proxth );   %#ok<ASGLU>
+
+            if numel( wSize ) > 0  % do SPIRiT Regularization
+              % minimize || M F S x - b ||_2 
+              % subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
+              % and || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+
+              applyA = @(in,op) concat_MFS_WmIFS( in, op );
+              n1 = nb;
+              n2 = n1 + nKData;
+              f = [];
+              proxf = @(in,t) projOutsideSupportOntoBall( in );
+              g1 = @( x ) 0.5 * norm( x - b )^2;
+              proxg1 = @(in,t) proxL2Sq( in, t, b );
+              g2 = @spiritReg;
+              proxg2 = @proxSpiritReg;
+              g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
+              proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2)) ];
+              proxgConj = @(in,s) proxConj( proxg, in, s );
+  
+              metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
+              metric2 = @metricSpiritRegViolation;
+              metrics = { metric1, metric2 };
+              metricNames = { 'sparsity', 'violation' };
+              if debug == true
+                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                  'N', 1000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
+              else
+                img = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                  'N', 1000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
+              end
+
+            else
+              % minimize || M F S x - b ||_2 subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
+              g = @(in) 0.5 * norm( applyMFS( in ) - b, 2 )^2;
+              STFTMTb = applyFS( kData, 'transp' );
+              %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - STFTMTb;
+              gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - STFTMTb;
+              proxth = @(in,t) projOutsideSupportOntoBall( in );
+              img = fista_wLS( img0, g, gGrad, proxth );
+            end
   
           else  % if epsSupport > 0
 
@@ -1015,10 +1050,9 @@ function img = mriRecon( kData, varargin )
             metrics = { metric1, metric2 };
             metricNames = { 'sparsity', 'violation' };
             [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-              'N', 1000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
+              'N', 10000, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
 
-          else
-
+          else  % if numel( wSize ) > 0
             % minimize || M F S x - b ||_2
 
             img0 = mri_reconRoemer( img0 );
@@ -1044,12 +1078,12 @@ function img = mriRecon( kData, varargin )
         end
   
       else  % if numel( sMaps ) > 0
-  
+
         if numel( support ) > 0
-  
+
           if epsSupport > 0
             % minimize || M F x - b ||_2  subject to  || Pc x(c) ||_2^2 / ( Nc - 1 ) <= epsSupport for all c
-  
+
             sampleMaskSlice = sampleMask(:,:,1);
             coilImgs = cell( 1, 1, nCoils );
             for coilIndx = 1 : nCoils
@@ -1064,7 +1098,7 @@ function img = mriRecon( kData, varargin )
             end
             coilImgs = cell2mat( coilImgs );
             img = mri_reconRoemer( coilImgs );
-  
+
           else
             % minimize || M F PcoilsT x - b ||_2
             b = applyM( kData );
@@ -1074,19 +1108,19 @@ function img = mriRecon( kData, varargin )
             coilImgs = applyPcoils( reshape( coilImgsSupport, nSupport, nCoils ), 'transp' );
             img = mri_reconRoemer( coilImgs );
           end
-  
+
         else  % if numel( support ) > 0
           coilRecons = applyF( kData, 'inv' );
           img = mri_reconRoemer( coilRecons );
-  
+
         end
-  
+
       end
-  
+
     else  % if nCoils > 1
-  
+
       if numel( support ) > 0
-  
+
         if epsSupport > 0
           % minimize || M F x - b ||_2  subject to  || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
           % minimize (1/2) || M F x - b ||_2^2  subject to  || Pc x ||_2  <= sqrt( epsSupport * ( Nc - 1 ) )
@@ -1097,7 +1131,7 @@ function img = mriRecon( kData, varargin )
           gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
           proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
           img = fista_wLS( img0, g, gGrad, proxth );
-  
+
         else
           if numel( optAlg ) == 0, optAlg = 'pocs'; end
           if strcmp( optAlg, 'pocs' )
