@@ -553,6 +553,18 @@ function testDworkLib
     disp( 'flipAboutIndx passed' );
   end
   
+  %% flipDims
+  in = rand(5,5);
+  flippedTrue = flip( flip( flip( in, 1 ), 2 ), 3 );
+  flipped = flipDims( in, 'dims', [1 2 4] );
+  err = norm( flipped(:) - flippedTrue(:) );
+  if err < 1d-12
+    disp( 'flipDims passed' );
+  else
+    error([ 'flipDims failed with error ', num2str(err) ]);
+  end
+
+
   %% goldenSectionSearch
   fprintf( '\nTesting goldenSectionSearch: \n' );
   trueMin = 0.7809;
