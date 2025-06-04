@@ -34,7 +34,7 @@ function out = proxL2Sq( v, t, b, A )
     case 4
       if isa( A, 'function_handle' )
         % solve with the conjugate gradient method
-        E = @(x) A( A( x ), 'transp' ) + ( 1 ./ t .* ones( size(x) ) );
+        E = @(x) A( A( x ), 'transp' ) + ( ones( size(x) ) ./ t );
         v = A( b, 'transp' ) + ( v ./ t );
         out = cgs( E, v );
         % TODO: If A is tight frame, this can be solved much faster
