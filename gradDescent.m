@@ -68,7 +68,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.addParameter( 't', 1, @isnumeric );
   p.addParameter( 'tau', 1.1, @(x) x >= 1 );
   p.addParameter( 'tol', [], @isnumeric );
-  p.addParameter( 'useLineSearch', false, @islogical );
+  p.addParameter( 'useLineSearch', true, @islogical );
   p.addParameter( 'useMomentum', false, @islogical );
   p.addParameter( 'verbose', false, @islogical );
   p.parse( varargin{:} );
