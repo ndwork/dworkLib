@@ -36,14 +36,8 @@ function x = flipDims( x, varargin )
 
   if numel( dims ) == 0, dims = 1 : ndims( x ); end
 
-  dIndx = 1;
-  if numel(dims) >= 2 && all( dims(1:2) == [ 1 2 ] )
-    x = rot90( x, 2 );
-    dIndx = 3;
-  end
-
   if fftOrigin == true
-    for i = dIndx : numel( dims )
+    for i = 1 : numel( dims )
       thisDim = dims( i );
       if mod( size( x, thisDim ), 2 ) == 0
         x = circshift( flip( x, thisDim ), 1, thisDim );
@@ -53,7 +47,7 @@ function x = flipDims( x, varargin )
     end
 
   else
-    for i = dIndx : numel( dims )
+    for i = 1 : numel( dims )
       x = flip( x, dims(i) );
     end
   end
