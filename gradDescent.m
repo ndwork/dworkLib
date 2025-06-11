@@ -2,8 +2,8 @@
 function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   % [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad [, 'alpha', alpha, 'beta', beta, 't', t, ...
   %   'tol', tol, 'useLineSearch', useLineSearch, 'useMomentum', useMomentum, 'g', g, 'N', N, ...
-  %   'nMaxLineSearchIter', nMaxLineSearchIter, 'printEvery', printEvery, 'verbose', verbose, ...
-  %    'dispEvery', dispEvery, 'dispFunc', dispFunc ] )
+  %   'gradThresh', gradThresh, 'nMaxLineSearchIter', nMaxLineSearchIter, 'printEvery', printEvery, ...
+  %    'verbose', verbose, 'dispEvery', dispEvery, 'dispFunc', dispFunc ] )
   %
   % This function implements the gradient descent method.
   % This method finds the x that minimizes a (sub)differentiable function g
@@ -14,13 +14,14 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   %   input: the point to evaluation, output: the gradient vector
   %
   % Optional Inputs:
-  % alpha - line search parameter for 
+  % alpha - line search parameter for Armijo line search
   % beta - line search parameter for step size reduction (default is 0.8)
   % dispEvery - how often to call dispFunc function when verbose is true
   % dispFunc - function to display x in iterations when verbose is true
   % g - a function handle representing the g function; accepts a vector x
   %   as input and returns a scalar.  This is needed to calculate the
   %   objective values.
+  % gradThresh - if the magnitude of the gradient is below this value, then the output is returned
   % N - the maximum number of iterations that gradDescent will perform (default is 100)
   % nMaxLineSearchIter - maximum number of line search iterations (default is 10)
   % postOp - a function handle to a function that's called after the gradient step
@@ -61,12 +62,14 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   p.addParameter( 'dispEvery', 1, @ispositive );
   p.addParameter( 'dispFunc', [] );
   p.addParameter( 'g', [] );
+  p.addParameter( 'gradThresh', 1d-18 );
   p.addParameter( 'N', 100, @isnumeric );
   p.addParameter( 'nMaxLineSearchIter', 100, @ispositive );
   p.addParameter( 'postOp', [] );
   p.addParameter( 'printEvery', 1, @isnumeric );
-  p.addParameter( 't', 1, @isnumeric );
+  p.addParameter( 't', 1, @ispositive );
   p.addParameter( 'tau', 1.1, @(x) x >= 1 );
+  p.addParameter( 'tThresh', 1d-18 );
   p.addParameter( 'tol', [], @isnumeric );
   p.addParameter( 'useLineSearch', true, @islogical );
   p.addParameter( 'useMomentum', false, @islogical );
@@ -77,6 +80,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   dispEvery = p.Results.dispEvery;
   dispFunc = p.Results.dispFunc;
   g = p.Results.g;
+  gradThresh = p.Results.gradThresh;
   N = p.Results.N;
   nMaxLineSearchIter = p.Results.nMaxLineSearchIter;
   postOp = p.Results.postOp;
@@ -84,11 +88,10 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
   t = p.Results.t;
   tau = p.Results.tau;
   tol = p.Results.tol;
+  tThresh = p.Results.tThresh;
   useLineSearch = p.Results.useLineSearch;
   useMomentum = p.Results.useMomentum;
   verbose = p.Results.verbose;
-
-  if t <= 0, error('gradDescent: t0 must be greater than 0'); end
 
   if useLineSearch == true
     if numel( g ) == 0
@@ -119,17 +122,26 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
     z = x;
   end
 
+  if numel( g ) > 0
+    gx = g( x );
+  end
+
+  if verbose == true
+    disp([ 'Initial guess has objective value ', num2str(gx) ]);
+  end
+
   for k = 0 : N-1
     if numel( tol ) > 0  ||  calculateObjectiveValues == true || ( useLineSearch == true && k == 0 )
-      if useLineSearch == false || k == 0
-        gx = g( x );
-      end
       if calculateObjectiveValues == true, objectiveValues( k+1 ) = gx; end
     end
 
     if ( numel( tol ) > 0 && tol ~= 0 ) || ( calculateRelDiffs == true ), lastX = x; end
 
     gGradX = gGrad( x );
+    normGradX = norm( gGradX(:) );
+    if normGradX <= gradThresh
+      break;
+    end
 
     if useMomentum == true  % Nesterov's Momentum
       lastZ = z;
@@ -138,25 +150,33 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
       mu = 0.5 * ( 1 + sqrt( 1 + 4 * mu*mu ) );
       x = z + ( lastMu / mu ) * ( z - lastZ );
 
+      if calculateObjectiveValues == true, gx = g( x ); end
+
     else
 
       if useLineSearch == true
         gx = g( x );
-        lineSearchIter = 0;
-        while true  &&  lineSearchIter <= nMaxLineSearchIter 
-          lineSearchIter = lineSearchIter + 1;
+        lineBreakThresh = gx - alpha * t * normGradX^2;
+        for lineSearchIter = 1 : nMaxLineSearchIter
+          % This could be parallelized for those cases where g is slow.
+          % Break up the iterations in chunks equal to the number of parallel workers.
           xNew = x - t * gGradX;
           gxNew = g( xNew );
-          if gxNew < gx - alpha * t * norm( gGradX(:) )^2
+          if gxNew < lineBreakThresh || t < tThresh
             break;
           end
           t = beta * t;
+          if t < 1d-18
+            break;
+          end
         end
         t = tau * t;
         x = xNew;
         gx = gxNew;
+
       else
         x = x - t * gGradX;
+        if calculateObjectiveValues == true, gx = g( x ); end
       end
     end
 
@@ -173,7 +193,7 @@ function [xStar,objectiveValues,relDiffs] = gradDescent( x, gGrad, varargin )
       dispFunc( x, k );
     end
 
-    if verbose == true  &&  mod( k+1, printEvery ) == 0
+    if verbose == true  &&  mod( k, printEvery ) == 0
       verboseStr = [ 'gradDescent Iteration: ', num2str(k) ];
       if calculateObjectiveValues == true
         verboseStr = [ verboseStr, ' has objective value ', num2str( objectiveValues(k+1) ) ];   %#ok<AGROW>
