@@ -1,8 +1,8 @@
 
-function img = mriRecon( kData, varargin )
+function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   % img = mri_Recon( kData [, 'epsData', epsData, 'epsSupport', epsSupport, 'gamma', gamma, 
-  %       'lambda', lambda, 'Psi', Psi 'sACR', sACR, 'sMaps', sMaps, 'support', support, 
-  %       'verbose', verbose, 'wSize', wSize ] )
+  %       'lambda', lambda, 'nOptIter', nOptIter, 'Psi', Psi 'sACR', sACR, 'sMaps', sMaps,
+  %       'support', support, 'verbose', verbose, 'wSize', wSize ] )
   %
   % Inputs:
   % kData - an array of size M x N x C where C is the number of coils
@@ -337,6 +337,18 @@ function img = mriRecon( kData, varargin )
       allOut( sampleMask == 1 ) = out;
       out = allOut;
     end
+  end
+
+  function out = metricEpsDataViolation( in )
+    MFSin = applyMFS( in );
+    MFSin = reshape( MFSin, [], nCoils );
+
+    violations = zeros( nCoils, 1 );
+    for c = 1 : nCoils
+      cProj = projectOntoBall( MFSin(:,c) - bTmp(:,c), epsBallRadiuses(c) ) + bTmp(:,c);
+      violations(c) = norm( cProj - MFSin(:,c) );
+    end
+    out = max( violations );
   end
 
   if numel( support ) > 0  &&  numel( epsSupport ) > 0
@@ -756,7 +768,7 @@ function img = mriRecon( kData, varargin )
                   proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'verbose', verbose );   %#ok<ASGLU>
+                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
   
                 else  % if oPsi == true
                   applyA = @concat_Psi_MFS_Pc;
@@ -772,7 +784,7 @@ function img = mriRecon( kData, varargin )
                                     proxg1( in(n1+1:n2), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'verbose', verbose );   %#ok<ASGLU>
+                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
                 end
   
               else  % if numel( epsData ) > 0
@@ -813,7 +825,7 @@ function img = mriRecon( kData, varargin )
               metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
               metric2 = @metricSpiritRegViolation;
               metrics = { metric1, metric2 };
-              metricNames = { 'sparsity', 'violation' };
+              metricNames = { 'data consistency', 'violation' };
 
               if oPsi == true
                 applyA = @(in,op) concat_MFS_WmIFS( in, op );
@@ -866,11 +878,11 @@ function img = mriRecon( kData, varargin )
                 ATA = @(in) applyA( applyA( in ), 'transp' );
                 L = powerIteration( ATA, rand( size( img0 ) ), 'symmetric', true );
                 t0 = 1 / L;
-                if verbose == true
+                if debug == true
                   [ img, objValues, relDiffs] = fista_wLS( img0, f, fGrad, proxg, 'h', g, 't0', t0, ...
-                    'verbose', verbose );   %#ok<ASGLU>
+                    'printEvery', 50, 'verbose', verbose );   %#ok<ASGLU>
                 else
-                  img = fista_wLS( img0, f, fGrad, proxg, 'h', g, 'verbose', verbose );
+                  img = fista_wLS( img0, f, fGrad, proxg, 'h', g );
                 end
   
               else  % if numel( lambda ) > 0  &&  lambda > 0
@@ -883,8 +895,13 @@ function img = mriRecon( kData, varargin )
                 proxg = @(in,t) projectOntoEpsBalls( in );
                 proxgConj = @(in,s) proxConj( proxg, in, s );
   
+                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
+                metric2 = @metricEpsDataViolation;
+                metrics = { metric1, metric2 };
+                metricNames = { 'data consistency', 'violation' };
+
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
   
               end
 
@@ -971,7 +988,11 @@ function img = mriRecon( kData, varargin )
             FTMTb = applyF( kData, 'transp' );
             gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
             proxth = @(in,t) proxCompositionAffine( in, Psi, [], 1, t * lambda );
-            img = fista_wLS( img0, g, gGrad, proxth );
+            if debug == true
+              img = fista_wLS( img0, g, gGrad, proxth, 'printEvery', 50, 'verbose', true );
+            else
+              img = fista_wLS( img0, g, gGrad, proxth );
+            end
 
           else
           end
@@ -1026,10 +1047,10 @@ function img = mriRecon( kData, varargin )
               metricNames = { 'sparsity', 'violation' };
               if debug == true
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
+                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
               else
                 img = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );
+                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );
               end
 
             else
@@ -1045,10 +1066,11 @@ function img = mriRecon( kData, varargin )
 
               if debug == true
                 if strcmp( optAlg, 'projGrad' )
-                  [img,objValues] = projSubgrad( img0, gGrad, proxth, 'g', g, 'N', nOptIter, 'verbose', true );   %#ok<ASGLU>
+                  [img,objValues] = projSubgrad( img0, gGrad, proxth, 'g', g, 'N', nOptIter, 'verbose', verbose );   %#ok<ASGLU>
                 elseif strcmp( optAlg, 'fista_wLS' )
                   h = @(in) indicatorOutsideSupport( in );
-                  [img,ojbValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth, 'N', 200, 'h', h, 'verbose', true );   %#ok<ASGLU>
+                  [img,ojbValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth, 'N', 200, 'h', h, ...
+                    'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
                 else
                   error( 'Unrecognized optimization algorithm' );
                 end
@@ -1057,7 +1079,7 @@ function img = mriRecon( kData, varargin )
                 if strcmp( optAlg, 'projGrad' )
                   img = projSubgrad( img0, gGrad, proxth, 'g', g );
                 elseif strcmp( optAlg, 'fista_wLS' )
-                  img = fista_wLS( img0, g, gGrad, proxth, 'N', nOptIter );
+                  img = fista_wLS( img0, g, gGrad, proxth, 'N', nOptIter, 'verbose', verbose );
                 else
                   error( 'Unrecognized optimization algorithm' );
                 end
@@ -1098,7 +1120,7 @@ function img = mriRecon( kData, varargin )
             metrics = { @metricSpiritRegViolation };
             metricNames = { 'violation' };
             [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-              'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
+              'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
           else  % if numel( wSize ) > 0
             % minimize || M F S x - b ||_2
@@ -1214,7 +1236,7 @@ function img = mriRecon( kData, varargin )
               if numel( optAlg ) == 0, optAlg = 'gd'; end
 
               if strcmp( optAlg, 'gd' )
-                [k,oVals,relDiffs] = gradDescent( k0, gGrad, 'g', g, 'N', nOptIter, 'verbose', true, 'printEvery', 50 );   %#ok<ASGLU>
+                [k,oVals,relDiffs] = gradDescent( k0, gGrad, 'g', g, 'N', nOptIter, 'verbose', verbose, 'printEvery', 50 );   %#ok<ASGLU>
                 % Note: SPIRiT requires many iterations; for a sagittal slice of the knee, it required 10,000 iterations.
               elseif strcmp( optAlg, 'lsqr' )
                 [ k, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
