@@ -29,6 +29,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   %     Note: for complex vectors, innerProd should be real( dotP( x, y ) )
   % minStep - the smallest the step size can be
   % N - the number of iterations that FISTA will perform (default is 100)
+  % printEvery - when verbose is set to true, only print statements every printEvery interval
   % r - the backtracking line search parameter; must be between 0 and 1
   %     (default is 0.5)
   % s - the scaling parameter each FISTA iteration; must be greater than 1
