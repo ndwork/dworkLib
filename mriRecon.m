@@ -30,7 +30,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   p.addParameter( 'epsSpiritReg', [], @isnonnegative );
   p.addParameter( 'epsSupport', 0, @isnonnegative );
   p.addParameter( 'lambda', [], @isnonnegative );
-  p.addParameter( 'nOptIter', 2000, @ispositive );
+  p.addParameter( 'nOptIter', 1000, @ispositive );
   p.addParameter( 'noCS', false );
   p.addParameter( 'oPsi', true );
   p.addParameter( 'optAlg', [] );
@@ -79,16 +79,6 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     error( 'Cannot perform spiritReg with only one coil' );
   end
 
-  if numel( wSize ) > 0
-    acr = cropData( kData, [ sACR(1) sACR(2) nCoils ] );
-    if numel( epsSpiritReg ) == 0
-      [w, epsSpiritReg] = findW( acr, wSize );
-    elseif isscalar( epsSpiritReg )
-      epsSpiritReg = epsSpiritReg * ones( nCoils, 1 );
-    end
-    flipW = padData( flipDims( w, 'dims', [1 2] ), [ sImg nCoils nCoils ] );
-  end
-
   if noCS == true
     cs = false;
   elseif ( numel( lambda ) > 0  &&  lambda > 0 )  ||  numel( epsData ) > 0
@@ -100,13 +90,29 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     cs = false;
   end
 
+  if numel( wSize ) > 0
+    if nCoils == 1, error( 'Cannot supply wSize with a single coil' ); end
+    acr = cropData( kData, [ sACR(1) sACR(2) nCoils ] );
+    spiritNormWeights = findSpiritNormWeights( kData );
+    spiritNormWeightsACR = cropData( spiritNormWeights, [ sACR(1) sACR(2) nCoils ] );
+    if numel( epsSpiritReg ) == 0
+      [w, epsSpiritReg] = findW( acr, wSize, spiritNormWeightsACR );
+    elseif isscalar( epsSpiritReg )
+      epsSpiritReg = epsSpiritReg * ones( nCoils, 1 );
+      [w, ~] = findW( acr, wSize, spiritNormWeightsACR );
+    else
+      [w, ~] = findW( acr, wSize, spiritNormWeightsACR );
+    end
+    flipW = padData( flipDims( w, 'dims', [1 2] ), [ sImg nCoils nCoils ] );
+  end
+
   if numel( Psi ) == 0
     wavSplit = makeWavSplit( sImg );
+    Psi = @defaultPsi;
     if oPsi == false
       warning( 'The default value of oPsi being overwritten because default Psi is orthogonal' );
     end
     oPsi = true;
-    Psi = @defaultPsi;
   end
 
   if numel( support ) > 0
@@ -135,9 +141,9 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
   function out = applyA_SPIRiT( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
-      out = A( in );
+      out = A_SPIRiT( in );
     else
-      out = AT( reshape( in, size( kData ) ) );
+      out = AH_SPIRiT( reshape( in, size( kData ) ) );
     end
     out = out(:);
   end
@@ -220,13 +226,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   function out = applyPcoils( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
       out = zeros( nSupport, nCoils );
-      for c = 1 : nCoils
-        out(:,c) = applyP( in(:,:,c) );
+      for cI = 1 : nCoils
+        out(:,cI) = applyP( in(:,:,cI) );
       end
     else
       out = zeros( sKData );
-      for c = 1 : nCoils
-        out(:,:,c) = applyP( in(:,c), op );
+      for cI = 1 : nCoils
+        out(:,:,cI) = applyP( in(:,cI), op );
       end
     end
   end
@@ -243,13 +249,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   function out = applyPCcoils( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
       out = zeros( nSupportC, nCoils );
-      for c = 1 : nCoils
-        out(:,c) = applyPC( in(:,:,c) );
+      for cI = 1 : nCoils
+        out(:,cI) = applyPC( in(:,:,cI) );
       end
     else
       out = zeros( sKData );
-      for c = 1 : nCoils
-        out(:,:,c) = applyPC( in(:,c), op );
+      for cI = 1 : nCoils
+        out(:,:,cI) = applyPC( in(:,cI), op );
       end
     end
   end
@@ -259,6 +265,25 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       out = bsxfun( @times, sMaps, in );
     else
       out = sum( conj(sMaps) .* in, 3 );
+    end
+  end
+
+  function out = applySw( in, op )   %#ok<INUSD>
+    % Apply the spirit norm weights
+    % Note that since the weights are real, Sw is self adjoint
+    out = zeros( size( in ) );
+    for cI = 1 : nCoils
+      out(:,:,cI) = spiritNormWeights(:,:,cI) .* in(:,:,cI);
+    end
+  end
+
+  function out = applySwWmI( in, op )
+    % apply Sw .* ( W minus I )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = applySw( applyWmI( in ) );
+    else
+      SwHIn = applySw( in, 'transp' );
+      out = applyWmI( SwHIn, 'transp' );
     end
   end
 
@@ -307,8 +332,8 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     % indicator( || x(c) - b(c) ||_2  <= ballRadius(c) )
     out = 0;    
     in = reshape( in, [], nCoils );
-    for c = 1 : nCoils
-      out = indicatorFunction( norm( in - bTmp(:,c) )^2 / nbPerCoil, [ 0 epsData(c) ] );
+    for cI = 1 : nCoils
+      out = indicatorFunction( norm( in - bTmp(:,cI) )^2 / nbPerCoil, [ 0 epsData(cI) ] );
       if out ~= 0, break; end
     end
   end
@@ -328,8 +353,8 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     sOut = size( in );
     in = reshape( in, [], nCoils );
     out = zeros( size( in, 1 ), nCoils );
-    for c = 1 : nCoils
-      out(:,c) = projectOntoBall( in(:,c) - bTmp(:,c), epsBallRadiuses(c) ) + bTmp(:,c);
+    for cI = 1 : nCoils
+      out(:,cI) = projectOntoBall( in(:,cI) - bTmp(:,cI), epsBallRadiuses(cI) ) + bTmp(:,cI);
     end
     out = reshape( out, sOut );
 
@@ -344,9 +369,9 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     MFSin = reshape( MFSin, [], nCoils );
 
     violations = zeros( nCoils, 1 );
-    for c = 1 : nCoils
-      cProj = projectOntoBall( MFSin(:,c) - bTmp(:,c), epsBallRadiuses(c) ) + bTmp(:,c);
-      violations(c) = norm( cProj - MFSin(:,c) );
+    for cI = 1 : nCoils
+      cProj = projectOntoBall( MFSin(:,cI) - bTmp(:,cI), epsBallRadiuses(cI) ) + bTmp(:,cI);
+      violations(cI) = norm( cProj - MFSin(:,cI) );
     end
     out = max( violations );
   end
@@ -372,8 +397,8 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     % indicator( || in(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
     in = reshape( in, sKData );
     out = zeros( sKData );
-    for c = 1 : nCoils
-      out(:,:,c) = projectOntoBall( in(:,:,c), ballRadiusesSpiritReg(c), 'fro' );
+    for cI = 1 : nCoils
+      out(:,:,cI) = projectOntoBall( in(:,:,cI), ballRadiusesSpiritReg(cI), 'fro' );
     end
     out = out(:);
   end
@@ -390,10 +415,19 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   end
 
   function out = metricSpiritRegViolation( in )
-    WmIFSin = applyWmIFS(in);
-    violations = zeros(nCoils,1);
-    for c = 1 : nCoils
-      violations(c) = max( norm( WmIFSin(:,:,c), 'fro' ) - ballRadiusesSpiritReg(c), 0 );
+    WmIFSin = applyWmIFS( in );
+    violations = zeros( nCoils, 1 );
+    for cI = 1 : nCoils
+      violations(cI) = max( norm( WmIFSin(:,:,cI), 'fro' ) - ballRadiusesSpiritReg(cI), 0 );
+    end
+    out = max( violations );
+  end
+
+  function out = metricWeightedSpiritRegViolation( in )
+    SwWmIFSin = applySw( applyWmIFS( in ) );
+    violations = zeros( nCoils, 1 );
+    for cI = 1 : nCoils
+      violations(cI) = max( norm( SwWmIFSin(:,:,cI), 'fro' ) - ballRadiusesSpiritReg(cI), 0 );
     end
     out = max( violations );
   end
@@ -421,6 +455,21 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       MTin1 = reshape( applyM( in( 1 : n1 ), op ), sKData );
       WHmIHin3 = reshape( applyWmI( reshape( in( n1+1 : n2 ), sKData ), op ), sKData );
       out = applyFS( MTin1 + WHmIHin3, op );
+    end
+  end
+
+  function out = concat_MFS_SwWmIFS( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      FSin = applyFS( in );
+      MFSin = applyM( FSin );
+      SwWmIFSin = applySwWmI( FSin );
+      out = [ MFSin(:); SwWmIFSin(:); ];
+    else
+      n1 = nb;
+      n2 = n1 + nKData;
+      MTin1 = reshape( applyM( in( 1 : n1 ), op ), sKData );
+      SwHWHmIHin2 = reshape( applySwWmI( reshape( in( n1+1 : n2 ), sKData ), op ), sKData );
+      out = applyFS( MTin1 + SwHWHmIHin2, op );
     end
   end
 
@@ -474,16 +523,6 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
 
   %-- Vectorized functions
-
-  function out = apply_vMF( in, op )
-    if nargin < 2  ||  strcmp( op, 'notransp' )
-      in = reshape( in, sKData );
-      out = applyMF( in );
-    else
-      out = applyMF( in, op );
-      out = out(:);
-    end
-  end
 
   function out = apply_vMFPcoilsT( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
@@ -620,6 +659,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
 
     if numel( wSize ) > 0
+      [chkSw,errChkSw] = checkAdjoint( rand( sKData ) + 1i * rand( sKData ), @applySw );
+      if chkSw == true
+        disp( 'Check of Sw Adjoint passed' );
+      else
+        error([ 'Check of Sw Adjoint failed with error ', num2str(errChkSw) ]);
+      end
+
       [chkW,errChkW] = checkAdjoint( rand( sKData ) + 1i * rand( sKData ), @applyW );
       if chkW == true
         disp( 'Check of W minus I Adjoint passed' );
@@ -632,6 +678,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
         disp( 'Check of W minus I Adjoint passed' );
       else
         error([ 'Check of W minus I Adjoint failed with error ', num2str(errChkWmI) ]);
+      end
+
+      [chkConcat_MFS_SwWmIFS,errChkConcat_MFS_SwWmIFS] = checkAdjoint( rand( sKData(1:2) ) + 1i * rand( sKData(1:2) ), @concat_MFS_SwWmIFS );
+      if chkConcat_MFS_SwWmIFS == true
+        disp( 'Check of concat_MFS_SwWmIFS Adjoint passed' );
+      else
+        error([ 'Check of concat_MFS_SwWmIFS Adjoint failed with error ', num2str(errChkConcat_MFS_SwWmIFS) ]);
       end
     end
 
@@ -670,6 +723,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       end
     end
   end  % if doChecks
+
 
   %-- Reconstruct the image
 
@@ -768,7 +822,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                   proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );
   
                 else  % if oPsi == true
                   applyA = @concat_Psi_MFS_Pc;
@@ -784,7 +838,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                                     proxg1( in(n1+1:n2), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );
                 end
   
               else  % if numel( epsData ) > 0
@@ -970,11 +1024,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     else  % if nCoils > 1
 
       if numel( support ) > 0
-        error( 'Not yet implemented' );
 
         if epsSupport > 0
+          error( 'Not yet implemented' );
 
         else  % if epsSupport > 0
+          error( 'Also not yet implemented' );
 
         end
 
@@ -1000,18 +1055,18 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
         else
           % minimize || Psi x ||_1  subject to  || M F x - b ||_2^2 / nbPerCoil <= epsData(c)
           % if A = M F the A AT = M F FT MT = a scaled identity matrix
-          error( 'Not yet implemented' );
+
           if oPsi == true
             % Solve this problem with ADMM
-            
+            error( 'Not yet implemented' );
           else
+            error( 'Also not yet implemented' );
           end
         end
 
       end
 
     end
-
 
   else  % if cs == true
 
@@ -1102,9 +1157,9 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
           if numel( wSize ) > 0  % do SPIRiT Regularization
             % minimize (1/2) || M F S x - b ||_2^2  
-            % subject to  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+            % subject to  || Sw(c) .* ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
 
-            applyA = @(in,op) concat_MFS_WmIFS( in, op );
+            applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
             n1 = nb;
             n2 = n1 + nKData;
             f = [];
@@ -1117,10 +1172,11 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
             proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2)) ];
             proxgConj = @(in,s) proxConj( proxg, in, s );
 
-            metrics = { @metricSpiritRegViolation };
-            metricNames = { 'violation' };
+            metricDC = @( in ) 0.5 * norm( applyMFS( in ) - b )^2;
+            metrics = { metricDC, @metricWeightedSpiritRegViolation };
+            metricNames = { 'data consistency', 'violation' };
             [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-              'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+              'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );
 
           else  % if numel( wSize ) > 0
             % minimize || M F S x - b ||_2
@@ -1180,7 +1236,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
           if numel( wSize ) > 0
 
-            if numel( epsData ) > 0
+            if numel( epsData ) > 0  &&  max( abs( epsData ) ) ~= 0
               % SPIRiT with soft consistency
               % minimize (1/2) || ( W - I ) k ||_2^2
               % subject to || M k(:,:,c) - b(:,c) ||_2^2  / nbPerCoil <= epsData(c)
@@ -1196,17 +1252,17 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               end
               img = mri_reconRoemer( applyF( kFull, 'inv' ) );
 
-            else  % if numel( epsData ) > 0
+            else  % if numel( epsData ) > 0  &&  max( abs( epsData ) ) ~= 0
               % SPIRiT with hard data consistency
               % minimize (1/2) || W ( Mc^T k + M^T b ) - ( Mc^T k + M^T b ) ||_2^2
               % minimize (1/2) || W Mc^T k + W kData - Mc^T k - kData ||_2^2
               % minimize (1/2) || A k + y ||_2^2 where A = ( W - I ) Mc^T k and y = ( W - I ) kData
               y = applyWmI( kData );
-              A = @(in) applyWmI( applyMc( in, 'transp' ) );
-              AT = @(in) applyMc( applyWmI( in, 'transp' ) );
-              g = @(in) 0.5 * norm( A( in ) + y, 'fro' )^2;
-              ATy = AT( y );
-              gGrad = @(in) AT( A( in ) ) + ATy;
+              A_SPIRiT = @(in) applyWmI( applyMc( in, 'transp' ) );
+              AH_SPIRiT = @(in) applyMc( applyWmI( in, 'transp' ) );
+              g = @(in) 0.5 * norm( A_SPIRiT( in ) + y, 'fro' )^2;
+              AHy_SPIRiT = AH_SPIRiT( y );
+              gGrad = @(in) AH_SPIRiT( A_SPIRiT( in ) ) + AHy_SPIRiT;
 
               k0 = zeros( sum( reshape( sampleMask, [], 1 ) == 0 ), 1 );
               % k0 = reshape( k0, [], nCoils );
@@ -1327,7 +1383,43 @@ function out = applyF( in, op )
   end
 end
 
-function [w, epsSpiritReg] = findW( acr, wSize )
+function spiritNormWeights = findSpiritNormWeights( kData )
+
+  sampleMask = kData(:,:,1) ~= 0;
+  nCoils = size( kData, 3 );
+
+  fftCoords = size2fftCoordinates( size( kData, [1 2] ) );
+  ky = fftCoords{1};
+  kx = fftCoords{2};
+  [ kxs, kys ] = meshgrid( kx, ky );
+  kDists = sqrt( kxs.*kxs + kys.*kys );
+  sampleMask( kDists == 0 ) = 0;
+  kDistsSamples = kDists( sampleMask == 1 );
+  [ kDistsSamples, sortedIndxs ] = sort( kDistsSamples );
+  logKDistsSamples = log( kDistsSamples );
+  X = [ ones(size(kDistsSamples)), -logKDistsSamples ];
+
+  spiritNormWeights = zeros( size( kData ) );
+  for coilIndx = 1 : nCoils
+    kDataC = kData(:,:,coilIndx);
+    F = kDataC( kData(:,:,coilIndx) ~= 0 );
+    F = F( sortedIndxs );
+    logF = log( abs( F ) );
+    coeffs = X \ logF;
+    m = exp( coeffs(1) );
+    p = coeffs(2);
+    % Note: this could be improved by fitting to the function itself rather than to the line
+
+    %figure;  plotnice( kDistsSamples, abs( F ) );
+    %hold on;  plotnice( kDistsSamples, m * kDistsSamples.^(-p) );
+
+    spiritNormWeights(:,:,coilIndx) = ( kDists.^p ) / m;
+    spiritNormWeights(:,:,coilIndx) = spiritNormWeights(:,:,coilIndx) / sum( ( kDists(:).^p ) / m );
+  end
+end
+
+
+function [w, epsSpiritReg] = findW( acr, wSize, spiritNormWeights )
   %-- Find the interpolation coefficients w
   sACR = size( acr );
   nCoils = sACR( 3 );
@@ -1344,20 +1436,20 @@ function [w, epsSpiritReg] = findW( acr, wSize )
     for i = ceil( wSize(2)/2 ) : sACR(2) - floor( wSize(2)/2 )
       for j = ceil( wSize(1)/2 ) : sACR(1) - floor( wSize(1)/2 )
         subACR = acr( j - floor( wSize(2)/2 ) : j + floor( wSize(2)/2 ), ...
-                               i - floor( wSize(2)/2 ) : i + floor( wSize(2)/2 ), : );   %#ok<PFBNS>
+                      i - floor( wSize(2)/2 ) : i + floor( wSize(2)/2 ), : );   %#ok<PFBNS>
         subACR = subACR(:);
-        b( aIndx ) = subACR( pt2RemoveIndx );
+        b( aIndx ) = spiritNormWeights(j,i) * subACR( pt2RemoveIndx );   %#ok<PFBNS>
         subACR = [ subACR( 1 : pt2RemoveIndx-1 ); subACR( pt2RemoveIndx + 1 : end ); ];
-        A( aIndx, : ) = transpose( subACR );
+        A( aIndx, : ) = spiritNormWeights(j,i) * transpose( subACR );
         aIndx = aIndx + 1;
       end
     end
+
     wCoil = A \ b(:);
-    epsSpiritReg( coilIndx ) = norm( A * wCoil - b )^2 / numel(b);
+    epsSpiritReg( coilIndx ) = norm( A * wCoil - b )^2 / numel( b );
     wCoil = [ wCoil( 1 : pt2RemoveIndx - 1 ); 0; wCoil( pt2RemoveIndx : end ); ];
     w{1,1,1,coilIndx} = reshape( wCoil, [ wSize nCoils ] );
   end
   w = cell2mat( w );
-  %gammas = mean( gammas ) / nCoils;
 end
 
