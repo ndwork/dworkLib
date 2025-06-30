@@ -23,7 +23,7 @@ function coords = size2imgCoordinates( N )
     coords{i} = size2imgCoordinates_1D( N(i) );
   end
 
-  if numel( coords ) == 1, coords=coords{1}; end
+  if isscalar( coords ), coords=coords{1}; end
 end
 
 function coords = size2imgCoordinates_1D( N )  

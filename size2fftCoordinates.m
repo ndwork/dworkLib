@@ -15,10 +15,12 @@ function ks = size2fftCoordinates( N )
   %
   %   For our 2D example, 
   %     let fftImg = fftshift( fft2( ifftshift( img ) ) );
-  %     ky is a vector of size( img, 1 ) with the k-space location of
-  %       each column of fftImg
-  %     kx is a vector of size( img, 2 ) with the k-space location of
-  %       each row of fftImg
+  %     fftCoords = size2fftCoordinates( size( fftImg ) );
+  %     ky = fftCoords{1};
+  %     kx = fftCoords{2};
+  %
+  %     ky is a vector of size( img, 1 ) with the k-space location of each column of fftImg
+  %     kx is a vector of size( img, 2 ) with the k-space location of each row of fftImg
   %
   % Written by Nicholas Dwork - Copyright 2018
   %
