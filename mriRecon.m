@@ -24,7 +24,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   % purpose.
 
   p = inputParser;
-  p.addParameter( 'debug', true );
+  p.addParameter( 'debug', false );
   p.addParameter( 'doChecks', false );
   p.addParameter( 'epsData', [], @isnonnegative );
   p.addParameter( 'epsSpiritReg', [], @isnonnegative );
