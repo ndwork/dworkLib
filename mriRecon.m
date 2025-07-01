@@ -1402,7 +1402,7 @@ function spiritNormWeights = findSpiritNormWeights( kData )
     kDataC = kData(:,:,coilIndx);
     F = kDataC( kData(:,:,coilIndx) ~= 0 );
     F = F( sortedIndxs );
-    coeffs = fitPowerLaw( kDistsSamples, abs(F), 'ub', [Inf 0], 'linear', true );
+    coeffs = fitPowerLaw( kDistsSamples, abs(F), 'ub', [Inf 0], 'linear', false );
     m = coeffs(1);
     p = coeffs(2);
 
