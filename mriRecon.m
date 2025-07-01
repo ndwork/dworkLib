@@ -93,8 +93,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   if numel( wSize ) > 0
     if nCoils == 1, error( 'Cannot supply wSize with a single coil' ); end
     acr = cropData( kData, [ sACR(1) sACR(2) nCoils ] );
-    spiritNormWeights = findSpiritNormWeights( kData );
-    spiritNormWeightsACR = cropData( spiritNormWeights, [ sACR(1) sACR(2) nCoils ] );
+    if noCS == true
+      spiritNormWeights = [];
+      spiritNormWeightsACR = [];
+    else
+      spiritNormWeights = findSpiritNormWeights( kData );
+      spiritNormWeightsACR = cropData( spiritNormWeights, [ sACR(1) sACR(2) nCoils ] );
+    end
     if numel( epsSpiritReg ) == 0
       [w, epsSpiritReg] = findW( acr, wSize, spiritNormWeightsACR );
     elseif isscalar( epsSpiritReg )
@@ -1414,8 +1419,14 @@ function spiritNormWeights = findSpiritNormWeights( kData )
 end
 
 
-function [w, epsSpiritReg] = findW( acr, wSize, spiritNormWeights )
+function [w, epsSpiritReg] = findW( acr, wSize, varargin )
   %-- Find the interpolation coefficients w
+
+  p = inputParser;
+  p.addOptional( 'spiritNormWeights', [] );
+  p.parse( varargin{:} );
+  spiritNormWeights = p.Results.spiritNormWeights;
+
   sACR = size( acr );
   nCoils = sACR( 3 );
 
@@ -1433,9 +1444,13 @@ function [w, epsSpiritReg] = findW( acr, wSize, spiritNormWeights )
         subACR = acr( j - floor( wSize(2)/2 ) : j + floor( wSize(2)/2 ), ...
                       i - floor( wSize(2)/2 ) : i + floor( wSize(2)/2 ), : );   %#ok<PFBNS>
         subACR = subACR(:);
-        b( aIndx ) = spiritNormWeights(j,i) * subACR( pt2RemoveIndx );   %#ok<PFBNS>
+        b( aIndx ) = subACR( pt2RemoveIndx );
         subACR = [ subACR( 1 : pt2RemoveIndx-1 ); subACR( pt2RemoveIndx + 1 : end ); ];
-        A( aIndx, : ) = spiritNormWeights(j,i) * transpose( subACR );
+        A( aIndx, : ) = transpose( subACR );
+        if numel( spiritNormWeights ) > 0
+          b( aIndx ) = spiritNormWeights(j,i) * b( aIndx );
+          A( aIndx, : ) = spiritNormWeights(j,i) * A( aIndx, : );
+        end
         aIndx = aIndx + 1;
       end
     end
