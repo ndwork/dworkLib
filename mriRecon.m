@@ -1396,22 +1396,15 @@ function spiritNormWeights = findSpiritNormWeights( kData )
   sampleMask( kDists == 0 ) = 0;
   kDistsSamples = kDists( sampleMask == 1 );
   [ kDistsSamples, sortedIndxs ] = sort( kDistsSamples );
-  logKDistsSamples = log( kDistsSamples );
-  X = [ ones(size(kDistsSamples)), -logKDistsSamples ];
 
   spiritNormWeights = zeros( size( kData ) );
   for coilIndx = 1 : nCoils
     kDataC = kData(:,:,coilIndx);
     F = kDataC( kData(:,:,coilIndx) ~= 0 );
     F = F( sortedIndxs );
-    logF = log( abs( F ) );
-    coeffs = X \ logF;
-    m = exp( coeffs(1) );
+    coeffs = fitPowerLaw( kDistsSamples, abs(F), 'ub', [Inf 0] );
+    m = coeffs(1);
     p = coeffs(2);
-    % Note: this could be improved by fitting to the function itself rather than to the line
-
-    %figure;  plotnice( kDistsSamples, abs( F ) );
-    %hold on;  plotnice( kDistsSamples, m * kDistsSamples.^(-p) );
 
     spiritNormWeights(:,:,coilIndx) = ( kDists.^p ) / m;
     spiritNormWeights(:,:,coilIndx) = spiritNormWeights(:,:,coilIndx) / sum( ( kDists(:).^p ) / m );
