@@ -1412,7 +1412,13 @@ function spiritNormWeights = findSpiritNormWeights( kData )
     p = coeffs(2);
 
     normWeights = ( kDists.^p ) / m;
-    normWeights( kDists == 0 ) = max( normWeights( kDists ~= 0 ) );
+    %normWeights( kDists == 0 ) = max( normWeights( kDists ~= 0 ) ) * 10;
+
+    % fit a line to two small kDists and find the y intercept in order to set the weights when kDists == 0
+    smallKDists = kDists( kDists < 0.01  &  kDists ~= 0 );
+    smallKNormWeights = normWeights( kDists < 0.01  &  kDists ~= 0 );
+    polyCoeffs = fitPolyToData( 1, smallKDists, smallKNormWeights );
+    normWeights( kDists == 0 ) = polyCoeffs(1);
 
     spiritNormWeights(:,:,coilIndx) = normWeights / sum( normWeights(:) );
   end
