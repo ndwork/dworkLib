@@ -30,6 +30,12 @@ function out = fitPowerLaw( x, y, varargin )
   lb = p.Results.lb;
   ub = p.Results.ub;
 
+  function [ f, J ] = powerLaw( p, x )
+    a = p(1); b = p(2);
+    f = a * x .^ b;
+    J = [x .^ b, a * x .^ b .* log(x)];   % Jacobian: [ df/da, df/db ]
+  end
+
   % Finds a and by by fitting a line to log(y) v log(x)
   logX = log( x( x~=0 ) );
   logY = log( y( x~=0 ) );
@@ -39,23 +45,8 @@ function out = fitPowerLaw( x, y, varargin )
   b = coeffs(2);
 
   if p.Results.linear == false
-
-    powerLaw = @(params, x) params(1) * x .^ params(2); % params = [a, b]
-    initialParams = [a, b];
-    if p.Results.verbose == true
-      displayOption = 'iter';
-    else
-      displayOption = 'none';
-    end
-    options = optimoptions('lsqcurvefit', ...
-      'Algorithm', 'levenberg-marquardt', ...
-      'Display', displayOption, ...
-      'MaxIterations', 1000, ...
-      'FunctionTolerance', 1e-6 );
-
-    [params, resnorm, residual, exitflag, output] = lsqcurvefit( ...
-      powerLaw, initialParams, x, y, lb, ub, options );   %#ok<ASGLU>
-
+    % Uses the result of the linear fit as an initial guess.
+    params = lm( @powerLaw, [a, b], x, y, 'lb', lb, 'ub', ub );
     a = params(1);
     b = params(2);
   end
