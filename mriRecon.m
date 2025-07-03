@@ -448,6 +448,14 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
   end
 
+  function out = concat_MFS_Pc( in, op )
+    if nargin < 2  ||  strcmp( op, 'notransp' )
+      out = [ reshape( applyMFS(in), [], 1 );  applyPC( in ); ];
+    else
+      out = applyMFS( in(1:nb), op ) + reshape( applyPC( in(nb+1:end), 'transp' ), sImg );
+    end
+  end
+
   function out = concat_MFS_WmIFS( in, op )
     if nargin < 2 || strcmp( op, 'notransp' )
       FSin = applyFS( in );
@@ -492,6 +500,17 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       WHmIHin2 = reshape( applyWmI( reshape( in( n1+1 : n2 ), sKData ), op ), sKData );
       in3 = reshape( in( n2+1 : n3 ), sImg );
       out = applyFS( MTin1 + WHmIHin2, op ) + in3;
+    end
+  end
+
+  function out = concat_Psi_MFS( in, op )
+    if nargin < 2  ||  strcmp( op, 'notransp' )
+      out = [ reshape( Psi(in), [], 1 ); ...
+              reshape( applyMFS(in), [], 1 ); ];
+    else
+      n1 = nPsi;
+      n2 = nPsi + nb;
+      out = Psi( in(1:nPsi), op ) + applyMFS( in(n1:n2), op );
     end
   end
 
@@ -815,13 +834,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   
                 g1 = @( in ) indicatorEpsData( in );
                 proxg1 = @(in,t) projectOntoEpsBalls( in );
-
                 if oPsi == true
-                  f = @(in) normL2L1( Psi( in ) );
-                  proxf = @(in,t) proxCompositionAffine( @proxL2L1, in, Psi, 0, 1, t );
+                  f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
+                  proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
                   applyA = @concat_MFS_I;
                   g2 = @(in) indicatorFunction( ...
-                    norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
+                    norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
                   g = @(in) g1( in(1:nb) ) + g2( in(nb+1:end) );
                   proxg2 = @(in,t) projOutsideSupportOntoBall( in );
                   proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
@@ -830,11 +848,11 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                     'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );
   
                 else  % if oPsi == true
-                  applyA = @concat_Psi_MFS_Pc;
+                  applyA = @concat_Psi_MFS;
                   f = @(in) indicatorFunction( ...
-                    norm( in(nb+1:end), 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
+                    norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
                   proxf = @(in,t) projOutsideSupportOntoBall( in );
-                  g0 = @(in) normL2L1( in );
+                  g0 = @(in) norm( reshape( in, [], 1 ), 1 );
                   n1 = nImg;
                   n2 = n1 + nb;
                   g = @(in) g0(1:n1) + g1( in(n1+1:n2) );
