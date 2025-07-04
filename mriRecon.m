@@ -409,12 +409,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   end
 
   function out = indicatorSpiritReg( x )
-    % indicator( || x ||_2^2 / (nImg-1) <= epsSpiritReg(coilIndx) ) is equivalent to
-    % indicator( || x(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * (nImg-1) ) )
+    % indicator( || x(:,:,coilIndx) ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
+    % indicator( || x(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
     x = reshape( x, sKData );
     xNorms = LpNorms( reshape( x, [], nCoils ), 2, 1 );
     out = 0;
-    if any( ( xNorms.^2 / nImg ) > ballRadiusesSpiritReg )
+    if any( xNorms > ballRadiusesSpiritReg )
       out = Inf;
     end
   end
@@ -852,12 +852,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                   f = @(in) indicatorFunction( ...
                     norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
                   proxf = @(in,t) projOutsideSupportOntoBall( in );
-                  g0 = @(in) norm( reshape( in, [], 1 ), 1 );
                   n1 = nImg;
                   n2 = n1 + nb;
+                  g0 = @(in) norm( reshape( in, [], 1 ), 1 );
                   g = @(in) g0(1:n1) + g1( in(n1+1:n2) );
-                  proxg0 = @proxL2L1;
-                  proxg = @(in,t) [ proxg0( in(1:n1) ); ...
+                  proxg0 = @proxL1Complex;
+                  proxg = @(in,t) [ proxg0( in(1:n1), t ); ...
                                     proxg1( in(n1+1:n2), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
@@ -994,11 +994,14 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       else  % if numel( sMaps ) > 0
   
         if numel( support ) > 0
-          error( 'Not yet implemented' );
 
           if epsSupport > 0
+            % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / nbPerCoil < epsData(c)
+            % and || Pc x ||_2^2 / nOutsideSupport < epsSupport
+            error( 'Not yet implemented' );
 
           else
+            error( 'Also not yet implemented' );
 
           end
 
@@ -1180,7 +1183,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
           if numel( wSize ) > 0  % do SPIRiT Regularization
             % minimize (1/2) || M F S x - b ||_2^2  
-            % subject to  || Sw(c) .* ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+            % subject to  || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
 
             applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
             n1 = nb;
@@ -1212,7 +1215,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               SHFHMTb = applyFS( kData, 'transp' );
               %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - SHFHMTb;
               gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - SHFHMTb;              
-              [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter );   %#ok<ASGLU>
+              if debug
+                [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter, ...
+                  'verbose', true, 'printEvery', 20 );   %#ok<ASGLU>
+              else
+                [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter );   %#ok<ASGLU>
+              end
 
             elseif strcmp( optAlg, 'lsqr' )
               [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
@@ -1420,8 +1428,8 @@ function spiritNormWeights = findSpiritNormWeights( kData )
   kDistsSamples = kDists( sampleMask == 1 );
   [ kDistsSamples, sortedIndxs ] = sort( kDistsSamples );
 
-  spiritNormWeights = zeros( size( kData ) );
-  for coilIndx = 1 : nCoils
+  spiritNormWeights = cell( 1, 1, nCoils );
+  parfor coilIndx = 1 : nCoils
     kDataC = kData(:,:,coilIndx);
     F = kDataC( kData(:,:,coilIndx) ~= 0 );
     F = F( sortedIndxs );
@@ -1438,8 +1446,9 @@ function spiritNormWeights = findSpiritNormWeights( kData )
     polyCoeffs = fitPolyToData( 1, smallKDists, smallKNormWeights );
     normWeights( kDists == 0 ) = polyCoeffs(1);
 
-    spiritNormWeights(:,:,coilIndx) = normWeights / sum( normWeights(:) );
+    spiritNormWeights{ coilIndx } = normWeights / sum( normWeights(:) );
   end
+  spiritNormWeights = cell2mat( spiritNormWeights );
 end
 
 
