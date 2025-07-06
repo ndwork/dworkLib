@@ -202,6 +202,12 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
 
     if verbose == true
       dispStr = [];
+      if nMetrics > 0
+        for mIndx = 1 : nMetrics
+          mValue = metrics{ mIndx }( x );
+          if nargout > 2, metricValues( optIter+1, mIndx ) = mValue; end
+        end
+      end
       if mod( optIter, printEvery ) == 0 || optIter == 1
         dispStr = [ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ];
         if nargout > 1
@@ -209,8 +215,6 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
         end
         if nMetrics > 0
           for mIndx = 1 : nMetrics
-            mValue = metrics{ mIndx }( x );
-            if nargout > 2, metricValues( optIter+1, mIndx ) = mValue; end
             if numel( metricNames ) > 0
               dispStr = [ dispStr, ',  ', metricNames{mIndx}, ': ', num2str(mValue) ];   %#ok<AGROW>
             else
