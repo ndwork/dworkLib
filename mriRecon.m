@@ -211,6 +211,14 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
   end
 
+  function out = applyMFSPre( in, op )
+    if nargin < 2  ||  strcmp( op, 'notransp' )
+      out = applyMFS( applyPre( in ) );
+    else
+      out = applyPre( applyMFS( in, op ), op );
+    end
+  end
+
   function out = applyMFSPT( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
       out = applyMFS( applyP( in, 'transp' ) );
@@ -262,6 +270,19 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       for cI = 1 : nCoils
         out(:,:,cI) = applyPC( in(:,cI), op );
       end
+    end
+  end
+
+  S_norms = LpNorms( sMaps, 2, 3 );
+  function out = applyPre( in, op )
+    if nargin < 2  ||  strcmp( op, 'notransp' )
+      out = in ./ S_norms;
+    elseif strcmp( op, 'transp' )
+      out = in ./ conj( S_norms );
+    elseif strcmp( op, 'inv' )
+      out = in .* S_norms;
+    elseif strcmp( op, 'invTransp' )
+      out = in .* conj( S_norms );
     end
   end
 
@@ -394,11 +415,15 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     out( support == 0 ) = projectOntoBall( applyPC( in ), outsideSupportBallRadius );
   end
 
+  function out = metricOutsideSupportViolation( in )
+    out = max( norm( applyPC( in ) ) - outsideSupportBallRadius, 0 );
+  end
+
   if numel( wSize ) > 0
     ballRadiusesSpiritReg = sqrt( epsSpiritReg * nImg );
   end
   function out = proxIndSpiritReg( in, t )   %#ok<INUSD>
-    % indicator( || in ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
+    % indicator( || in(:,:,coilIndx) ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
     % indicator( || in(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
     in = reshape( in, sKData );
     out = zeros( sKData );
@@ -411,7 +436,6 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   function out = indicatorSpiritReg( x )
     % indicator( || x(:,:,coilIndx) ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
     % indicator( || x(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
-    x = reshape( x, sKData );
     xNorms = LpNorms( reshape( x, [], nCoils ), 2, 1 );
     out = 0;
     if any( xNorms > ballRadiusesSpiritReg )
@@ -577,6 +601,16 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
   end
 
+  function out = apply_vMFSPre( in, op )
+    if nargin < 2  ||  strcmp( op, 'notransp' )
+      in = reshape( in, sImg );
+      out = applyMFSPre( in );
+    else
+      out = applyMFSPre( in, op );
+      out = out(:);
+    end
+  end
+
   function out = apply_vMFSPT( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
       in = reshape( in, [ nSupport, 1 ] );
@@ -623,6 +657,20 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       disp( 'Check of applyMF passed' );
     else
       error([ 'Check of applyMF Adjoint failed with error ', num2str(errChk_MF) ]);
+    end
+
+    [chk_MFS,errChk_MFS] = checkAdjoint( rand( sKData ) + 1i * rand( sKData ), @applyMFS );
+    if chk_MFS == true
+      disp( 'Check of applyMFS passed' );
+    else
+      error([ 'Check of applyMFS Adjoint failed with error ', num2str(errChk_MFS) ]);
+    end
+
+    [chk_Pre,errChk_Pre] = checkAdjoint( rand( sKData ) + 1i * rand( sKData ), @applyPre );
+    if chk_Pre == true
+      disp( 'Check of applyPre passed' );
+    else
+      error([ 'Check of applyPre Adjoint failed with error ', num2str(errChk_Pre) ]);
     end
 
     [chk_vPsi,errChk_vPsi] = checkAdjoint( rand( sKData ) + 1i * rand( sKData ), @vPsi );
@@ -1112,7 +1160,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               applyA = @(in,op) concat_MFS_WmIFS( in, op );
               n1 = nb;
               n2 = n1 + nKData;
-              f = [];
+              f = @indicatorOutsideSupport;
               proxf = @(in,t) projOutsideSupportOntoBall( in );
               g1 = @( x ) 0.5 * norm( x - b )^2;
               proxg1 = @(in,t) proxL2Sq( in, t, b );
@@ -1124,8 +1172,9 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
               metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
               metric2 = @metricSpiritRegViolation;
-              metrics = { metric1, metric2 };
-              metricNames = { 'sparsity', 'violation' };
+              metric3 = @metricOutsideSupportViolation;
+              metrics = { metric1, metric2, metric3 };
+              metricNames = { 'sparsity', 'spirit violation', 'support violation' };
               if debug == true
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
                   'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
@@ -1183,7 +1232,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
           if numel( wSize ) > 0  % do SPIRiT Regularization
             % minimize (1/2) || M F S x - b ||_2^2  
-            % subject to  || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+            % subject to || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro^2 / nImg <= epsSpiritReg(c) for all c
 
             applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
             n1 = nb;
@@ -1207,7 +1256,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
           else  % if numel( wSize ) > 0
             % minimize || M F S x - b ||_2
 
-            if numel( optAlg ) == 0, optAlg = 'gd'; end
+            if numel( optAlg ) == 0, optAlg = 'lsqr'; end
 
             if strcmp( optAlg, 'gd' )
               g = @(in) 0.5 * norm( applyMFS(in) - b )^2;
@@ -1223,9 +1272,17 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               end
 
             elseif strcmp( optAlg, 'lsqr' )
-              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-                @apply_vMFS, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
-              img = reshape( img, sImg );
+
+              usePreconditioner = false;
+              if usePreconditioner == true
+                [ y, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                  @apply_vMFSPre, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
+                img = applyPre( reshape( y, sImg ), 'inv' );
+              else
+                [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                  @apply_vMFS, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
+                img = reshape( img, sImg );
+              end
             end
           end
 
@@ -1320,7 +1377,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               %kFull0 = applyMc( k0(:), 'transp' ) + kData;
               %figure;  showImageCube( 20*log10( abs( kFull0 ) ), 3 );
 
-              if numel( optAlg ) == 0, optAlg = 'gd'; end
+              if numel( optAlg ) == 0, optAlg = 'lsqr'; end
 
               if strcmp( optAlg, 'gd' )
                 [k,oVals,relDiffs] = gradDescent( k0, gGrad, 'g', g, 'N', nOptIter, 'verbose', verbose, 'printEvery', 50 );   %#ok<ASGLU>
@@ -1359,7 +1416,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
           img = fista_wLS( img0, g, gGrad, proxth );
 
         else
-          if numel( optAlg ) == 0, optAlg = 'gd'; end
+          if numel( optAlg ) == 0, optAlg = 'lsqr'; end
           if strcmp( optAlg, 'pocs' )
             % minimize 1 subject to Pc x = 0  and  M F x = b
             proj1 = @(in) applyF( applyF( in ) .* ( 1 - sampleMask ) + kData, 'inv' );
@@ -1376,7 +1433,6 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
           elseif strcmp( optAlg, 'lsqr' )
             % minimize || M F PT x - b ||_2
-            % Note: DOESN'T WORK!!!  This problem is not appropriate for LSQR
             img0 = applyP( img0 );
             if nCoils == 1
               [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
@@ -1429,6 +1485,7 @@ function spiritNormWeights = findSpiritNormWeights( kData )
   [ kDistsSamples, sortedIndxs ] = sort( kDistsSamples );
 
   spiritNormWeights = cell( 1, 1, nCoils );
+  kDistThresh = 0.075;
   parfor coilIndx = 1 : nCoils
     kDataC = kData(:,:,coilIndx);
     F = kDataC( kData(:,:,coilIndx) ~= 0 );
@@ -1437,12 +1494,12 @@ function spiritNormWeights = findSpiritNormWeights( kData )
     m = coeffs(1);
     p = coeffs(2);
 
-    normWeights = ( kDists.^p ) / m;
+    normWeights = ( kDists.^(-p) ) / m;
     %normWeights( kDists == 0 ) = max( normWeights( kDists ~= 0 ) ) * 10;
 
     % fit a line to two small kDists and find the y intercept in order to set the weights when kDists == 0
-    smallKDists = kDists( kDists < 0.01  &  kDists ~= 0 );
-    smallKNormWeights = normWeights( kDists < 0.01  &  kDists ~= 0 );
+    smallKDists = kDists( kDists < kDistThresh  &  kDists ~= 0 );
+    smallKNormWeights = normWeights( kDists < kDistThresh  &  kDists ~= 0 );
     polyCoeffs = fitPolyToData( 1, smallKDists, smallKNormWeights );
     normWeights( kDists == 0 ) = polyCoeffs(1);
 
