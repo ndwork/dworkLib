@@ -353,13 +353,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
   end
 
-  bTmp = reshape( b, [], nCoils );
+  bPerCoil = reshape( b, [], nCoils );
   function out = indicatorEpsData( in )
     % indicator( || x(c) - b(c) ||_2  <= ballRadius(c) )
     out = 0;    
     in = reshape( in, [], nCoils );
     for cI = 1 : nCoils
-      out = indicatorFunction( norm( in - bTmp(:,cI) )^2 / nbPerCoil, [ 0 epsData(cI) ] );
+      out = indicatorFunction( norm( in - bPerCoil(:,cI) )^2 / nbPerCoil, [ 0 epsData(cI) ] );
       if out ~= 0, break; end
     end
   end
@@ -380,7 +380,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     in = reshape( in, [], nCoils );
     out = zeros( size( in, 1 ), nCoils );
     for cI = 1 : nCoils
-      out(:,cI) = projectOntoBall( in(:,cI) - bTmp(:,cI), epsBallRadiuses(cI) ) + bTmp(:,cI);
+      out(:,cI) = projectOntoBall( in(:,cI) - bPerCoil(:,cI), epsBallRadiuses(cI) ) + bPerCoil(:,cI);
     end
     out = reshape( out, sOut );
 
@@ -396,7 +396,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
     violations = zeros( nCoils, 1 );
     for cI = 1 : nCoils
-      cProj = projectOntoBall( MFSin(:,cI) - bTmp(:,cI), epsBallRadiuses(cI) ) + bTmp(:,cI);
+      cProj = projectOntoBall( MFSin(:,cI) - bPerCoil(:,cI), epsBallRadiuses(cI) ) + bPerCoil(:,cI);
       violations(cI) = norm( cProj - MFSin(:,cI) );
     end
     out = max( violations );
@@ -841,12 +841,16 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                                   proxg3( in(n2+1:n3) ); ];
                 proxgConj = @(in,s) proxConj( proxg, in, s );
     
+                PsiImg0 = Psi( img0 );
+                tau0 = mean( abs( PsiImg0(:) ) );
+
                 metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
                 metric2 = @metricSpiritRegViolation;
                 metrics = { metric1, metric2 };
                 metricNames = { 'sparsity', 'spirit violation' };
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'N', nOptIter, 'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, ...
+                  'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
               else
                 applyA = @(in,op) concat_Psi_MFS_WmIFS( in, op );
@@ -892,8 +896,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                   proxg2 = @(in,t) projOutsideSupportOntoBall( in );
                   proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
                   proxgConj = @(in,s) proxConj( proxg, in, s );
+
+                  PsiImg0 = Psi( img0 );
+                  tau0 = mean( abs( PsiImg0(:) ) );
+
                   [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );
+                    'f', f, 'g', g, 'tau', tau0, 'printEvery', 10, 'verbose', verbose );
   
                 else  % if oPsi == true
                   applyA = @concat_Psi_MFS;
@@ -963,8 +971,12 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                 proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2)) ];
                 proxgConj = @(in,s) proxConj( proxg, in, s );
     
+                PsiImg0 = Psi( img0 );
+                tau0 = mean( abs( PsiImg0(:) ) );
+
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'N', nOptIter, 'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, ...
+                  'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
               else
                 applyA = @(in,op) concat_Psi_MFS_WmIFS( in, op );
@@ -1025,8 +1037,11 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                 metrics = { metric1, metric2 };
                 metricNames = { 'data consistency', 'violation' };
 
+                PsiImg0 = Psi( img0 );
+                tau0 = mean( abs( PsiImg0(:) ) );
+
                 [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
   
               end
 
@@ -1066,7 +1081,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               proxg = @(in,t) projectOntoEpsBalls( in );
               proxgConj = @(in,s) proxConj( proxg, in, s );
               [y, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                'beta', 1, 'tau', tau, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
+                'beta', 1, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
                 'printEvery', 10, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
 
             else  % if oPsi == true
@@ -1502,6 +1517,10 @@ function spiritNormWeights = findSpiritNormWeights( kData )
     smallKNormWeights = normWeights( kDists < kDistThresh  &  kDists ~= 0 );
     polyCoeffs = fitPolyToData( 1, smallKDists, smallKNormWeights );
     normWeights( kDists == 0 ) = polyCoeffs(1);
+
+
+    [ ~, minI ] = min( abs( kDists(:) - 0.1 ) );
+    normWeights( kDists(:) > 0.1 ) = normWeights( minI );
 
     spiritNormWeights{ coilIndx } = normWeights / sum( normWeights(:) );
   end
