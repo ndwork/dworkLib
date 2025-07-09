@@ -422,16 +422,6 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   if numel( wSize ) > 0
     ballRadiusesSpiritReg = sqrt( epsSpiritReg * nImg );
   end
-  function out = proxIndSpiritReg( in, t )   %#ok<INUSD>
-    % indicator( || in(:,:,coilIndx) ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
-    % indicator( || in(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
-    in = reshape( in, sKData );
-    out = zeros( sKData );
-    for cI = 1 : nCoils
-      out(:,:,cI) = projectOntoBall( in(:,:,cI), ballRadiusesSpiritReg(cI), 'fro' );
-    end
-    out = out(:);
-  end
 
   function out = indicatorSpiritReg( x )
     % indicator( || x(:,:,coilIndx) ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
@@ -441,6 +431,17 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     if any( xNorms > ballRadiusesSpiritReg )
       out = Inf;
     end
+  end
+
+  function out = proxIndSpiritReg( in, t )   %#ok<INUSD>
+    % indicator( || in(:,:,coilIndx) ||_2^2 / nImg <= epsSpiritReg(coilIndx) ) is equivalent to
+    % indicator( || in(:,:,coilIndx) ||_Fro <= sqrt( epsSpiritReg( coilIndx ) * nImg ) )
+    in = reshape( in, sKData );
+    out = zeros( sKData );
+    for cI = 1 : nCoils
+      out(:,:,cI) = projectOntoBall( in(:,:,cI), ballRadiusesSpiritReg(cI), 'fro' );
+    end
+    out = out(:);
   end
 
   function out = metricSpiritRegViolation( in )
@@ -527,6 +528,23 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
   end
 
+  function out = concat_MFS_SwWmIFS_I( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      FSin = applyFS( in );
+      MFSin = applyM( FSin );
+      SwWmIFSin = applySw( applyWmI( FSin ) );
+      out = [ MFSin(:); SwWmIFSin(:); in(:); ];
+    else
+      n1 = nb;
+      n2 = n1 + nKData;
+      n3 = n2 + nImg;
+      MTin1 = reshape( applyM( in( 1 : n1 ), op ), sKData );
+      WHmIHSwTin2 = reshape( applyWmI( applySw( reshape( in( n1+1 : n2 ), sKData ), op ), op ), sKData );
+      in3 = reshape( in( n2+1 : n3 ), sImg );
+      out = applyFS( MTin1 + WHmIHSwTin2, op ) + in3;
+    end
+  end
+
   function out = concat_Psi_MFS( in, op )
     if nargin < 2  ||  strcmp( op, 'notransp' )
       out = [ reshape( Psi(in), [], 1 ); ...
@@ -566,6 +584,24 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
       MTin1 = reshape( applyM( in( n0 : n1 ), op ), sKData );
       WHmIHin3 = reshape( applyWmI( reshape( in( n1+1 : n2 ), sKData ), op ), sKData );
       out = applyFS( PsiIn0 + MTin1 + WHmIHin3, op );
+    end
+  end
+
+  function out = concat_Psi_MFS_SwWmIFS( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      PsiIn = Psi( in );
+      FSin = applyFS( in );
+      MFSin = applyM( FSin );
+      SwWmIFSin = applySwWmI( FSin );
+      out = [ PsiIn(:); MFSin(:); SwWmIFSin(:); ];
+    else
+      n0 = nPsi;
+      n1 = n0 + nb;
+      n2 = n1 + nKData;
+      PsiIn0 = Psi( reshape( in( 1 : n0 ), sKData), op );
+      MTin1 = reshape( applyM( in( n0 : n1 ), op ), sKData );
+      WHmIHSwTin3 = reshape( applySwWmI( reshape( in( n1+1 : n2 ), sKData ), op ), sKData );
+      out = applyFS( PsiIn0 + MTin1 + WHmIHSwTin3, op );
     end
   end
 
@@ -818,13 +854,13 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               % minimize || Psi x ||_1
               % subject to  || M F S(c) x - b(c) ||_2^2 / nbPerCoil <= epsData(c)
               %        and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
-              %        and  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+              %        and  || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
 
               g1 = @( in ) indicatorEpsData( in );
               proxg1 = @(in,t) projectOntoEpsBalls( in );
 
               if oPsi == true
-                applyA = @(in,op) concat_MFS_WmIFS_I( in, op );
+                applyA = @(in,op) concat_MFS_SwWmIFS_I( in, op );
                 f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
                 proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
                 g2 = @indicatorSpiritReg;
@@ -853,7 +889,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                   'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
               else
-                applyA = @(in,op) concat_Psi_MFS_WmIFS( in, op );
+                applyA = @(in,op) concat_Psi_MFS_SwWmIFS( in, op );
                 f = @(in) indicatorFunction( ...
                   norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
                 proxf = @(in,t) projOutsideSupportOntoBall( in );
@@ -948,7 +984,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
             else
               % minimize || Psi x ||_1
               % subject to  || M F S(c) x - b ||_2^2 / nbPerCoil <= epsData(c)
-              %        and  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+              %        and  || Sw ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
 
               g1 = @( in ) indicatorEpsData( in );
               proxg1 = @(in,t) projectOntoEpsBalls( in );
@@ -961,7 +997,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               metricNames = { 'data consistency', 'violation' };
 
               if oPsi == true
-                applyA = @(in,op) concat_MFS_WmIFS( in, op );
+                applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
                 f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
                 proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
                 % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
@@ -979,7 +1015,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                   'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
 
               else
-                applyA = @(in,op) concat_Psi_MFS_WmIFS( in, op );
+                applyA = @(in,op) concat_Psi_MFS_SwWmIFS( in, op );
                 f = [];
                 proxf = [];
                 g0 = @(in) norm( in, 1 );
@@ -1170,9 +1206,9 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
             if numel( wSize ) > 0  % do SPIRiT Regularization
               % minimize || M F S x - b ||_2 
               % subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
-              % and || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+              % and || Sw ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
 
-              applyA = @(in,op) concat_MFS_WmIFS( in, op );
+              applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
               n1 = nb;
               n2 = n1 + nKData;
               f = @indicatorOutsideSupport;
@@ -1505,22 +1541,46 @@ function spiritNormWeights = findSpiritNormWeights( kData )
     kDataC = kData(:,:,coilIndx);
     F = kDataC( kData(:,:,coilIndx) ~= 0 );
     F = F( sortedIndxs );
-    coeffs = fitPowerLaw( kDistsSamples, abs(F), 'ub', [Inf 0], 'linear', false );
+
+    coeffs = fitPowerLaw( kDistsSamples, abs( F ), 'ub', [Inf 0], 'linear', false );   %#ok<PFBNS>
     m = coeffs(1);
     p = coeffs(2);
-
     normWeights = ( kDists.^(-p) ) / m;
-    %normWeights( kDists == 0 ) = max( normWeights( kDists ~= 0 ) ) * 10;
 
-    % fit a line to two small kDists and find the y intercept in order to set the weights when kDists == 0
+    % freqBreak = 0.1;
+    % 
+    % % Find the parameters that fit the power law for low frequencies    
+    % coeffs = fitPowerLaw( kDistsSamples( kDistsSamples <= freqBreak ), ...
+    %                       abs( F( kDistsSamples <= freqBreak ) ), 'ub', [Inf 0], 'linear', false );   %#ok<PFBNS>
+    % mLow = coeffs(1);
+    % pLow = coeffs(2);
+    % fitLow = mLow * kDistsSamples.^pLow;
+    % normWeightsLow = ( kDists.^(-pLow) ) / mLow;
+    % 
+    % % Find the parameters tha tfit the power law for high frequencies
+    % coeffs = fitPowerLaw( kDistsSamples( kDistsSamples >= freqBreak ), ...
+    %                       abs( F( kDistsSamples >= freqBreak ) ), 'ub', [Inf 0], 'linear', false );   %#ok<PFBNS>
+    % mHigh = coeffs(1);
+    % pHigh = coeffs(2);
+    % fitHigh = mHigh * kDistsSamples.^pHigh;
+    % normWeightsHigh = ( kDists.^(-pHigh) ) / mHigh;
+    % 
+    % %figure;  plotnice( kDistsSamples, log( abs( F ) ) );
+    % %hold on;  plotnice( kDistsSamples, log( fitLow ) );
+    % %hold on;  plotnice( kDistsSamples, log( fitHigh ) );
+    % 
+    % % Blend the parameters together
+    % 
+    % %fitBlend = max( fitLow, fitHigh );
+    % %hold on;  plotnice( kDistsSamples, log( fitBlend ) );
+    % %figure;  plotnice( kDists(:), normWeights(:) );
+    % normWeights = min( normWeightsLow, normWeightsHigh );
+  
+    % fit a line to very small kDists and find the y intercept in order to set the weights when kDists == 0
     smallKDists = kDists( kDists < kDistThresh  &  kDists ~= 0 );
     smallKNormWeights = normWeights( kDists < kDistThresh  &  kDists ~= 0 );
     polyCoeffs = fitPolyToData( 1, smallKDists, smallKNormWeights );
     normWeights( kDists == 0 ) = polyCoeffs(1);
-
-
-    [ ~, minI ] = min( abs( kDists(:) - 0.1 ) );
-    normWeights( kDists(:) > 0.1 ) = normWeights( minI );
 
     spiritNormWeights{ coilIndx } = normWeights / sum( normWeights(:) );
   end
