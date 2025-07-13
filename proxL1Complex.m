@@ -24,6 +24,7 @@ function out = proxL1Complex( in, thresh, weights, b )
 
   if nargin < 2
     disp( 'Usage:  out = proxL1Complex( in, thresh [, weights, b ] )' );
+    if nargout > 0, out = []; end
     return;
   end
 
