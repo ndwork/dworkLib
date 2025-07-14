@@ -250,7 +250,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
       end
       if dscValue < dscThresh  &&  optIter > 1, break; end
     else
-      disp( dispStr );
+      if verbose == true, disp( dispStr ); end
     end
 
     lastTau = tau;
