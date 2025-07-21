@@ -189,7 +189,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       if t < 1 / gradNorm, break; end
 
       t = r*t;
-      if verbose>1 && mod( k, printEvery ) == 0
+      if verbose == true  &&  mod( k, printEvery ) == 0
         disp([ '  Step size change to: ', num2str(t) ]);
       end
     end
@@ -199,7 +199,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
       relDiff = diffNorm / xNorm;
 
-      if verbose == true
+      if verbose == true && mod( k, printEvery ) == 0
         disp([ '  Relative error: ', num2str( relDiff ) ]);
       end
 
