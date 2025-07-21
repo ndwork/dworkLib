@@ -151,7 +151,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
     subIter = 0;
     while true
       subIter = subIter + 1;
-      if verbose == true && mod( iter, printEvery ) == 0
+      if verbose == true  &&  printEvery == 1
         disp([ '     sub iteration: ', num2str( subIter ), '  t: ', num2str(t) ]);
       end
 
@@ -189,7 +189,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       if t < 1 / gradNorm, break; end
 
       t = r*t;
-      if verbose == true  &&  mod( k, printEvery ) == 0
+      if verbose == true  &&  printEvery == 1
         disp([ '  Step size change to: ', num2str(t) ]);
       end
     end
@@ -199,7 +199,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
       diffNorm = sqrt( innerProd( x - lastX, x - lastX ) );
       relDiff = diffNorm / xNorm;
 
-      if verbose == true && mod( k, printEvery ) == 0
+      if verbose == true  &&  printEvery == 1
         disp([ '  Relative error: ', num2str( relDiff ) ]);
       end
 
