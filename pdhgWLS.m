@@ -215,9 +215,9 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
         end
       end
       if mod( optIter, printEvery ) == 0 || optIter == 1
-        dispStr = [ 'pdhgWLS: working on ', indx2str(optIter,N), ' of ', num2str(N) ];
+        dispStr = [ 'pdhgWLS: ', indx2str(optIter,N), ' of ', num2str(N) ];
         if nargout > 1
-          dispStr = [ dispStr, ',  objective value: ', num2str( objValues( optIter ),'%15.13f' ) ];   %#ok<AGROW>
+          dispStr = [ dispStr, ',  objective: ', num2str( objValues( optIter ),'%15.13f' ) ];   %#ok<AGROW>
         end
         if nMetrics > 0
           for mIndx = 1 : nMetrics
