@@ -1,5 +1,5 @@
 
-function wavSplit = makeWavSplit( sData, varargin )
+function [ wavSplit, binSizes ] = makeWavSplit( sData, varargin )
   % Make the wav split to be used with the wavelet transforms
   %
   % wavSplit = makeWavSplit( sData [, minSplitSize ] )
@@ -31,8 +31,11 @@ function wavSplit = makeWavSplit( sData, varargin )
     minSplitSize = minSplitSize * ones( nDims, 1 );
   end
 
+  binSizes = zeros( 1, nDims );
   for dimIndx = 1 : nDims
-    nPows( dimIndx ) = findNPows( sData( dimIndx ), minSplitSize( dimIndx ) );
+    [ thisNPow, binSize ] = findNPows( sData( dimIndx ), minSplitSize( dimIndx ) );
+    nPows( dimIndx ) = thisNPow;
+    binSizes( dimIndx ) = binSize;
   end
 
   if nDims == 1
@@ -47,7 +50,7 @@ function wavSplit = makeWavSplit( sData, varargin )
 end
 
 
-function nPow = findNPows( sizeDim, minSplitSize )
+function [ nPow, sizeDim ] = findNPows( sizeDim, minSplitSize )
   binPow = logBase( sizeDim, 2 );
 
   nPow = 0;
