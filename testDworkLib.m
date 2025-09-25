@@ -310,7 +310,7 @@ function testDworkLib
   %% dworkLib
   dworkLib
 
-  %% evlautePoly
+  %% evaluatePoly
   c = [1 2 3];  x = [4 5 6];
   p1 = evaluatePoly( c, x );
   [p2,dp] = evaluatePoly( c, x );
@@ -325,7 +325,7 @@ function testDworkLib
     error( 'evlautePoly failed' );
   end
 
-  %% evlautePoly2
+  %% evaluatePoly2
   x = 4;
   y = 5;
   c = reshape( 1:4, [2 2] );
@@ -351,6 +351,26 @@ function testDworkLib
   else
     disp([ 'fftn check failed with error: ', num2str(fftnCheckErr) ]);
   end
+
+  %% filtBackProject
+  nProjections = 180;
+  p = phantom( 'Modified Shepp-Logan', 256 );
+  sImg = size( p );
+  sino = zeros( 256, nProjections );
+  projAngles_deg = 0 : nProjections-1;
+  for i = 0 : nProjections-1
+    pRotated = imrotate( p, i, 'bilinear', 'crop' );
+    sino(:,i+1) = sum( pRotated, 2 );
+  end
+  projAngles = projAngles_deg * (pi/180);
+  recon = filtBackProject( sino, sImg, 'projAngles', projAngles );
+  re = relErr( p, recon );
+  if re < 0.2
+    disp( 'filtBackProject passed' );
+  else
+    disp([ 'filtBackProject passed with error ', num2str( re ) ]);
+  end
+
 
   %% findDoGFeatures2D
   imgFile = '/Applications/MATLAB_R2019b.app/toolbox/images/imdata/moon.tif';
