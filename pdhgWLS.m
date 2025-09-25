@@ -54,6 +54,8 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
     return;
   end
   
+  defaultN = 1000;
+
   p = inputParser;
   p.addParameter( 'A', [] );
   p.addParameter( 'beta', 1, @ispositive );
@@ -67,7 +69,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   p.addParameter( 'metricNames', [] );
   p.addParameter( 'metrics', [] );
   p.addParameter( 'mu', 0.8, @(x) x>0 && x<1 );
-  p.addParameter( 'N', 1000, @ispositive );
+  p.addParameter( 'N', defaultN, @ispositive );
   p.addParameter( 'P', [] );
   p.addParameter( 'printEvery', 1, @ispositive );
   p.addParameter( 'saveDir', './', @(x) true );
@@ -110,6 +112,8 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   if numel( innerProd ) == 0
     innerProd = @(x,y) real( dotP( x, y ) );
   end
+
+  if numel( N ) == 0, N = defaultN; end
 
   if numel( A ) == 0  &&  numel( P ) == 0
     applyA = @(x) x;
