@@ -6,7 +6,13 @@ function [ intersectionPts, ts ] = lineCircleIntersect( pt, vec, center, radius 
   % may be imaginary or complex.)
   % The line is defined as { pt + t * vec, where t is real }
   % The circle is defined as
-  %   { (x,y) : ( x - center )^2 + ( y - center )^2 = radius^2 }
+  %   { (x,y) : ( x - center(1) )^2 + ( y - center(2) )^2 = radius^2 }
+  %
+  % Inputs:
+  % pt - a 2 element array specifying the (x,y) coordinates of the point
+  % vec - Either a two element array specifying the (x,y) coordinates of the vector OR
+  %       An Mx2 element array specifying a set a vectors where the first/second column
+  %       represents the (x,y) coordinates of the vectors, respectively.
   %
   % Outputs:
   % intersectionPts - an array specifying the intersection points
