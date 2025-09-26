@@ -42,13 +42,13 @@ function [ intersectionPts, ts ] = lineCircleIntersect( pt, vec, center, radius 
 
   a = vec(:,1) .* vec(:,1) + vec(:,2) .* vec(:,2);
 
-  if min( size( pt ) == size( vec ) ) == 1 && min( size( pt ) == size( center ) )
+  if all( size( pt ) == size( vec ) ) && all( size( pt ) == size( center ) )
     b = 2 * ( pt(:,1) .* vec(:,1) - vec(:,1) .* center(:,1) + pt(:,2) .* vec(:,2) - vec(:,2) .* center(:,2) );
     c = pt(:,1) .* pt(:,1) - 2 * pt(:,1) .* center(:,1) + center(:,1) .* center(:,1) ...
         + pt(:,2) .* pt(:,2) - 2 * pt(:,2) .* center(:,2) + center(:,2) .* center(:,2) - radius(:) .* radius(:);
 
   else
-    if min( size( pt ) == size( vec ) ) == 1
+    if all( size( pt ) == size( vec ) )
       ptVec11 = pt(:,1) .* vec(:,1);
       ptVec22 = pt(:,2) .* vec(:,2);
     else
@@ -61,7 +61,7 @@ function [ intersectionPts, ts ] = lineCircleIntersect( pt, vec, center, radius 
       end
     end
 
-    if min( size( vec ) == size( center ) ) == 1
+    if all( size( vec ) == size( center ) )
       if numel( vec ) == 2, vec = vec(:)'; end
 
       vecCenter11 = vec(:,1) .* center(:,1);
@@ -78,7 +78,7 @@ function [ intersectionPts, ts ] = lineCircleIntersect( pt, vec, center, radius 
 
     b = 2 * ( ptVec11 - vecCenter11 + ptVec22 - vecCenter22 );
 
-    if min( size( pt ) == size( center ) ) == 1
+    if all( size( pt ) == size( center ) )
       if numel( pt ) == 2, pt = pt(:)'; end
       if numel( center ) == 2, center = center(:)'; end
 
@@ -114,5 +114,5 @@ function [ intersectionPts, ts ] = lineCircleIntersect( pt, vec, center, radius 
   intersectionPts = [ bsxfun( @plus, pt, roots1Vec ); ...
                       bsxfun( @plus, pt, roots2Vec ); ];
 
-  if nargout > 1, ts = [ roots1(:); roots2(:); ]; end
+  if nargout > 1, ts = [ roots1(:) roots2(:) ]; end
 end

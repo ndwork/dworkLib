@@ -26,7 +26,8 @@ function out = backProject( sino, projAngles, sImg )
     projAngle = projAngles( angleIndx ) * 180/pi;
 
     proj = repmat( sino(:,angleIndx), [ 1 sImg(2) ] );
-    proj = imrotate( proj, -projAngle, 'crop' );
+    proj = imrotate( proj, -projAngle, 'loose' );
+    proj = cropData( proj, sImg );
 
     out = out + proj;
   end
