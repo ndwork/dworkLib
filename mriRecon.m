@@ -1,5 +1,5 @@
 
-function [ img, objValues, mValues ] = mriRecon( kData, varargin )
+function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
   % img = mri_Recon( kData [, 'epsData', epsData, 'epsSupport', epsSupport, 'gamma', gamma, 
   %       'lambda', lambda, 'nOptIter', nOptIter, 'Psi', Psi 'sACR', sACR, 'sMaps', sMaps,
   %       'support', support, 'verbose', verbose, 'wSize', wSize ] )
@@ -30,7 +30,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
   p.addParameter( 'epsSpiritReg', [], @isnonnegative );
   p.addParameter( 'epsSupport', 0, @isnonnegative );
   p.addParameter( 'lambda', [], @isnonnegative );
-  p.addParameter( 'nOptIter', 1000, @ispositive );
+  p.addParameter( 'nOptIter', 2500, @ispositive );
   p.addParameter( 'noCS', false );
   p.addParameter( 'oPsi', true );
   p.addParameter( 'optAlg', [] );
@@ -118,9 +118,11 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
     end
     flipW = padData( flipDims( w, 'dims', [1 2] ), [ sImg nCoils nCoils ] );
 
-    normMFS = powerIteration( @applyMFS, rand( sImg ) );
-    normSwWmIFS = powerIteration( @applySwWmIFS, rand( sImg ) );
-    spiritScaling = normMFS / normSwWmIFS;
+    if numel( sMaps ) > 0
+      normMFS = powerIteration( @applyMFS, rand( sImg ) );
+      normSwWmIFS = powerIteration( @applySwWmIFS, rand( sImg ) );
+      spiritScaling = normMFS / normSwWmIFS;
+    end
   end
 
   if numel( Psi ) == 0
@@ -1010,10 +1012,11 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
               g2 = @indicatorSpiritReg;
               proxg2 = @v_proxIndSpiritReg;
 
-              metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-              metric2 = @metricSpiritRegViolation;
-              metrics = { metric1, metric2 };
-              metricNames = { 'data consistency', 'violation' };
+              metric1 = @(in) norm( in(:), 1 );
+              metric2 = @metricEpsDataViolation;
+              metric3 = @metricSpiritRegViolation;
+              metrics = { metric1, metric2, metric3 };
+              metricNames = { 'sparsity', 'dcViolation', 'spiritViolation' };
 
               if oPsi == true
                 applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
@@ -1293,6 +1296,7 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
 
             % minimize || M F S PT x - b ||_2
             img0 = applyP( img0 );
+            img0(:) = 0;
             b = applyM( kData );
             [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
               @apply_vMFSPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
@@ -1356,6 +1360,15 @@ function [ img, objValues, mValues ] = mriRecon( kData, varargin )
                 img = reshape( img, sImg );
               end
             end
+
+            residualErrs = zeros( nCoils, 1 );
+            for coilIndx = 1 : nCoils
+              tmp = applyF( sMaps(:,:,coilIndx) * img );
+              residualErrs( coilIndx ) = norm( tmp( sampleMask(:,:,coilIndx) == 1 ) - bPerCoil(:,coilIndx) )^2 / ...
+                numel( bPerCoil(:,coilIndx) );
+            end
+            objValues = [];
+            mValues = [];
           end
 
         end
