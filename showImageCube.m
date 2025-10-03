@@ -7,7 +7,7 @@ function imH = showImageCube( cube, varargin )
   % figure.
   %
   % Inputs:
-  % cube is an MxNxK array
+  % cube is an MxNxK array where K is the number of slices
   %
   % Optional Inputs:
   % border - specifies a border to place between images (default is 0)
