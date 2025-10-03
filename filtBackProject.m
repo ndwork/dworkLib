@@ -5,12 +5,14 @@ function out = filtBackProject( sino, sImg, varargin )
   %
   % Inputs:
   % sino - a parallel beam sinogram with one column per detector and one row per projection
+  % sImg - the size of the output image
   %
   % Optional Inputs:
-  % dProjAngle - the angle between adjacent rotation angles
-  %   Either dAngle or projAngles must be supplied
   % detCenter - the location of the center detector (defaults to center of projection)
   %   Note, for optical projection tomography, this is a component of the principal point
+  % dProjAngle - the angle between adjacent rotation angles
+  %   Either dAngle or projAngles must be supplied
+  % dSize - the size of each detector.  (More specifically, the spacing between detectors.)
   % projAngles - the angle of the principal ray for each projection
   %   Either dAngle or projAngles must be supplied
   %
@@ -20,6 +22,8 @@ function out = filtBackProject( sino, sImg, varargin )
   % is offered without any warranty expressed or implied, including the
   % implied warranties of merchantability or fitness for a particular
   % purpose.
+
+  % TODO: Density compensation may be beneficial
 
   p = inputParser;
   p.addParameter( 'detCenter', [] );
@@ -38,6 +42,10 @@ function out = filtBackProject( sino, sImg, varargin )
 
   nDetectors = size( sino, 1 );
   nProjections = size( sino, 2 );
+
+  if numel( projAngles ) == 0
+    projAngles = dProjAngle * ( 0 : nProjections-1 );
+  end
 
   if numel( detCenter ) == 0
     n = size2imgCoordinates( nDetectors );
