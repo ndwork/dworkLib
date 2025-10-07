@@ -1,9 +1,10 @@
 
-function K = calibrateCamFromSquares( squares, varargin )
+function [ K, Hs ] = calibrateCamFromSquares( squares, varargin )
   % K = calibrateCamFromSquares( squares )
   %
   % Written according to (8.12) from "Multiple View Geometry" by Hartley and Zisserman,
   % 2nd edition (page 211).
+  % Note that it is suggested that the points of squares be normalized using normalizePts2D.
   %
   % Inputs:
   % squares - a 3D array of size 4 x 2 x nSquares (nSquares must be >=3 ) that represents
@@ -26,9 +27,12 @@ function K = calibrateCamFromSquares( squares, varargin )
   p.parse( varargin{:} );
   doCheck = p.Results.doCheck;
 
-  simplePts = [ 0 0; 1 0; 0 1; 1 1; ];
-
   nSquares = size( squares, 3 );
+  if size(squares,1) ~= 4 || size(squares,2) ~= 2 || nSquares < 3
+    error('Input "squares" must be a 4 x 2 x nSquares array with nSquares >= 3.');
+  end
+
+  simplePts = [ 0 0; 1 0; 0 1; 1 1; ];
   Hs = zeros( 3, 3, nSquares );
 
   for squareIndx = 1 : nSquares
@@ -58,17 +62,17 @@ function K = calibrateCamFromSquares( squares, varargin )
 
     d = H(:,1) - H(:,2);  % difference
     s = H(:,1) + H(:,2);  % sum
-    A(i+3,:) = [ d(1) * s(1)  ...
-                 d(1) * s(2) + d(2) * s(1) ...
-                 d(1) * s(3) + d(3) * s(1) ...
-                 d(2) * s(2) ...
-                 d(2) * s(3) + d(3) * s(2) ...
-                 d(3) * s(3) ];
+    A(i+nSquares,:) = [ d(1) * s(1)  ...
+                        d(1) * s(2) + d(2) * s(1) ...
+                        d(1) * s(3) + d(3) * s(1) ...
+                        d(2) * s(2) ...
+                        d(2) * s(3) + d(3) * s(2) ...
+                        d(3) * s(3) ];
   end
 
   [~,s,v] = svd( A, 'vector' );   %#ok<ASGLU>
 
-  iacVec = v(:,6);
+  iacVec = v(:,end);
   iac = [ iacVec(1) iacVec(2) iacVec(3); ...
           iacVec(2) iacVec(4) iacVec(5); ...
           iacVec(3) iacVec(5) iacVec(6); ];
@@ -78,14 +82,19 @@ function K = calibrateCamFromSquares( squares, varargin )
     invIAC = -invIAC;
   end
 
-  K = chol( invIAC );
+  try
+    K = chol( invIAC );
+  catch
+    error('Inverse IAC is not positive definite.');
+  end
+
   K = K ./ K(3,3);
 end
 
 function errH = checkH( H, squarePts )
   simplePts = [ 0 0; 1 0; 0 1; 1 1; ];
   Hsimple = H * [ simplePts'; 1 1 1 1; ];
-  Hpts = bsxfun( @rdivide, Hsimple, Hsimple(3,:) );
+  Hpts = Hsimple ./ Hsimple(3,:);
   Hpts = Hpts(1:2,:);
   diffPts = squarePts - Hpts';
   errH = norm( diffPts(:), 2 );
