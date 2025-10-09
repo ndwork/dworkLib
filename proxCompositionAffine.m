@@ -19,9 +19,9 @@ function out = proxCompositionAffine( proxf, x, A, b, alpha, t )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
-  if numel( b ) == 0, b = 0; end
-  if numel( alpha ) == 0, alpha = 1; end
-  if numel( t ) == 0, t = 1; end
+  if nargin < 4 || numel( b ) == 0, b = 0; end
+  if nargin < 5 || numel( alpha ) == 0, alpha = 1; end
+  if nargin < 6 || numel( t ) == 0, t = 1; end
 
   if numel( A ) > 0
 
