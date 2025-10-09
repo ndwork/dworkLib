@@ -1191,7 +1191,7 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
             g = @(in) 0.5 * norm( applyMF( in ) - b, 2 )^2;
             FTMTb = applyF( kData, 'transp' );
             gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
-            proxth = @(in,t) proxCompositionAffine( in, Psi, [], 1, t * lambda );
+            proxth = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t * lambda );
             if debug == true
               img = fista_wLS( img0, g, gGrad, proxth, 'printEvery', 50, 'verbose', true );
             else
