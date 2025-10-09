@@ -38,7 +38,8 @@ function mask = vdSampleMask( sMask, sigmas, nSamples, varargin )
 
   if numel( maskType ) == 0, maskType = 'Laplacian'; end
 
-  if numel( sigmas ) == 1, sigmas = sigmas * ones( numel(sMask), 1 ); end
+  if numel( sigmas ) == 0, sigmas = round( 0.3 * sMask ); end
+  if isscalar( sigmas ), sigmas = sigmas * ones( numel(sMask), 1 ); end
 
   maskCoordinates = size2imgCoordinates( sMask );
 
