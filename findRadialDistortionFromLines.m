@@ -84,38 +84,18 @@ end
 
 
 function err = computeLineError( pts, ks, c )
-  %rs = LpNorms( bsxfun( @minus, pts, c(:)' ), 2 );
-  %rPower = rs;
-  %Ls = ones( size( rs ) );
-  %for kIndx = 1 : numel( ks )
-  %  Ls = Ls + ks(kIndx) .* rPower;
-  %  if kIndx < numel( ks ), rPower = rPower .* rs; end
-  %end
 
   undistortedPts = applyRadialDistortion2Pts( pts, ks, c, 'dir', 1 );
 
-  % normalize the points
-  %undistortedPts = normalizePts2D( undistortedPts );
+  [ pt, vec ] = findBestLineThroughPoints( undistortedPts );
+  line.pt = pt;
+  line.vec = vec;
 
-  %figure; plotnice( pts(:,1), pts(:,2) );
-  %hold all;  plotnice( undistortedPts(:,1), undistortedPts(:,2) )
-
-  line.pt = undistortedPts(1,:);
-  diffVec = undistortedPts( size(undistortedPts,1), : ) - line.pt;
-  line.vec = diffVec / norm( diffVec );
-
-  %midPt = line.pt + 0.5 * diffVec;
-  %diffFromMid = bsxfun( @minus, undistortedPts, midPt );
-  %dists2Pts = norms( diffFromMid, 2, 2 );
-  %[~,closestPt2MidIndx] = min( dists2Pts );
-  %closestPt2Mid = undistortedPts(closestPt2MidIndx,:);
-  %dists = findDistsBetweenPtsAndLine( closestPt2Mid', line );
-  %err = norm( dists ) / numel( dists );
-  %err = dist ./ norm( diffVec );
+  %line.pt = undistortedPts(1,:);
+  %diffVec = undistortedPts( size(undistortedPts,1), : ) - line.pt;
+  %line.vec = diffVec / norm( diffVec );
 
   dists = findDistsBetweenPtsAndLine( undistortedPts', line );
-  err = max( dists ) / norm( diffVec );
-  %err = norm( dists(2:end-1) ) / norm( diffVec ) / ( numel(dists)-2 );
-  %err = norm( dists(2:end-1) ) / ( numel(dists)-2 );
-
+  %err = max( dists ) / norm( diffVec );
+  err = sum( dists );
 end
