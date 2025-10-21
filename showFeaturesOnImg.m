@@ -23,6 +23,12 @@ function showFeaturesOnImg( features, varargin )
   % implied warranties of merchantability or fitness for a particular
   % purpose.
 
+  if nargin < 1
+    disp( ['Usage: showFeaturesOnImg( features [, img, ''range'', range, ''scale'', scale, ...' newline, ...
+      '  ''color'', color, ''figH'', figH, ''connect'', true/false, ''offset'', offset ] )' ] );
+    return
+  end
+
   p = inputParser;
   p.addOptional( 'img', [] );
   p.addParameter( 'connect', false, @(x) islogical(x) );
