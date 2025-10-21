@@ -22,7 +22,7 @@ function dists = findDistsBetweenPtsAndLine( pts, line )
   % purpose.
 
   a = line.pt;   a = a(:);
-  n = line.vec;  n = n(:);
+  n = line.vec;  n = n(:);  n = n / norm( n(:) );
 
   aMinusP = bsxfun( @minus, a, pts );
   tmp = bsxfun( @times, ( aMinusP' * n )', n );
