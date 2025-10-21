@@ -78,7 +78,7 @@ end
 function err = computeError( lines, ks, c )
   err = 0;
   for i = 1 : numel( lines )
-    err = err + computeLineError( lines{i}, ks, c ).^2;
+    err = err + computeLineError( lines{i}, ks, c );
   end
 end
 
@@ -91,11 +91,6 @@ function err = computeLineError( pts, ks, c )
   line.pt = pt;
   line.vec = vec;
 
-  %line.pt = undistortedPts(1,:);
-  %diffVec = undistortedPts( size(undistortedPts,1), : ) - line.pt;
-  %line.vec = diffVec / norm( diffVec );
-
   dists = findDistsBetweenPtsAndLine( undistortedPts', line );
-  %err = max( dists ) / norm( diffVec );
-  err = sum( dists );
+  err = sum( dists.^2 );
 end
