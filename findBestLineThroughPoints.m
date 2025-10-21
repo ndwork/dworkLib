@@ -25,6 +25,6 @@ function [ pt, vec ] = findBestLineThroughPoints( pts )
 
   centeredPts = bsxfun( @minus, pts, pt );
 
-  [~,~,V] = svdc( centeredPts, 'econ' );
+  [~,~,V] = svd( centeredPts, 'econ' );
   vec = V(:,1);
 end
