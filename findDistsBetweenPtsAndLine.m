@@ -26,5 +26,5 @@ function dists = findDistsBetweenPtsAndLine( pts, line )
 
   aMinusP = bsxfun( @minus, a, pts );
   tmp = bsxfun( @times, ( aMinusP' * n )', n );
-  dists = norms( aMinusP - tmp, 2, 1 );
+  dists = LpNorms( aMinusP - tmp, 2, 1 );
 end
