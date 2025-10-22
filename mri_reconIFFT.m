@@ -35,11 +35,18 @@ function recons = mri_reconIFFT( kData, varargin )
   multiSlice = p.Results.multiSlice;
 
   if numel( dims ) > 0
-    recons = kData;
-    for dimIndx = 1 : numel( dims )
-      dim = dims( dimIndx );
-      recons = fftshift( ifft( ifftshift( recons, dim ), [], dim ), dim );
+
+    if all( dims == [ 1 2 ] )
+      recons = fftshift2( ifft2( ifftshift2( kData ) ) );
+
+    else
+      recons = kData;
+      for dimIndx = 1 : numel( dims )
+        dim = dims( dimIndx );
+        recons = fftshift( ifft( ifftshift( recons, dim ), [], dim ), dim );
+      end
     end
+
   else
 
     recons = fftshift2( ifft2( ifftshift2( kData ) ) );
