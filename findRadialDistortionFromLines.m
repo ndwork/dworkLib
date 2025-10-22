@@ -62,7 +62,8 @@ function [ ks, c ] = findRadialDistortionFromLines( lines, varargin )
     x0 = [ c0; ks0; ];
   end
   
-  [x,finalErr] = fminsearch( @computeThisError, x0 );   %#ok<ASGLU>
+  options = optimset( 'TolFun', 1e-12, 'MaxFunEvals', 10000 );
+  [x,finalErr] = fminsearch( @computeThisError, x0, options );   %#ok<ASGLU>
 
   if fixedCenter == true
     c = c0;
@@ -85,7 +86,7 @@ end
 
 function err = computeLineError( pts, ks, c )
 
-  undistortedPts = applyRadialDistortion2Pts( pts, ks, c, 'dir', 1 );
+  undistortedPts = applyRadialDistortion2Pts( pts, ks, c, 'dir', -1 );
 
   [ pt, vec ] = findBestLineThroughPoints( undistortedPts );
   line.pt = pt;
