@@ -1,6 +1,6 @@
 
-function recon = grid_2D( F, kTraj, N, varargin )
-  % recon = grid_2D( F, kTraj, N, [ weights, 'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC ] )
+function [ recon, weights ] = grid_2D( F, kTraj, N, varargin )
+  % [ recon, weights ] = grid_2D( F, kTraj, N, [ weights, 'alg', alg, 'alpha', alpha, 'W', W, 'nC', nC ] )
   %
   % The gridding non-uniform FFT algorithm based on EE369C notes by John Pauly
   % and Beatty et. al., IEEE TMI, 2005.  Definitions and details according to
@@ -25,6 +25,9 @@ function recon = grid_2D( F, kTraj, N, varargin )
   %
   % Output:
   %   recon is the uniformly spaced data in the space domain
+  %
+  % Optional Output:
+  %   weights - returns the weights that were used for gridding
   %
   % Written by Nicholas Dwork - Copyright 2015
   %
