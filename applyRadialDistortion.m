@@ -1,6 +1,6 @@
 
 function out = applyRadialDistortion( img, ks, varargin )
-  % out = applyRadialDistortion( img, k [, 'c', c ] )
+  % out = applyRadialDistortion( img, k [, 'c', c, 'dir', dir, 'space', space ] )
   %
   % Written according to section 7.4 of Multiple View Geometry, 2nd edition
   % by Hartley and Zisserman

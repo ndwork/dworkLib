@@ -1,6 +1,12 @@
 
 function out = undoRadialDistortion( img, ks, varargin )
-  error( 'This is depracated.  Please replace with applyRadialDistortion using dir=-1' );
+  p = inputParser;
+  p.addParameter( 'c', [] );
+  p.addParameter( 'space', [] );
+  p.parse( varargin{:} );
+  c = p.Results.c;
+  space = p.Results.space;
+  out = applyRadialDistortion( img, ks, 'c', c, 'dir', -1, 'space', space );
 end
 
 
