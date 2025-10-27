@@ -129,7 +129,7 @@ function [xStar,objectiveValues,relDiffs] = fista_wLS( x, g, gGrad, proxth, vara
   k = 0;
 
   for iter = 1 : N
-    if verbose>0 && iter>0 && mod( iter, printEvery ) == 0
+    if verbose>0 && mod( iter, printEvery ) == 0
       verboseString = [ 'FISTA_wLS Iteration: ', indx2str(iter,N), ...
         ' of ', num2str(N) ];
       if calculateObjectiveValues == true
