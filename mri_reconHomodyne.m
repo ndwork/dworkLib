@@ -19,10 +19,8 @@ function [out, phaseImg] = mri_reconHomodyne( in, sFSR, varargin )
   %
   % https://github.com/ndwork/dworkLib.git
   %
-  % This software is offered under the GNU General Public License 3.0.  It
-  % is offered without any warranty expressed or implied, including the
-  % implied warranties of merchantability or fitness for a particular
-  % purpose.
+  % This software is offered under the GNU General Public License 3.0.  It is offered without any warranty expressed
+  % or implied, including the implied warranties of merchantability or fitness for a particular purpose.
 
   p = inputParser;
   p.addParameter( 'op', 'notransp', @(x) true );
@@ -50,9 +48,7 @@ function [out, phaseImg] = mri_reconHomodyne_Cartesian( in, sFSR, phases, op, ra
   ys = size2imgCoordinates( Ny );
   centerIndx = find( ys == 0, 1 );
 
-  if numel( sFSR ) == 1
-    sFSR = [ sFSR, size( in, 2 ) ];
-  end
+  if isscalar( sFSR ), sFSR = [ sFSR, size( in, 2 ) ]; end
 
   firstY = centerIndx - ceil( ( sFSR(1) - 1 ) / 2 );
   lastY = centerIndx + floor( ( sFSR(1) - 1 ) / 2 );
@@ -111,5 +107,5 @@ end
 
 
 function [out, phaseImg] = mri_reconHomodyne_NonCartesian( in, sFSR, phases, op, ramp, traj )
-  error( 'I still need to implement this' )
+  error( 'Not yet implemented' )
 end
