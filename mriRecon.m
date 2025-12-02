@@ -1,8 +1,8 @@
 
 function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
   % img = mri_Recon( kData [, 'epsData', epsData, 'epsSupport', epsSupport, 'gamma', gamma, 
-  %       'lambda', lambda, 'nOptIter', nOptIter, 'Psi', Psi 'sACR', sACR, 'sMaps', sMaps,
-  %       'support', support, 'verbose', verbose, 'wSize', wSize ] )
+  %       'lambda', lambda, 'nOptIter', nOptIter, 'Psi', Psi 'sACR', sACR, 'sImg', sImg, 
+  %       'sMaps', sMaps, 'support', support, 'traj', traj, 'verbose', verbose, 'wSize', wSize ] )
   %
   % Inputs:
   % kData - an array of size M x N x C where C is the number of coils
@@ -36,8 +36,11 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
   p.addParameter( 'optAlg', [] );
   p.addParameter( 'Psi', [] );
   p.addParameter( 'sACR', [] );
+  p.addParameter( 'sImg', [], @ispositive );
   p.addParameter( 'sMaps', [], @isnumeric );
   p.addParameter( 'support', [] );
+  p.addParameter( 'tol', [], @(x) ispositive(x) || numel(x) == 0 );
+  p.addParameter( 'traj', [] );
   p.addParameter( 'verbose', true );
   p.addParameter( 'wSize', [], @ispositive );
   p.parse( varargin{:} );
@@ -53,23 +56,46 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
   optAlg = p.Results.optAlg;
   Psi = p.Results.Psi;
   sACR = p.Results.sACR;
+  sImg = p.Results.sImg;
   sMaps = p.Results.sMaps;
   support = p.Results.support;
+  traj = p.Results.traj;
   verbose = p.Results.verbose;
   wSize = p.Results.wSize;
 
-
   %-- Preliminary variable definitions and input checks
-  sampleMask = ( kData ~= 0 );
   sKData = size( kData );
   nKData = prod( sKData );
-  sImg = size( kData, [1 2] );
-  nImg = prod( sImg );
-  nCoils = size( kData, 3 );
+  nCoils = size( kData, ndims( kData ) );
 
   if isscalar( epsData ), epsData = epsData * ones( nCoils, 1 ); end
   if isscalar( sACR ), sACR = [ sACR sACR ]; end
   if isscalar( wSize ), wSize = [ wSize wSize ]; end
+
+  if numel( traj ) > 0
+    b = kData;
+    if numel( sImg ) == 0
+      error( 'Must supply sImg when supplying traj' );
+    end
+    coilImgs0 = grid_2D( kData, traj, sImg );
+    img0 = mri_reconRoemer( coilImgs0 );
+
+  else
+    sampleMask = ( kData ~= 0 );
+    b = applyM( kData );
+
+    if numel( sImg ) > 0
+      warning( 'sImg argument is not used when processing Cartesian data' );
+    end
+    sImg = size( kData, [1 2] );
+    coilImgs0 = applyF( kData, 'inv' );
+    if nCoils > 1
+      img0 = mri_reconRoemer( coilImgs0, 'sMaps', sMaps );
+    else
+      img0 = coilImgs0;
+    end
+  end
+  nImg = prod( sImg );
 
   if min( mod( wSize, 2 ) ) < 1, error( 'wSize elements must be odd' ); end
   if numel( wSize ) > 0  &&  numel( sACR ) == 0
@@ -90,13 +116,6 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
     cs = false;
   end
 
-  coilImgs0 = applyF( kData, 'inv' );
-  if nCoils > 1
-    img0 = mri_reconRoemer( coilImgs0, 'sMaps', sMaps );
-  else
-    img0 = coilImgs0;
-  end
-
   spiritScaling = 1;
   if numel( wSize ) > 0
     if nCoils == 1, error( 'Cannot supply wSize with a single coil' ); end
@@ -110,10 +129,10 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
     end
     if numel( epsSpiritReg ) == 0
       [w, epsSpiritReg] = findW( acr, wSize, spiritNormWeightsACR );
-    elseif isscalar( epsSpiritReg )
-      epsSpiritReg = epsSpiritReg * ones( nCoils, 1 );
-      [w, ~] = findW( acr, wSize, spiritNormWeightsACR );
     else
+      if isscalar( epsSpiritReg )
+        epsSpiritReg = epsSpiritReg * ones( nCoils, 1 );
+      end
       [w, ~] = findW( acr, wSize, spiritNormWeightsACR );
     end
     flipW = padData( flipDims( w, 'dims', [1 2] ), [ sImg nCoils nCoils ] );
@@ -133,6 +152,9 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
     end
     oPsi = true;
   end
+  if cs == true
+    nPsi = numel( Psi( img0 ) );
+  end
 
   if numel( support ) > 0
     if any( sImg ~= size( support ) ), error( 'Support must be the size of the image' ); end
@@ -144,7 +166,6 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
     error( 'Cannot supply sMaps with single coil data' );
   end
 
-  b = applyM( kData );
   nb = numel( b );
   nbPerCoil = nb / nCoils;
 
@@ -157,6 +178,31 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
       out = AH_SPIRiT( reshape( in, size( kData ) ) );
     end
     out = out(:);
+  end
+
+  function out = applyFnu( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = iGrid_2D( in, traj );
+    else
+      out = iGridT_2D( in, traj, sImg );
+    end
+  end
+
+  function out = applyFnuS( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      out = applyFnu( applyS( in ) );
+    else
+      out = applyS( applyFnu( in, 'transp' ), 'transp' );
+    end
+  end
+
+  function out = applyFnuS_v( in, op )
+    if nargin < 2 || strcmp( op, 'notransp' )
+      in = reshape( in, sImg );
+    else
+      in = reshape( in, sKData );
+    end
+    out = reshape( applyFnuS( in, op ), [], 1 );
   end
 
   function out = applyFS( in, op )
@@ -376,7 +422,7 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
     out = 0;    
     in = reshape( in, [], nCoils );
     for cI = 1 : nCoils
-      out = indicatorFunction( norm( in - bPerCoil(:,cI) )^2 / nbPerCoil, [ 0 epsData(cI) ] );
+      out = indicatorFunction( norm( in(:,cI) - bPerCoil(:,cI) )^2 / nbPerCoil, [ 0 epsData(cI) ] );
       if out ~= 0, break; end
     end
   end
@@ -695,6 +741,14 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
 
   %-- Checks
   if doChecks
+
+    [chk_Fnu,errChk_Fnu] = checkAdjoint( rand( sImg ) + 1i * rand( sImg ), @applyFnu );
+    if chk_Fnu == true
+      disp( 'Check of applyFnu passed' );
+    else
+      error([ 'Check of applyFnu Adjoint failed with error ', num2str(errChk_Fnu) ]);
+    end
+
     [chk_M,errChk_M] = checkAdjoint( rand( sKData ) + 1i * rand( sKData ), @applyM );
     if chk_M == true
       disp( 'Check of applyM passed' );
@@ -858,385 +912,600 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
 
   tol = 1d-6;
 
-  if cs == true
+  if numel( traj ) > 0
 
-    nPsiCoils = numel( Psi( coilImgs0 ) );
-    nPsi = numel( Psi( img0 ) );
-
-    if nCoils > 1
-  
+    if cs == true
       if numel( sMaps ) > 0
 
-        if numel( support ) > 0
-
-          if epsSupport > 0
-
-            if numel( wSize ) > 0
-              % minimize || Psi x ||_1
-              % subject to  || M F S(c) x - b(c) ||_2^2 / nbPerCoil <= epsData(c)
-              %        and  || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
-              %        and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
-
-              g1 = @( in ) indicatorEpsData( in );
-              proxg1 = @(in,t) projectOntoEpsBalls( in );
-
-              if oPsi == true
-                applyA = @(in,op) concat_MFS_SwWmIFS_I( in, op );
-                f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
-                proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
-                g2 = @indicatorSpiritReg;
-                proxg2 = @v_proxIndSpiritReg;
-                g3 = @(in) indicatorFunction( ...
-                  norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
-                proxg3 = @(in,t) projOutsideSupportOntoBall( in );
-                n1 = nb;
-                n2 = n1 + nKData;
-                n3 = n2 + nImg;
-                g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) ) + g3( in(n2+1:n3) );
-                proxg = @(in,t) [ proxg1( in(1:n1), t );  ...
-                                  proxg2( in(n1+1:n2), t ); ...
-                                  proxg3( in(n2+1:n3) ); ];
-                proxgConj = @(in,s) proxConj( proxg, in, s );
+        if oPsi == true
     
-                PsiImg0 = Psi( img0 );
-                tau0 = mean( abs( PsiImg0(:) ) );
+          if numel( lambda ) > 0  &&  lambda > 0
+            % minimize (1/2) || F_nu S x - b ||_2^2 + lambda || Psi x ||_1
 
-                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-                metric2 = @metricSpiritRegViolation;
-                metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'spirit violation' };
-                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, ...
-                  'printEvery', 10, 'verbose', verbose );
+            applyA = @applyFnuS;
+            f = @(in) 0.5 * norm( applyA(in) - b, 2 )^2;
+            ATb = applyA( b, 'transp' );
+            fGrad = @(in) applyA( applyA( in ), 'transp' ) - ATb;
+            g = @(in) lambda * norm( vPsi( in ), 1 );
+            proxg = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, lambda * t );
 
-              else
-                applyA = @(in,op) concat_Psi_MFS_SwWmIFS( in, op );
-                f = @(in) indicatorFunction( ...
-                  norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
-                proxf = @(in,t) projOutsideSupportOntoBall( in );
-                g0 = @(in) norm( in(:), 1 );
-                proxg0 = @proxL1Complex;
-                g2 = @indicatorSpiritReg;
-                proxg2 = @v_proxIndSpiritReg;
-                n0 = nKData;
-                n1 = n0 + nb;
-                n2 = n1 + nKData;
-                g = @(in) g0( in(1:n0) ) + g1( in(n0:n1) ) + g2( in(n1+1:n2), t );
-                proxg = @(in,t) [ proxg0( in(1:n0), t ); ...
-                                  proxg1( in(n0+1:n1), t ); ...
-                                  proxg2( in(n1+1:n2), t ) ];
-                proxgConj = @(in,s) proxConj( proxg, in, s );
-
-                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-                metric2 = @metricSpiritRegViolation;
-                metrics = { metric1, metric2 };
-                metricNames = { 'sparsity', 'spirit violation' };
-                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
-              end
-            else
-
-              if numel( epsData ) > 0
-                % minimize || Psi x ||_1
-                % subject to || M F S(c) x - b(c) ||_2^2 / nbPerCoil <= epsData(c)
-                % and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
-  
-                g1 = @( in ) indicatorEpsData( in );
-                proxg1 = @(in,t) projectOntoEpsBalls( in );
-                if oPsi == true
-                  f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
-                  proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
-                  applyA = @concat_MFS_I;
-                  g2 = @(in) indicatorFunction( ...
-                    norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
-                  g = @(in) g1( in(1:nb) ) + g2( in(nb+1:end) );
-                  proxg2 = @(in,t) projOutsideSupportOntoBall( in );
-                  proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
-                  proxgConj = @(in,s) proxConj( proxg, in, s );
-
-                  PsiImg0 = Psi( img0 );
-                  tau0 = mean( abs( PsiImg0(:) ) );
-
-                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'tau', tau0, 'printEvery', 10, 'verbose', verbose );
-  
-                else  % if oPsi == true
-                  applyA = @concat_Psi_MFS;
-                  f = @(in) indicatorFunction( ...
-                    norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
-                  proxf = @(in,t) projOutsideSupportOntoBall( in );
-                  n1 = nImg;
-                  n2 = n1 + nb;
-                  g0 = @(in) norm( reshape( in, [], 1 ), 1 );
-                  g = @(in) g0( in(1:n1) ) + g1( in(n1+1:n2) );
-                  proxg0 = @proxL1Complex;
-                  proxg = @(in,t) [ proxg0( in(1:n1), t ); ...
-                                    proxg1( in(n1+1:n2), t ); ];
-                  proxgConj = @(in,s) proxConj( proxg, in, s );
-                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                    'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );
-                end
-  
-              else  % if numel( epsData ) > 0
-                % lambda provided
-                % minimize (1/2) || M F S x - b ||_2^2 + lambda || Psi x ||_1
-                % subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
-                % Could use PD3O based on whether or not oPsi is true
-  
-                error( 'Not yet implemented' );
-  
-              end
-            end
-
-          else  % if epsSupport > 0
-
-            error( 'Not yet implemented' );
-          end
-
-        else  % if numel( support ) > 0
-
-          if numel( wSize ) > 0
-
-            if numel( lambda ) > 0  &&  lambda > 0 
-              % minimize (1/2) || M F S x - b ||_2^2  + lambda || Psi ||_1
-              % subject to  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
-              error( 'Not yet implemented' );
-
-            else
-              % minimize || Psi x ||_1
-              % subject to  || M F S(c) x - b ||_2^2 / nbPerCoil <= epsData(c)
-              %        and  || Sw ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
-
-              g1 = @( in ) indicatorEpsData( in );
-              proxg1 = @(in,t) projectOntoEpsBalls( in );
-              g2 = @indicatorSpiritReg;
-              proxg2 = @v_proxIndSpiritReg;
-
-              metric1 = @(in) norm( in(:), 1 );
-              metric2 = @metricEpsDataViolation;
-              metric3 = @metricSpiritRegViolation;
-              metrics = { metric1, metric2, metric3 };
-              metricNames = { 'sparsity', 'dcViolation', 'spiritViolation' };
-
-              if oPsi == true
-                applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
-                f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
-                proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
-                % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
-                n1 = nb;
-                n2 = n1 + nKData;
-                g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
-                proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2), t) ];
-                proxgConj = @(in,s) proxConj( proxg, in, s );
-    
-                PsiImg0 = Psi( img0 );
-                tau0 = mean( abs( PsiImg0(:) ) );
-
-                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, ...
-                  'printEvery', 10, 'verbose', verbose );
-
-              else
-                applyA = @(in,op) concat_Psi_MFS_SwWmIFS( in, op );
-                f = [];
-                proxf = [];
-                g0 = @(in) norm( in, 1 );
-                proxg0 = @proxL1Complex;
-                n0 = nKData;
-                n1 = n0 + nb;
-                n2 = n1 + nKData;
-                g = @(in) g0( in(1:n0) ) + g1( in(n0+1:n1) ) + g2( in(n1+1:n2) );
-                proxg = @(in,t) [ proxg0( in(n0:n1), t ); ...
-                                  proxg1( in(n0+1:n1), t ); ...
-                                  proxg2( in(n1+1:n2), t) ];
-                proxgConj = @(in,s) proxConj( proxg, in, s );
-
-                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
-              end
-            end
-
-          else % if numel( wSize ) > 0
-
-            % Parallel imaging with compressed sensing (PICS)
-
-            if oPsi == true
-  
-              if numel( lambda ) > 0  &&  lambda > 0
-                % minimize (1/2) || M F S x - b ||_2^2 + lambda || Psi x ||_1
-    
-                applyA = @applyMFS;
-                f = @(in) 0.5 * norm( applyA(in) - b, 2 )^2;
-                ATb = applyA( b, 'transp' );
-                fGrad = @(in) applyA( applyA( in ), 'transp' ) - ATb;
-                g = @(in) lambda * norm( vPsi( in ), 1 );
-                proxg = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, lambda * t );
-    
-                ATA = @(in) applyA( applyA( in ), 'transp' );
-                L = powerIteration( ATA, rand( size( img0 ) ), 'symmetric', true );
-                t0 = 1 / L;
-                if debug == true
-                  [ img, objValues, relDiffs] = fista_wLS( img0, f, fGrad, proxg, 'h', g, 't0', t0, ...
-                    'printEvery', 50, 'verbose', verbose );   %#ok<ASGLU>
-                else
-                  img = fista_wLS( img0, f, fGrad, proxg, 'h', g );
-                end
-  
-              else  % if numel( lambda ) > 0  &&  lambda > 0
-                % minimize || Psi x ||_1  subject to  || M F S(c) x - b ||_2^2 / ( nbPerCoil - 1 ) <= epsData(c)
-
-                applyA = @applyMFS;
-                f = @(in) norm( vPsi( in ), 1 );
-                proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t );
-                g = @( in ) indicatorEpsData( in );
-                proxg = @(in,t) projectOntoEpsBalls( in );
-                proxgConj = @(in,s) proxConj( proxg, in, s );
-  
-                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-                metric2 = @metricEpsDataViolation;
-                metrics = { metric1, metric2 };
-                metricNames = { 'data consistency', 'violation' };
-
-                PsiImg0 = Psi( img0 );
-                tau0 = mean( abs( PsiImg0(:) ) );
-
-                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
-  
-              end
-
-            else  % if oPsi == true
-              if numel( lambda ) > 0  &&  lambda > 0
-              else  % if numel( lambda ) > 0  &&  lambda > 0
-              end
-              error( 'Not yet implemented' );
-            end
-          end
-        end
-
-      else  % if numel( sMaps ) > 0
-  
-        if numel( support ) > 0
-
-          if epsSupport > 0
-            % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / nbPerCoil < epsData(c)
-            % and || Pc x ||_2^2 / nOutsideSupport < epsSupport
-            error( 'Not yet implemented' );
-
-          else
-            error( 'Also not yet implemented' );
-
-          end
-
-        else % if numel( support ) > 0
-
-          if numel( epsData ) > 0
-            % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / nbPerCoil < epsData(c)
-
-            if oPsi == true
-              applyA = @applyMF;
-              f = @(in) normL2L1( Psi( in ) );
-              proxf = @(in,t) proxCompositionAffine( @proxL2L1, in, Psi, 0, 1, t );
-              g = @( in ) indicatorEpsData( in );
-              proxg = @(in,t) projectOntoEpsBalls( in );
-              proxgConj = @(in,s) proxConj( proxg, in, s );
-              [y, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                'beta', 1, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
-                'printEvery', 10, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
-
-            else  % if oPsi == true
-              applyA = @concat_Psi_MF;
-              f = [];
-              proxf = [];
-              g1 = @(in) normL2L1( in );
-              g2 = @( in ) indicatorEpsData( in );
-              g = @(in) g1( reshape(in(1:nKData), sKData) ) + g2( in(nKData+1:end) );
-              proxg1 = @(in,t) proxL2L1( reshape( in, sKData ), t );
-              proxg2 = @(in,t) projectOntoEpsBalls( in );
-              proxg = @(in,t) [ proxg1( in(1:nKData), t ); ...
-                                proxg2( in(nKData+1:end), t ); ];
-              proxgConj = @(in,s) proxConj( proxg, in, s );
-              [y, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
-                'beta', 1, 'tau', tau, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
-                'printEvery', 10, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
-
-            end
-
-          else
-
-          end
-
-        end
-
-      end
-
-    else  % if nCoils > 1
-
-      if numel( support ) > 0
-
-        if epsSupport > 0
-          error( 'Not yet implemented' );
-
-        else  % if epsSupport > 0
-          error( 'Also not yet implemented' );
-
-        end
-
-      else  % if numel( support ) > 0
-
-        if numel( lambda ) > 0  &&  lambda > 0
-          % minimize (1/2) || M F x - b ||_2^2 + lambda || Psi x ||_1
-
-          if oPsi == true
-            g = @(in) 0.5 * norm( applyMF( in ) - b, 2 )^2;
-            FTMTb = applyF( kData, 'transp' );
-            gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
-            proxth = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t * lambda );
+            ATA = @(in) applyA( applyA( in ), 'transp' );
+            L = powerIteration( ATA, rand( size( img0 ) ), 'symmetric', true );
+            t0 = 1 / L;
             if debug == true
-              img = fista_wLS( img0, g, gGrad, proxth, 'printEvery', 50, 'verbose', true );
+              [ img, objValues, relDiffs] = fista_wLS( img0, f, fGrad, proxg, 'h', g, 't0', t0, ...
+                'printEvery', 1, 'verbose', verbose );   %#ok<ASGLU>
             else
-              img = fista_wLS( img0, g, gGrad, proxth );
+              img = fista_wLS( img0, f, fGrad, proxg, 'h', g );
             end
 
-          else
+          else  % if numel( lambda ) > 0  &&  lambda > 0
+            % minimize || Psi x ||_1  subject to  || Fnu S(c) x - b ||_2^2 / nbPerCoil <= epsData(c)
+
+            applyA = @applyFnuS;
+            f = @(in) norm( vPsi( in ), 1 );
+            proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t );
+            g = @( in ) indicatorEpsData( in );
+            proxg = @(in,t) projectOntoEpsBalls( in );
+            proxgConj = @(in,s) proxConj( proxg, in, s );
+
+            metric1 = @(in) 0.5 * norm( applyA( in ) - b )^2;
+            metric2 = @metricEpsDataViolation;
+            metrics = { metric1, metric2 };
+            metricNames = { 'data consistency', 'violation' };
+
+            PsiImg0 = Psi( img0 );
+            tau0 = mean( abs( PsiImg0(:) ) );
+
+            [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+              'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+
           end
 
         else
-          % minimize || Psi x ||_1  subject to  || M F x - b ||_2^2 / nbPerCoil <= epsData(c)
-          % if A = M F the A AT = M F FT MT = a scaled identity matrix
+          error( 'Not yet implemented' );
+        end
 
-          if oPsi == true
-            % Solve this problem with ADMM
-            error( 'Not yet implemented' );
+      else  % if numel( sMaps ) > 0
+
+        % minimize (1/2) || Fnu x - b ||_2^2 + lambda || Psi x ||_1 for each image
+
+        if oPsi == true
+
+          ATA = @(in) applyFnu( applyFnu( in ), 'transp' );
+          L = powerIteration( ATA, rand( size( img0 ) ), 'symmetric', true );
+          t0 = 1 / L;
+
+          g = @(in) 0.5 * norm( applyFnu( in ) - b, 2 )^2;
+          FnuHb = applyFnu( b, 'transp' );
+          gGrad = @(in) applyFnu( applyFnu( in ), 'transp' ) - FnuHb;
+          h = @(in) lambda * norm( vPsi( in ), 1 );
+          proxth = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, lambda * t );
+
+          img0s = grid_2D( kData, traj, sImg );
+          if debug == true
+            imgs = fista_wLS( img0s, g, gGrad, proxth, 'h', h, 't0', t0, 'printEvery', 1, 'verbose', verbose );
           else
-            error( 'Also not yet implemented' );
+            imgs = fista_wLS( img0s, g, gGrad, proxth, 't0', t0, 'printEvery', 50, 'verbose', verbose );
           end
+          img = mri_reconRoemer( imgs );
+
+        else
+          error( 'Not yet implemeneted' );
         end
 
       end
-
-    end
-
-  else  % if cs == true
-
-    if nCoils > 1
+    else  % if cs == true
 
       if numel( sMaps ) > 0
+        % minimize || Fnu S x - b ||_2
+  
+        if numel( optAlg ) == 0, optAlg = 'gd'; end
+  
+        if strcmp( optAlg, 'gd' )
+          g = @(in) 0.5 * norm( applyFnuS(in) - b )^2;
+          SHFnuHb = applyFnuS( b, 'transp' );
+          gGrad = @(in) applyFnuS( applyFnuS( in ), 'transp' ) - SHFnuHb;
+          if debug
+            [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter, ...
+              'tol', tol, 'verbose', true, 'printEvery', 2 );   %#ok<ASGLU>
+          else
+            [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter, ...
+              'tol', tol );   %#ok<ASGLU>
+          end
+  
+        elseif strcmp( optAlg, 'lsqr' )
+          [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+            @applyFnuS_v, b(:), tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
+          img = reshape( img, sImg );
+        end
+  
+      else
+        img = img0;
+      end
+    end
 
+  else
+
+    if cs == true
+  
+      if nCoils > 1
+    
+        if numel( sMaps ) > 0
+  
+          if numel( support ) > 0
+  
+            if epsSupport > 0
+  
+              if numel( wSize ) > 0
+                % minimize || Psi x ||_1
+                % subject to  || M F S(c) x - b(c) ||_2^2 / nbPerCoil <= epsData(c)
+                %        and  || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+                %        and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
+  
+                g1 = @( in ) indicatorEpsData( in );
+                proxg1 = @(in,t) projectOntoEpsBalls( in );
+  
+                if oPsi == true
+                  applyA = @(in,op) concat_MFS_SwWmIFS_I( in, op );
+                  f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
+                  proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
+                  g2 = @indicatorSpiritReg;
+                  proxg2 = @v_proxIndSpiritReg;
+                  g3 = @(in) indicatorFunction( ...
+                    norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
+                  proxg3 = @(in,t) projOutsideSupportOntoBall( in );
+                  n1 = nb;
+                  n2 = n1 + nKData;
+                  n3 = n2 + nImg;
+                  g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) ) + g3( in(n2+1:n3) );
+                  proxg = @(in,t) [ proxg1( in(1:n1), t );  ...
+                                    proxg2( in(n1+1:n2), t ); ...
+                                    proxg3( in(n2+1:n3) ); ];
+                  proxgConj = @(in,s) proxConj( proxg, in, s );
+      
+                  PsiImg0 = Psi( img0 );
+                  tau0 = mean( abs( PsiImg0(:) ) );
+  
+                  metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
+                  metric2 = @metricSpiritRegViolation;
+                  metrics = { metric1, metric2 };
+                  metricNames = { 'sparsity', 'spirit violation' };
+                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'N', nOptIter, 'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, ...
+                    'printEvery', 10, 'verbose', verbose );
+  
+                else
+                  applyA = @(in,op) concat_Psi_MFS_SwWmIFS( in, op );
+                  f = @(in) indicatorFunction( ...
+                    norm( in, 2 )^2 / ( nImg - nSupport - 1 ), [ 0 epsSupport ] );
+                  proxf = @(in,t) projOutsideSupportOntoBall( in );
+                  g0 = @(in) norm( in(:), 1 );
+                  proxg0 = @proxL1Complex;
+                  g2 = @indicatorSpiritReg;
+                  proxg2 = @v_proxIndSpiritReg;
+                  n0 = nKData;
+                  n1 = n0 + nb;
+                  n2 = n1 + nKData;
+                  g = @(in) g0( in(1:n0) ) + g1( in(n0:n1) ) + g2( in(n1+1:n2), t );
+                  proxg = @(in,t) [ proxg0( in(1:n0), t ); ...
+                                    proxg1( in(n0+1:n1), t ); ...
+                                    proxg2( in(n1+1:n2), t ) ];
+                  proxgConj = @(in,s) proxConj( proxg, in, s );
+  
+                  metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
+                  metric2 = @metricSpiritRegViolation;
+                  metrics = { metric1, metric2 };
+                  metricNames = { 'sparsity', 'spirit violation' };
+                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                end
+              else
+  
+                if numel( epsData ) > 0
+                  % minimize || Psi x ||_1
+                  % subject to || M F S(c) x - b(c) ||_2^2 / nbPerCoil <= epsData(c)
+                  % and  || Pc x ||_2^2 / ( nImg - Ns - 1 ) <= epsSupport
+    
+                  g1 = @( in ) indicatorEpsData( in );
+                  proxg1 = @(in,t) projectOntoEpsBalls( in );
+                  if oPsi == true
+                    f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
+                    proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
+                    applyA = @concat_MFS_I;
+                    g2 = @(in) indicatorFunction( ...
+                      norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
+                    g = @(in) g1( in(1:nb) ) + g2( in(nb+1:end) );
+                    proxg2 = @(in,t) projOutsideSupportOntoBall( in );
+                    proxg = @(in,t) [ proxg1( in(1:nb), t );  proxg2( in(nb+1:end), t ); ];
+                    proxgConj = @(in,s) proxConj( proxg, in, s );
+  
+                    PsiImg0 = Psi( img0 );
+                    tau0 = mean( abs( PsiImg0(:) ) );
+  
+                    [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
+                      'f', f, 'g', g, 'tau', tau0, 'printEvery', 10, 'verbose', verbose );
+    
+                  else  % if oPsi == true
+                    applyA = @concat_Psi_MFS;
+                    f = @(in) indicatorFunction( ...
+                      norm( in( support == 0 ), 2 )^2 / ( nImg - nSupport ), [ 0 epsSupport ] );
+                    proxf = @(in,t) projOutsideSupportOntoBall( in );
+                    n1 = nImg;
+                    n2 = n1 + nb;
+                    g0 = @(in) norm( reshape( in, [], 1 ), 1 );
+                    g = @(in) g0( in(1:n1) ) + g1( in(n1+1:n2) );
+                    proxg0 = @proxL1Complex;
+                    proxg = @(in,t) [ proxg0( in(1:n1), t ); ...
+                                      proxg1( in(n1+1:n2), t ); ];
+                    proxgConj = @(in,s) proxConj( proxg, in, s );
+                    [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
+                      'f', f, 'g', g, 'printEvery', 10, 'verbose', verbose );
+                  end
+    
+                else  % if numel( epsData ) > 0
+                  % lambda provided
+                  % minimize (1/2) || M F S x - b ||_2^2 + lambda || Psi x ||_1
+                  % subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
+                  % Could use PD3O based on whether or not oPsi is true
+    
+                  error( 'Not yet implemented' );
+    
+                end
+              end
+  
+            else  % if epsSupport > 0
+  
+              error( 'Not yet implemented' );
+            end
+  
+          else  % if numel( support ) > 0
+  
+            if numel( wSize ) > 0
+  
+              if numel( lambda ) > 0  &&  lambda > 0 
+                % minimize (1/2) || M F S x - b ||_2^2  + lambda || Psi ||_1
+                % subject to  || ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+                error( 'Not yet implemented' );
+  
+              else
+                % minimize || Psi x ||_1
+                % subject to  || M F S(c) x - b ||_2^2 / nbPerCoil <= epsData(c)
+                %        and  || Sw ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+  
+                g1 = @( in ) indicatorEpsData( in );
+                proxg1 = @(in,t) projectOntoEpsBalls( in );
+                g2 = @indicatorSpiritReg;
+                proxg2 = @v_proxIndSpiritReg;
+  
+                metric1 = @(in) norm( in(:), 1 );
+                metric2 = @metricEpsDataViolation;
+                metric3 = @metricSpiritRegViolation;
+                metrics = { metric1, metric2, metric3 };
+                metricNames = { 'sparsity', 'dcViolation', 'spiritViolation' };
+  
+                if oPsi == true
+                  applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
+                  f = @(in) norm( reshape( Psi( in ), [], 1 ), 1 );
+                  proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, t );
+                  % || M F S x - b ||_2^2 / (nb-1) <= epsData  <==>  || M F S x - b ||_2 <= sqrt( epsData * (nb-1) )
+                  n1 = nb;
+                  n2 = n1 + nKData;
+                  g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
+                  proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2), t) ];
+                  proxgConj = @(in,s) proxConj( proxg, in, s );
+      
+                  PsiImg0 = Psi( img0 );
+                  tau0 = mean( abs( PsiImg0(:) ) );
+  
+                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'N', nOptIter, 'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, ...
+                    'printEvery', 10, 'verbose', verbose );
+  
+                else
+                  applyA = @(in,op) concat_Psi_MFS_SwWmIFS( in, op );
+                  f = [];
+                  proxf = [];
+                  g0 = @(in) norm( in, 1 );
+                  proxg0 = @proxL1Complex;
+                  n0 = nKData;
+                  n1 = n0 + nb;
+                  n2 = n1 + nKData;
+                  g = @(in) g0( in(1:n0) ) + g1( in(n0+1:n1) ) + g2( in(n1+1:n2) );
+                  proxg = @(in,t) [ proxg0( in(n0:n1), t ); ...
+                                    proxg1( in(n0+1:n1), t ); ...
+                                    proxg2( in(n1+1:n2), t) ];
+                  proxgConj = @(in,s) proxConj( proxg, in, s );
+  
+                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                end
+              end
+  
+            else % if numel( wSize ) > 0
+  
+              % Parallel imaging with compressed sensing (PICS)
+  
+              if oPsi == true
+    
+                if numel( lambda ) > 0  &&  lambda > 0
+                  % minimize (1/2) || M F S x - b ||_2^2 + lambda || Psi x ||_1
+      
+                  applyA = @applyMFS;
+                  f = @(in) 0.5 * norm( applyA(in) - b, 2 )^2;
+                  ATb = applyA( b, 'transp' );
+                  fGrad = @(in) applyA( applyA( in ), 'transp' ) - ATb;
+                  g = @(in) lambda * norm( vPsi( in ), 1 );
+                  proxg = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, lambda * t );
+      
+                  ATA = @(in) applyA( applyA( in ), 'transp' );
+                  L = powerIteration( ATA, rand( size( img0 ) ), 'symmetric', true );
+                  t0 = 1 / L;
+                  if debug == true
+                    [ img, objValues, relDiffs] = fista_wLS( img0, f, fGrad, proxg, 'h', g, 't0', t0, ...
+                      'printEvery', 50, 'verbose', verbose );   %#ok<ASGLU>
+                  else
+                    img = fista_wLS( img0, f, fGrad, proxg, 'h', g );
+                  end
+    
+                else  % if numel( lambda ) > 0  &&  lambda > 0
+                  % minimize || Psi x ||_1  subject to  || M F S(c) x - b ||_2^2 / nbPerCoil <= epsData(c)
+  
+                  applyA = @applyMFS;
+                  f = @(in) norm( vPsi( in ), 1 );
+                  proxf = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t );
+                  g = @( in ) indicatorEpsData( in );
+                  proxg = @(in,t) projectOntoEpsBalls( in );
+                  proxgConj = @(in,s) proxConj( proxg, in, s );
+    
+                  metric1 = @(in) 0.5 * norm( applyA( in ) - b )^2;
+                  metric2 = @metricEpsDataViolation;
+                  metrics = { metric1, metric2 };
+                  metricNames = { 'data consistency', 'violation' };
+  
+                  PsiImg0 = Psi( img0 );
+                  tau0 = mean( abs( PsiImg0(:) ) );
+  
+                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'tau', tau0, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+    
+                end
+  
+              else  % if oPsi == true
+                if numel( lambda ) > 0  &&  lambda > 0
+                else  % if numel( lambda ) > 0  &&  lambda > 0
+                end
+                error( 'Not yet implemented' );
+              end
+            end
+          end
+  
+        else  % if numel( sMaps ) > 0
+    
+          if numel( support ) > 0
+  
+            if epsSupport > 0
+              % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / nbPerCoil < epsData(c)
+              % and || Pc x ||_2^2 / nOutsideSupport < epsSupport
+              error( 'Not yet implemented' );
+  
+            else
+              error( 'Also not yet implemented' );
+  
+            end
+  
+          else % if numel( support ) > 0
+  
+            if numel( epsData ) > 0
+              % minimize || Psi x ||_{2,1} subject to || M F x - b ||_2^2 / nbPerCoil < epsData(c)
+  
+              if oPsi == true
+                applyA = @applyMF;
+                f = @(in) normL2L1( Psi( in ) );
+                proxf = @(in,t) proxCompositionAffine( @proxL2L1, in, Psi, 0, 1, t );
+                g = @( in ) indicatorEpsData( in );
+                proxg = @(in,t) projectOntoEpsBalls( in );
+                proxgConj = @(in,s) proxConj( proxg, in, s );
+                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
+                  'beta', 1, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
+                  'printEvery', 10, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
+  
+              else  % if oPsi == true
+                applyA = @concat_Psi_MF;
+                f = [];
+                proxf = [];
+                g1 = @(in) normL2L1( in );
+                g2 = @( in ) indicatorEpsData( in );
+                g = @(in) g1( reshape(in(1:nKData), sKData) ) + g2( in(nKData+1:end) );
+                proxg1 = @(in,t) proxL2L1( reshape( in, sKData ), t );
+                proxg2 = @(in,t) projectOntoEpsBalls( in );
+                proxg = @(in,t) [ proxg1( in(1:nKData), t ); ...
+                                  proxg2( in(nKData+1:end), t ); ];
+                proxgConj = @(in,s) proxConj( proxg, in, s );
+                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, ...
+                  'beta', 1, 'tau', tau, 'f', f, 'g', g, 'N', N, 'dsc', true, ...
+                  'printEvery', 10, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
+  
+              end
+  
+            elseif numel( lambda ) > 0  % if numel( epsData ) > 0
+              % Solve minimize (1/2) || M F x - b ||_2^2 + lambda || Psi x ||_1 for each image
+  
+              if oPsi == true
+  
+                g = @(in) 0.5 * norm( applyMF( in ) - b, 2 )^2;
+                FTMTb = applyMF( b, 'transp' );
+                gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
+                h = @(in) lambda * norm( vPsi( in ), 1 );
+                proxth = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, 0, 1, lambda * t );
+    
+                img0s = mri_reconIFFT( kData );
+                if debug == true
+                  imgs = fista_wLS( img0s, g, gGrad, proxth, 'h', h, 'printEvery', 50, 'verbose', verbose );
+                else
+                  imgs = fista_wLS( img0s, g, gGrad, proxth, 'printEvery', 50, 'verbose', verbose );
+                end
+                img = mri_reconRoemer( imgs );
+  
+              else
+                error( 'Not yet implemeneted' );
+              end
+  
+            else
+              img = img0;
+  
+            end
+  
+          end
+  
+        end
+  
+      else  % if nCoils > 1
+  
         if numel( support ) > 0
-
+  
           if epsSupport > 0
-
+            error( 'Not yet implemented' );
+  
+          else  % if epsSupport > 0
+            error( 'Also not yet implemented' );
+  
+          end
+  
+        else  % if numel( support ) > 0
+  
+          if numel( lambda ) > 0  &&  lambda > 0
+            % minimize (1/2) || M F x - b ||_2^2 + lambda || Psi x ||_1
+  
+            if oPsi == true
+              g = @(in) 0.5 * norm( applyMF( in ) - b, 2 )^2;
+              FTMTb = applyF( kData, 'transp' );
+              gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
+              proxth = @(in,t) proxCompositionAffine( @proxL1Complex, in, Psi, [], 1, t * lambda );
+              if debug == true
+                img = fista_wLS( img0, g, gGrad, proxth, 'printEvery', 50, 'verbose', verbose );
+              else
+                img = fista_wLS( img0, g, gGrad, proxth );
+              end
+  
+            else
+              error( 'Not yet implemented' );
+            end
+  
+          else
+            % minimize || Psi x ||_1  subject to  || M F x - b ||_2^2 / nbPerCoil <= epsData(c)
+            % if A = M F the A AT = M F FT MT = a scaled identity matrix
+  
+            if oPsi == true
+              % Solve this problem with ADMM
+              error( 'Not yet implemented' );
+            else
+              error( 'Also not yet implemented' );
+            end
+          end
+  
+        end
+  
+      end
+  
+    else  % if cs == true
+  
+      if nCoils > 1
+  
+        if numel( sMaps ) > 0
+  
+          if numel( support ) > 0
+  
+            if epsSupport > 0
+  
+              if numel( wSize ) > 0  % do SPIRiT Regularization
+                % minimize || M F S x - b ||_2 
+                % subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
+                % and || Sw ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
+  
+                applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
+                n1 = nb;
+                n2 = n1 + nKData;
+                f = @indicatorOutsideSupport;
+                proxf = @(in,t) projOutsideSupportOntoBall( in );
+                g1 = @( x ) 0.5 * norm( x - b )^2;
+                proxg1 = @(in,t) proxL2Sq( in, t, b );
+                g2 = @indicatorSpiritReg;
+                proxg2 = @v_proxIndSpiritReg;
+                g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
+                proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2), t) ];
+                proxgConj = @(in,s) proxConj( proxg, in, s );
+  
+                metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
+                metric2 = @metricSpiritRegViolation;
+                metric3 = @metricOutsideSupportViolation;
+                metrics = { metric1, metric2, metric3 };
+                metricNames = { 'sparsity', 'spirit violation', 'support violation' };
+                if debug == true
+                  [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
+                else
+                  img = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                    'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );
+                end
+  
+              else
+                % minimize || M F S x - b ||_2 subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
+                g = @(in) 0.5 * norm( applyMFS( in ) - b, 2 )^2;
+                SHFHMTb = applyFS( kData, 'transp' );
+                %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - SHFHMTb;
+                gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - SHFHMTb;
+  
+                proxth = @(in,t) projOutsideSupportOntoBall( in );
+  
+                if numel( optAlg ) == 0, optAlg = 'projGrad'; end
+  
+                if debug == true
+                  if strcmp( optAlg, 'projGrad' )
+                    [img,objValues] = projSubgrad( img0, gGrad, proxth, 'g', g, 'N', nOptIter, 'verbose', verbose );   %#ok<ASGLU>
+                  elseif strcmp( optAlg, 'fista_wLS' )
+                    h = @(in) indicatorOutsideSupport( in );
+                    [img,ojbValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth, 'N', 200, 'h', h, ...
+                      'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
+                  else
+                    error( 'Unrecognized optimization algorithm' );
+                  end
+  
+                else  % if debug == true
+                  if strcmp( optAlg, 'projGrad' )
+                    img = projSubgrad( img0, gGrad, proxth, 'g', g );
+                  elseif strcmp( optAlg, 'fista_wLS' )
+                    img = fista_wLS( img0, g, gGrad, proxth, 'N', nOptIter, 'verbose', verbose );
+                  else
+                    error( 'Unrecognized optimization algorithm' );
+                  end
+                end
+                
+              end
+    
+            else  % if epsSupport > 0
+  
+              % minimize || M F S PT x - b ||_2
+              img0 = applyP( img0 );
+              img0(:) = 0;
+              b = applyM( kData );
+              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                @apply_vMFSPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
+              img = applyP( img, 'transp' );
+  
+            end
+  
+          else  % if numel( support ) > 0
+  
             if numel( wSize ) > 0  % do SPIRiT Regularization
-              % minimize || M F S x - b ||_2 
-              % subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
-              % and || Sw ((W-I) F S x)(:,:,c) ||_Fro <= sqrt( epsSpiritReg(c) * nImg ) for all c
-
+              % minimize (1/2) || M F S x - b ||_2^2  
+              % subject to || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro^2 / nImg <= epsSpiritReg(c) for all c
+  
               applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
               n1 = nb;
               n2 = n1 + nKData;
-              f = @indicatorOutsideSupport;
-              proxf = @(in,t) projOutsideSupportOntoBall( in );
+              f = [];
+              proxf = [];
               g1 = @( x ) 0.5 * norm( x - b )^2;
               proxg1 = @(in,t) proxL2Sq( in, t, b );
               g2 = @indicatorSpiritReg;
@@ -1244,299 +1513,223 @@ function [ img, objValues, mValues, residualErrs ] = mriRecon( kData, varargin )
               g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
               proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2), t) ];
               proxgConj = @(in,s) proxConj( proxg, in, s );
-
-              metric1 = @(in) 0.5 * norm( applyMFS( in ) - b )^2;
-              metric2 = @metricSpiritRegViolation;
-              metric3 = @metricOutsideSupportViolation;
-              metrics = { metric1, metric2, metric3 };
-              metricNames = { 'sparsity', 'spirit violation', 'support violation' };
-              if debug == true
-                [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'verbose', verbose );   %#ok<ASGLU>
+  
+              metricDC = @( in ) 0.5 * norm( applyMFS( in ) - b )^2;
+              metrics = { metricDC, @metricWeightedSpiritRegViolation };
+              metricNames = { 'data consistency', 'violation' };
+              [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
+                'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );
+  
+            else  % if numel( wSize ) > 0
+              % minimize || M F S x - b ||_2
+  
+              if numel( optAlg ) == 0, optAlg = 'lsqr'; end
+  
+              if strcmp( optAlg, 'gd' )
+                g = @(in) 0.5 * norm( applyMFS(in) - b )^2;
+                %SHFHMTb = applyMFS( b, 'transp' );
+                SHFHMTb = applyFS( kData, 'transp' );
+                %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - SHFHMTb;
+                gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - SHFHMTb;              
+                if debug
+                  [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter, ...
+                    'verbose', true, 'printEvery', 20 );   %#ok<ASGLU>
+                else
+                  [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter );   %#ok<ASGLU>
+                end
+  
+              elseif strcmp( optAlg, 'lsqr' )
+  
+                usePreconditioner = false;
+                if usePreconditioner == true
+                  [ y, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                    @apply_vMFSPre, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
+                  img = applyPre( reshape( y, sImg ), 'inv' );
+                else
+                  [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                    @apply_vMFS, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
+                  img = reshape( img, sImg );
+                end
+              end
+  
+              if nargout > 3
+                FSimg = applyF( bsxfun( @times, sMaps, img ) );
+                MFSimg = reshape( FSimg( sampleMask == 1 ), [], nCoils );
+                residualErrs = LpNorms( MFSimg - bPerCoil, 2, 1 ).^2 / size( bPerCoil, 1 );
               else
-                img = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-                  'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );
+                residualErrs = [];
               end
-
-            else
-              % minimize || M F S x - b ||_2 subject to || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
-              g = @(in) 0.5 * norm( applyMFS( in ) - b, 2 )^2;
-              SHFHMTb = applyFS( kData, 'transp' );
-              %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - SHFHMTb;
-              gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - SHFHMTb;
-
-              proxth = @(in,t) projOutsideSupportOntoBall( in );
-
-              if numel( optAlg ) == 0, optAlg = 'projGrad'; end
-
-              if debug == true
-                if strcmp( optAlg, 'projGrad' )
-                  [img,objValues] = projSubgrad( img0, gGrad, proxth, 'g', g, 'N', nOptIter, 'verbose', verbose );   %#ok<ASGLU>
-                elseif strcmp( optAlg, 'fista_wLS' )
-                  h = @(in) indicatorOutsideSupport( in );
-                  [img,ojbValues,relDiffs] = fista_wLS( img0, g, gGrad, proxth, 'N', 200, 'h', h, ...
-                    'printEvery', 10, 'verbose', verbose );   %#ok<ASGLU>
-                else
-                  error( 'Unrecognized optimization algorithm' );
-                end
-
-              else  % if debug == true
-                if strcmp( optAlg, 'projGrad' )
-                  img = projSubgrad( img0, gGrad, proxth, 'g', g );
-                elseif strcmp( optAlg, 'fista_wLS' )
-                  img = fista_wLS( img0, g, gGrad, proxth, 'N', nOptIter, 'verbose', verbose );
-                else
-                  error( 'Unrecognized optimization algorithm' );
-                end
-              end
-              
+              objValues = [];
+              mValues = [];
             end
   
-          else  % if epsSupport > 0
-
-            % minimize || M F S PT x - b ||_2
-            img0 = applyP( img0 );
-            img0(:) = 0;
-            b = applyM( kData );
-            [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-              @apply_vMFSPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
-            img = applyP( img, 'transp' );
-
           end
-
-        else  % if numel( support ) > 0
-
-          if numel( wSize ) > 0  % do SPIRiT Regularization
-            % minimize (1/2) || M F S x - b ||_2^2  
-            % subject to || Sw(c) ((W-I) F S x)(:,:,c) ||_Fro^2 / nImg <= epsSpiritReg(c) for all c
-
-            applyA = @(in,op) concat_MFS_SwWmIFS( in, op );
-            n1 = nb;
-            n2 = n1 + nKData;
-            f = [];
-            proxf = [];
-            g1 = @( x ) 0.5 * norm( x - b )^2;
-            proxg1 = @(in,t) proxL2Sq( in, t, b );
-            g2 = @indicatorSpiritReg;
-            proxg2 = @v_proxIndSpiritReg;
-            g = @(in) g1( in(1:n1) ) + g2( in(n1+1:n2) );
-            proxg = @(in,t) [ proxg1( in(1:n1), t );  proxg2(in(n1+1:n2), t) ];
-            proxgConj = @(in,s) proxConj( proxg, in, s );
-
-            metricDC = @( in ) 0.5 * norm( applyMFS( in ) - b )^2;
-            metrics = { metricDC, @metricWeightedSpiritRegViolation };
-            metricNames = { 'data consistency', 'violation' };
-            [img, objValues, mValues] = pdhgWLS( img0, proxf, proxgConj, 'A', applyA, 'f', f, 'g', g, ...
-              'N', nOptIter, 'metrics', metrics, 'metricNames', metricNames, 'printEvery', 10, 'verbose', verbose );
-
-          else  % if numel( wSize ) > 0
-            % minimize || M F S x - b ||_2
-
-            if numel( optAlg ) == 0, optAlg = 'lsqr'; end
-
-            if strcmp( optAlg, 'gd' )
-              g = @(in) 0.5 * norm( applyMFS(in) - b )^2;
-              %SHFHMTb = applyMFS( b, 'transp' );
-              SHFHMTb = applyFS( kData, 'transp' );
-              %gGrad = @(in) applyMFS( applyMFS( in ), 'transp' ) - SHFHMTb;
-              gGrad = @(in) applyFS( applyFS( in ) .* sampleMask, 'transp' ) - SHFHMTb;              
-              if debug
-                [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter, ...
-                  'verbose', true, 'printEvery', 20 );   %#ok<ASGLU>
-              else
-                [img,oVals,relDiffs] = gradDescent( img0, gGrad, 'g', g, 'useLineSearch', true, 'N', nOptIter );   %#ok<ASGLU>
+  
+        else  % if numel( sMaps ) > 0
+  
+          if numel( support ) > 0
+  
+            if epsSupport > 0
+              % minimize || M F x - b ||_2  subject to  || Pc x(c) ||_2^2 / ( Nc - 1 ) <= epsSupport for all c
+  
+              sampleMaskSlice = sampleMask(:,:,1);
+              coilImgs = cell( 1, 1, nCoils );
+              for coilIndx = 1 : nCoils
+                coilImg0 = zeros( sImg );
+                b = applyM( kData(:,:,coilIndx) );
+                g = @(in) 0.5 * norm( applyF( in ) .* sampleMaskSlice - b, 'fro' )^2;
+                FTMTb = applyF( kData, 'transp' );
+                gGrad = @(in) applyF( applyF( in ) .* sampleMaskSlice, 'transp' ) - FTMTb;
+                proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
+                coilImg = fista_wLS( coilImg0, g, gGrad, proxth );
+                coilImgs{ 1, 1, coilIndx } = coilImg;
               end
-
+              coilImgs = cell2mat( coilImgs );
+              img = mri_reconRoemer( coilImgs );
+  
+            else
+              % minimize || M F PcoilsT x - b ||_2
+              b = applyM( kData );
+              x0 = applyPcoils( coilImgs0 );
+              [ coilImgsSupport, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                @apply_vMFPcoilsT, b, tol, nOptIter, [], [], x0(:) );   %#ok<ASGLU>
+              coilImgs = applyPcoils( reshape( coilImgsSupport, nSupport, nCoils ), 'transp' );
+              img = mri_reconRoemer( coilImgs );
+            end
+  
+          else  % if numel( support ) > 0
+  
+            if numel( wSize ) > 0
+  
+              if numel( epsData ) > 0  &&  max( abs( epsData ) ) ~= 0
+                % SPIRiT with soft consistency
+                % minimize (1/2) || ( W - I ) k ||_2^2
+                % subject to || M k(:,:,c) - b(:,c) ||_2^2  / nbPerCoil <= epsData(c)
+  
+                g = @(in) 0.5 * norm( applyWmI( in ), 'fro' )^2;
+                gGrad = @(in) applyWmI( applyWmI( in ), 'transp' );
+                h = @( in ) indicatorEpsData( applyM( in ) );
+                proxth = @(in,t) projectOntoEpsBalls( in );
+                if debug == true
+                  [kFull,objValues,relDiffs] = fista_wLS( kData, g, gGrad, proxth, 'h', h );   %#ok<ASGLU>
+                else
+                  kFull = fista_wLS( kData, g, gGrad, proxth, 'N', nOptIter );
+                end
+                img = mri_reconRoemer( applyF( kFull, 'inv' ) );
+  
+              else  % if numel( epsData ) > 0  &&  max( abs( epsData ) ) ~= 0
+                % SPIRiT with hard data consistency
+                % minimize (1/2) || W ( Mc^T k + M^T b ) - ( Mc^T k + M^T b ) ||_2^2
+                % minimize (1/2) || W Mc^T k + W kData - Mc^T k - kData ||_2^2
+                % minimize (1/2) || A k + y ||_2^2 where A = ( W - I ) Mc^T k and y = ( W - I ) kData
+                y = applyWmI( kData );
+                A_SPIRiT = @(in) applyWmI( applyMc( in, 'transp' ) );
+                AH_SPIRiT = @(in) applyMc( applyWmI( in, 'transp' ) );
+                g = @(in) 0.5 * norm( A_SPIRiT( in ) + y, 'fro' )^2;
+                AHy_SPIRiT = AH_SPIRiT( y );
+                gGrad = @(in) AH_SPIRiT( A_SPIRiT( in ) ) + AHy_SPIRiT;
+  
+                k0 = zeros( sum( reshape( sampleMask, [], 1 ) == 0 ), 1 );
+                % k0 = reshape( k0, [], nCoils );
+                % [ys, xs] = ind2sub( sImg, find( sampleMask(:,:,1) == 1 ) );
+                % [yq, xq] = ind2sub( sImg, find( sampleMask(:,:,1) == 0 ) );
+                % for cIndx = 1 : nCoils
+                %   coilKData = kData(:,:,cIndx);
+                %   v = coilKData( sampleMask(:,:,cIndx) == 1 );
+                %   F = scatteredInterpolant( xs(:), ys(:), v(:), 'linear', 'nearest' );
+                %   k0(:,cIndx) = F( xq, yq );
+                % end
+                % k0( ~isfinite(k0) ) = 0;
+                % k0 = k0(:);
+  
+                if doChecks == true
+                  [chk_A,errChk_A] = checkAdjoint( rand( size(k0) ) + 1i * rand( size(k0) ), A_SPIRiT, AH_SPIRiT );
+                  if chk_A == true
+                    disp( 'Check of A passed' );
+                  else
+                    error([ 'Check of A Adjoint failed with error ', num2str(errChk_A) ]);
+                  end
+                end
+  
+                %kFull0 = applyMc( k0(:), 'transp' ) + kData;
+                %figure;  showImageCube( 20*log10( abs( kFull0 ) ), 3 );
+  
+                if numel( optAlg ) == 0, optAlg = 'lsqr'; end
+  
+                if strcmp( optAlg, 'gd' )
+                  [k,oVals,relDiffs] = gradDescent( k0, gGrad, 'g', g, 'N', nOptIter, 'verbose', verbose, 'printEvery', 50 );   %#ok<ASGLU>
+                  % Note: SPIRiT requires many iterations; for a sagittal slice of the knee, it required 10,000 iterations.
+                elseif strcmp( optAlg, 'lsqr' )
+                  [ k, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                    @applyA_SPIRiT, -y(:), tol, nOptIter, [], [], k0 );   %#ok<ASGLU>
+                end
+                kFull = reshape( applyMc( k, 'transp' ) + kData, [ sImg nCoils ] );
+                img = mri_reconRoemer( applyF( kFull, 'inv' ) );
+              end
+  
+            else  % if numel( wSize ) > 0
+  
+              img = img0;
+            end
+  
+          end
+  
+        end
+  
+      else  % if nCoils > 1
+  
+        if numel( support ) > 0
+  
+          if epsSupport > 0
+            % minimize || M F x - b ||_2  subject to  || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
+            % minimize (1/2) || M F x - b ||_2^2  subject to  || Pc x ||_2  <= sqrt( epsSupport * ( Nc - 1 ) )
+            b = applyM( kData );
+            g = @(in) 0.5 * norm( applyMF( in ) - b, 'fro' )^2;
+            FTMTb = applyF( kData, 'transp' );
+            %gGrad = @(in) applyMF( applyMF( in ), 'transp' ) - FTMTb;
+            gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
+            proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
+            img = fista_wLS( img0, g, gGrad, proxth );
+  
+          else
+            if numel( optAlg ) == 0, optAlg = 'lsqr'; end
+            if strcmp( optAlg, 'pocs' )
+              % minimize 1 subject to Pc x = 0  and  M F x = b
+              proj1 = @(in) applyF( applyF( in ) .* ( 1 - sampleMask ) + kData, 'inv' );
+              proj2 = @(in) in .* support;
+              projections = { proj2, proj1 };
+              img = pocs( img0, projections );
+  
+            elseif strcmp( optAlg, 'gd' )
+              % minimize 0.5 * || M F PT x - b ||_2^2
+              PFTMTb = applyMFPT( b, 'transp' );
+              g = @(in) 0.5 * norm( applyMFPT(in) - b )^2;
+              gGrad = @(in) applyMFPT( applyMFPT( in ), 'transp' ) - PFTMTb;
+              [img,oVals,relDiffs] = gradDescent( applyP(img0), gGrad, 'g', g, 'useLineSearch', true );   %#ok<ASGLU>
+  
             elseif strcmp( optAlg, 'lsqr' )
-
-              usePreconditioner = false;
-              if usePreconditioner == true
-                [ y, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-                  @apply_vMFSPre, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
-                img = applyPre( reshape( y, sImg ), 'inv' );
+              % minimize || M F PT x - b ||_2
+              img0 = applyP( img0 );
+              if nCoils == 1
+                [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
+                  @applyMFPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
               else
                 [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-                  @apply_vMFS, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
-                img = reshape( img, sImg );
+                  @apply_vMFPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
               end
+              img = applyP( img, 'transp' );
             end
-
-            residualErrs = zeros( nCoils, 1 );
-            for coilIndx = 1 : nCoils
-              tmp = applyF( sMaps(:,:,coilIndx) * img );
-              residualErrs( coilIndx ) = norm( tmp( sampleMask(:,:,coilIndx) == 1 ) - bPerCoil(:,coilIndx) )^2 / ...
-                numel( bPerCoil(:,coilIndx) );
-            end
-            objValues = [];
-            mValues = [];
           end
-
-        end
-
-      else  % if numel( sMaps ) > 0
-
-        if numel( support ) > 0
-
-          if epsSupport > 0
-            % minimize || M F x - b ||_2  subject to  || Pc x(c) ||_2^2 / ( Nc - 1 ) <= epsSupport for all c
-
-            sampleMaskSlice = sampleMask(:,:,1);
-            coilImgs = cell( 1, 1, nCoils );
-            for coilIndx = 1 : nCoils
-              coilImg0 = zeros( sImg );
-              b = applyM( kData(:,:,coilIndx) );
-              g = @(in) 0.5 * norm( applyF( in ) .* sampleMaskSlice - b, 'fro' )^2;
-              FTMTb = applyF( kData, 'transp' );
-              gGrad = @(in) applyF( applyF( in ) .* sampleMaskSlice, 'transp' ) - FTMTb;
-              proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
-              coilImg = fista_wLS( coilImg0, g, gGrad, proxth );
-              coilImgs{ 1, 1, coilIndx } = coilImg;
-            end
-            coilImgs = cell2mat( coilImgs );
-            img = mri_reconRoemer( coilImgs );
-
-          else
-            % minimize || M F PcoilsT x - b ||_2
-            b = applyM( kData );
-            x0 = applyPcoils( coilImgs0 );
-            [ coilImgsSupport, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-              @apply_vMFPcoilsT, b, tol, nOptIter, [], [], x0(:) );   %#ok<ASGLU>
-            coilImgs = applyPcoils( reshape( coilImgsSupport, nSupport, nCoils ), 'transp' );
-            img = mri_reconRoemer( coilImgs );
-          end
-
-        else  % if numel( support ) > 0
-
-          if numel( wSize ) > 0
-
-            if numel( epsData ) > 0  &&  max( abs( epsData ) ) ~= 0
-              % SPIRiT with soft consistency
-              % minimize (1/2) || ( W - I ) k ||_2^2
-              % subject to || M k(:,:,c) - b(:,c) ||_2^2  / nbPerCoil <= epsData(c)
-
-              g = @(in) 0.5 * norm( applyWmI( in ), 'fro' )^2;
-              gGrad = @(in) applyWmI( applyWmI( in ), 'transp' );
-              h = @( in ) indicatorEpsData( applyM( in ) );
-              proxth = @(in,t) projectOntoEpsBalls( in );
-              if debug == true
-                [kFull,objValues,relDiffs] = fista_wLS( kData, g, gGrad, proxth, 'h', h );   %#ok<ASGLU>
-              else
-                kFull = fista_wLS( kData, g, gGrad, proxth, 'N', nOptIter );
-              end
-              img = mri_reconRoemer( applyF( kFull, 'inv' ) );
-
-            else  % if numel( epsData ) > 0  &&  max( abs( epsData ) ) ~= 0
-              % SPIRiT with hard data consistency
-              % minimize (1/2) || W ( Mc^T k + M^T b ) - ( Mc^T k + M^T b ) ||_2^2
-              % minimize (1/2) || W Mc^T k + W kData - Mc^T k - kData ||_2^2
-              % minimize (1/2) || A k + y ||_2^2 where A = ( W - I ) Mc^T k and y = ( W - I ) kData
-              y = applyWmI( kData );
-              A_SPIRiT = @(in) applyWmI( applyMc( in, 'transp' ) );
-              AH_SPIRiT = @(in) applyMc( applyWmI( in, 'transp' ) );
-              g = @(in) 0.5 * norm( A_SPIRiT( in ) + y, 'fro' )^2;
-              AHy_SPIRiT = AH_SPIRiT( y );
-              gGrad = @(in) AH_SPIRiT( A_SPIRiT( in ) ) + AHy_SPIRiT;
-
-              k0 = zeros( sum( reshape( sampleMask, [], 1 ) == 0 ), 1 );
-              % k0 = reshape( k0, [], nCoils );
-              % [ys, xs] = ind2sub( sImg, find( sampleMask(:,:,1) == 1 ) );
-              % [yq, xq] = ind2sub( sImg, find( sampleMask(:,:,1) == 0 ) );
-              % for cIndx = 1 : nCoils
-              %   coilKData = kData(:,:,cIndx);
-              %   v = coilKData( sampleMask(:,:,cIndx) == 1 );
-              %   F = scatteredInterpolant( xs(:), ys(:), v(:), 'linear', 'nearest' );
-              %   k0(:,cIndx) = F( xq, yq );
-              % end
-              % k0( ~isfinite(k0) ) = 0;
-              % k0 = k0(:);
-
-              if doChecks == true
-                [chk_A,errChk_A] = checkAdjoint( rand( size(k0) ) + 1i * rand( size(k0) ), A, AT );
-                if chk_A == true
-                  disp( 'Check of A passed' );
-                else
-                  error([ 'Check of A Adjoint failed with error ', num2str(errChk_A) ]);
-                end
-              end
-
-              %kFull0 = applyMc( k0(:), 'transp' ) + kData;
-              %figure;  showImageCube( 20*log10( abs( kFull0 ) ), 3 );
-
-              if numel( optAlg ) == 0, optAlg = 'lsqr'; end
-
-              if strcmp( optAlg, 'gd' )
-                [k,oVals,relDiffs] = gradDescent( k0, gGrad, 'g', g, 'N', nOptIter, 'verbose', verbose, 'printEvery', 50 );   %#ok<ASGLU>
-                % Note: SPIRiT requires many iterations; for a sagittal slice of the knee, it required 10,000 iterations.
-              elseif strcmp( optAlg, 'lsqr' )
-                [ k, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-                  @applyA_SPIRiT, -y(:), tol, nOptIter, [], [], k0 );   %#ok<ASGLU>
-              end
-              kFull = reshape( applyMc( k, 'transp' ) + kData, [ sImg nCoils ] );
-              img = mri_reconRoemer( applyF( kFull, 'inv' ) );
-            end
-
-          else  % if numel( wSize ) > 0
-
-            coilRecons = applyF( kData, 'inv' );
-            img = mri_reconRoemer( coilRecons );
-          end
-
-        end
-
-      end
-
-    else  % if nCoils > 1
-
-      if numel( support ) > 0
-
-        if epsSupport > 0
-          % minimize || M F x - b ||_2  subject to  || Pc x ||_2^2 / ( Nc - 1 ) <= epsSupport
-          % minimize (1/2) || M F x - b ||_2^2  subject to  || Pc x ||_2  <= sqrt( epsSupport * ( Nc - 1 ) )
-          b = applyM( kData );
-          g = @(in) 0.5 * norm( applyMF( in ) - b, 'fro' )^2;
-          FTMTb = applyF( kData, 'transp' );
-          %gGrad = @(in) applyMF( applyMF( in ), 'transp' ) - FTMTb;
-          gGrad = @(in) applyF( applyF( in ) .* sampleMask, 'transp' ) - FTMTb;
-          proxth = @(in) projectOntoBall( applyPC( in ), sqrt( epsSupport * (nSupportC - 1) ) );
-          img = fista_wLS( img0, g, gGrad, proxth );
-
+    
         else
-          if numel( optAlg ) == 0, optAlg = 'lsqr'; end
-          if strcmp( optAlg, 'pocs' )
-            % minimize 1 subject to Pc x = 0  and  M F x = b
-            proj1 = @(in) applyF( applyF( in ) .* ( 1 - sampleMask ) + kData, 'inv' );
-            proj2 = @(in) in .* support;
-            projections = { proj2, proj1 };
-            img = pocs( img0, projections );
-
-          elseif strcmp( optAlg, 'gd' )
-            % minimize 0.5 * || M F PT x - b ||_2^2
-            PFTMTb = applyMFPT( b, 'transp' );
-            g = @(in) 0.5 * norm( applyMFPT(in) - b )^2;
-            gGrad = @(in) applyMFPT( applyMFPT( in ), 'transp' ) - PFTMTb;
-            [img,oVals,relDiffs] = gradDescent( applyP(img0), gGrad, 'g', g, 'useLineSearch', true );   %#ok<ASGLU>
-
-          elseif strcmp( optAlg, 'lsqr' )
-            % minimize || M F PT x - b ||_2
-            img0 = applyP( img0 );
-            if nCoils == 1
-              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-                @applyMFPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
-            else
-              [ img, lsqrFlag, lsqrRelRes, lsqrIter, lsqrResVec ] = lsqr( ...
-                @apply_vMFPT, b, tol, nOptIter, [], [], img0(:) );   %#ok<ASGLU>
-            end
-            img = applyP( img, 'transp' );
-          end
+          img = applyF( kData, 'inv' );
         end
   
-      else
-        img = applyF( kData, 'inv' );
       end
-
     end
-  end
+  end  % if numel( traj ) > 0
 end
+
 
 
 %% SUPPORT FUNCTIONS
