@@ -211,10 +211,10 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
       if nMetrics > 0
         for mIndx = 1 : nMetrics
           mValue = metrics{ mIndx }( x );
-          if nargout > 2
+          if nMetrics > 1
             metricValues( optIter+1, mIndx ) = mValue;
           else
-            metricValues( mIndx ) = mValue;
+            metricValues( optIter+1 ) = mValue;
           end
         end
       end

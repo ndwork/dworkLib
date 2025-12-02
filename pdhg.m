@@ -14,9 +14,9 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   %
   % Optional Inputs:
   % A - if A is not provided, it is assumed to be the identity
-  % f - to determine the objective values, f must be provided
-  % g - to determine the objective values, g must be provided
-  % N - the number of iterations that ADMM will perform (default is 100)
+  % f - function handle to f; to determine the objective values, f must be provided
+  % g - function handle to g; to determine the objective values, g must be provided
+  % N - the number of iterations that PDHG will perform (default is 100)
   % normA - the matrix induced 2-norm of A.  Could be determined with norm or, for
   %   large sparse matries, estimated with normest or powerIteration.
   % sigma - one of the two step sizes
@@ -59,7 +59,7 @@ function [xStar,objValues,relDiffs] = pdhg( x, proxf, proxgConj, tau, varargin )
   p.addParameter( 'N', 100, @ispositive );
   p.addParameter( 'normA', [], @(x) x>0 );
   p.addParameter( 'sigma', [], @ispositive );
-  p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 1 );
+  p.addParameter( 'theta', 1, @(x) x >= 0 && x <= 2 );
   p.addParameter( 'tol', defaultTol, @(x) numel(x) == 0 || ispositive(x) );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x==1 || x==0 );
   p.addParameter( 'printEvery', [], @ispositive );
