@@ -58,13 +58,14 @@ function out = nonlocalMeans_3D( img, varargin )
   [M, N, K] = size( img );
   borderSize = halfKSize + halfSearchSize;
 
-  out = zeros( size(img) );
+  out = cell( size( img, 1 ), 1, 1 );
   
   parfor j=borderSize+1:M-borderSize
     if mod(j,5)==0
       disp(['NLM: Working on ', num2str(j), ' of ', num2str(M)]);
     end
 
+    outSlice = zeros( size( img, [ 2 3 ] ) );
     localWeights = zeros( sSize, sSize );
     for i=borderSize+1:N-borderSize
       
@@ -102,11 +103,15 @@ function out = nonlocalMeans_3D( img, varargin )
                       k-halfSearchSize : k+halfSearchSize  );
 
         tmp = sum( localWeights(:) .* subImg(:) );
-        out(j,i,k) = tmp;
+        outSlice(i,k) = tmp;
 
       end
     end
+
+    out{j,1,1} = outSlice;
   end
+
+  out = cell2mat( out );
 end
 
 
@@ -141,7 +146,6 @@ function out = nonlocalMeans_2D( img, varargin )
   sSize = p.Results.searchSize;
   sigmaS = p.Results.sigmaS;
 
-
   halfSearchSize = floor( sSize/2 );
   halfKSize = floor( kSize/2 );
   sVar = sigmaS*sigmaS;
@@ -149,12 +153,14 @@ function out = nonlocalMeans_2D( img, varargin )
   [M, N] = size( img );
   borderSize = halfKSize + halfSearchSize;
 
-  out = zeros( size(img) );
-  
+  out = cell( size( img, 1 ) + 2*borderSize-1, 1 );
+
   parfor j=borderSize+1:M-borderSize
     if mod(j,5)==0
       disp(['NLM: Working on ', num2str(j), ' of ', num2str(M)]);
     end
+
+    rowOut = zeros( 1, size( img, 2 ) );
 
     localWeights = zeros( sSize, sSize );
     for i=borderSize+1:N-borderSize
@@ -184,9 +190,15 @@ function out = nonlocalMeans_2D( img, varargin )
                     i-halfSearchSize : i+halfSearchSize  );
 
       tmp = sum( localWeights(:) .* subImg(:) );
-      out(j,i) = tmp;
+
+      
+      rowOut(1,i) = tmp;
 
     end
+
+    out{j,1} = rowOut;
   end
 
+  out = cell2mat( out );
+  out = cropData( out, min( size( out ), size( img ) ) );
 end
