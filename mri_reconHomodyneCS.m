@@ -50,12 +50,12 @@ function recon =  mri_reconHomodyneCS( kData, sFSR, varargin )
     if nargin < 2 || strcmp( op, 'notransp' )
       tmp = zeros( sImg );
       tmp( 1 : nu, : ) = reshape( in, sTopPortion );
-      Pin = mri_reconPartialFourier( tmp, sFSR, 'phases', phases );
+      Pin = mri_reconHomodyne( tmp, sFSR, 'phases', phases );
       out = wtDaubechies2( Pin, wavSplit );
     else
       in = reshape( in, sImg );
       WHin = iwtDaubechies2( in, wavSplit );
-      out = mri_reconPartialFourier( WHin, sFSR, 'phases', phases, 'op', 'transp' );
+      out = mri_reconHomodyne( WHin, sFSR, 'phases', phases, 'op', 'transp' );
       out = out( 1 : nu, : );
     end
     out = out(:);
