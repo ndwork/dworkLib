@@ -77,7 +77,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   p.addParameter( 'saveFun', [] );
   p.addParameter( 'tau', [], @ispositive );
   p.addParameter( 'theta', 1, @ispositive );
-  p.addParameter( 'y', [], @isnumeric );
+  p.addParameter( 'z', [], @isnumeric );
   p.addParameter( 'verbose', false, @(x) islogical(x) || x == 1 || x == 0 );
   p.parse( varargin{:} );
   A = p.Results.A;
@@ -100,7 +100,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   saveFun = p.Results.saveFun;
   tau = p.Results.tau;
   theta = p.Results.theta;
-  y = p.Results.y;
+  z = p.Results.z;
   verbose = p.Results.verbose;
 
   if nargout > 1
@@ -153,9 +153,9 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
     end
   end
 
-  if numel( y ) == 0
-    y = applyA( x );
-    y(:) = 0;
+  if numel( z ) == 0
+    z = applyA( x );
+    z(:) = 0;
   end
 
   nMetrics = numel( metrics );
@@ -183,10 +183,10 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
 
   if nargout > 1
     fx = 0;
-    objValues = zeros( N+1, 1 );
+    objValues = zeros( N, 1 );
   end
   if nargout > 2
-    metricValues = zeros( N+1, nMetrics );
+    metricValues = zeros( N, nMetrics );
   else
     metricValues = zeros( nMetrics, 1 );
   end
@@ -212,9 +212,9 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
         for mIndx = 1 : nMetrics
           mValue = metrics{ mIndx }( x );
           if nMetrics > 1
-            metricValues( optIter+1, mIndx ) = mValue;
+            metricValues( optIter, mIndx ) = mValue;
           else
-            metricValues( optIter+1 ) = mValue;
+            metricValues( optIter ) = mValue;
           end
         end
       end
@@ -226,7 +226,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
         if nMetrics > 0
           for mIndx = 1 : nMetrics
             if nargout > 2
-              mValue = metricValues( optIter+1, mIndx );
+              mValue = metricValues( optIter, mIndx );
             else
               mValue = metricValues( mIndx );
             end
@@ -237,11 +237,12 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
             end
           end
         end
+        dispStr = [ dispStr, ', tau: ', num2str( tau ) ];   %#ok<AGROW>
       end
     end
 
     lastX = x;
-    x = lastX - tau * applyAT( y );
+    x = lastX - tau * applyAT( z );
     if numel( proxf ) > 0
       x = proxf( x, tau );
     end
@@ -262,7 +263,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
 
     diffx = x - lastX;
 
-    lastY = y;
+    lastY = z;
     subIter = 0;
     while true
       subIter = subIter + 1;
@@ -275,9 +276,9 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
 
       betaTau = beta * tau;
       tmp = lastY + betaTau * applyA( xBar );
-      y = proxgConj( tmp, betaTau );
+      z = proxgConj( tmp, betaTau );
 
-      diffy = y - lastY;
+      diffy = z - lastY;
       ATdiffy = applyAT( diffy );
 
       normATdiffy = sqrt( innerProd( ATdiffy(:), ATdiffy(:) ) );
