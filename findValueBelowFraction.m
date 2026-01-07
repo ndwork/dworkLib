@@ -31,6 +31,6 @@ function value = findValueBelowFraction( data, fraction, varargin )
   lowerValue = min( data(:) );
   upperValue = max( data(:) );
 
-  f = @( value ) fraction - sum( data(:) <= value ) / nData; 
+  f = @( value ) fraction - sum( data(:) >= value ) / nData; 
   value = binarySearch( f, lowerValue, upperValue, 'tol', tol, 'nMax', Inf );
 end

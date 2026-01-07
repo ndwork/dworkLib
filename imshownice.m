@@ -56,12 +56,16 @@ function [scaling,imH] = imshownice( img, varargin )
 
   if ismatrix( img )
     % Grayscale image
-    tmp = imresize( img, scale, method );
+    if scale ~= 1
+      tmp = imresize( img, scale, method );
+    else
+      tmp = img;
+    end
     if numel( sdevScale ) > 0
       scaling = [ medianImg - sdevScale*sdevImg, medianImg + sdevScale*sdevImg ];
     else
-      lowScalingLevel = findValueBelowFraction( img(:), thresh );
-      highScalingLevel = findValueBelowFraction( img(:), 1-thresh );
+      lowScalingLevel = findValueBelowFraction( img(:), 1-thresh );
+      highScalingLevel = findValueBelowFraction( img(:), thresh );
       scaling = [ lowScalingLevel highScalingLevel ];
     end
     imH = imshow( tmp, scaling );
