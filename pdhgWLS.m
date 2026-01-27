@@ -149,7 +149,7 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
       applyAT = @(x) P( A' * x, 'invTransp' );    
     elseif isnumeric( A ) && isnumeric( P )
       applyA = @(x) A * ( P \ x );
-      applyAT = @(x) P' \ ( A * x );
+      applyAT = @(x) P' \ ( A' * x );
     end
   end
 
