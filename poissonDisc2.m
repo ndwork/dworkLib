@@ -74,11 +74,6 @@ function pts = poissonDisc2( r, varargin )
 end
 
 
-function out = ispositive( x )
-  out = isnumeric(x) && min( x(:) > 0 );
-end
-
-
 function gc = getGridCoordinate( pts, bounds, cellSize )
   gc = ceil( [ ( pts(:,1) - bounds(1,1) ) , ...
                ( pts(:,2) - bounds(2,1) ) ] / cellSize );
