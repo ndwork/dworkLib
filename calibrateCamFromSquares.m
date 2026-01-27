@@ -15,6 +15,10 @@ function [ K, Hs ] = calibrateCamFromSquares( squares, varargin )
   %   first/second coordinate, respectively.  The points are projected onto [ (0,0),
   %   (1,0), (0,1), (1,1) ], so they should be in a comparable order.
   %
+  % Optional Inputs:
+  % zeroSkew - if true, then zero skew is assumed
+  % principalPoint - a two element array.  If provided, then this principal point is assumed.
+  %
   % Outputs:
   % K - the 3 x 3 intrisic camera matrix
   %
@@ -27,11 +31,13 @@ function [ K, Hs ] = calibrateCamFromSquares( squares, varargin )
 
   p = inputParser;
   p.addParameter( 'doCheck', false );
-  p.addParameter( 'nonzeroSkew', false );
+  p.addParameter( 'zeroSkew', true );
+  p.addParameter( 'principalPoint', [], @isnumeric );
   p.addParameter( 'tol', 1d-8, @isnonnegative );
   p.parse( varargin{:} );
   doCheck = p.Results.doCheck;
-  nonzeroSkew = p.Results.nonzeroSkew;
+  zeroSkew = p.Results.zeroSkew;
+  principalPoint = p.Results.principalPoint;
   tol = p.Results.tol;
 
   nSquares = size( squares, 3 );
@@ -55,10 +61,18 @@ function [ K, Hs ] = calibrateCamFromSquares( squares, varargin )
     end
   end
 
-  if nonzeroSkew
-    iac = findIAC_nonzeroSkew( Hs );
+  if zeroSkew
+    if numel( principalPoint ) > 0
+      iac = findIAC_zeroSkew_withPP( Hs, principalPoint(1), principalPoint(2) );
+    else
+      iac = findIAC_zeroSkew( Hs );
+    end
   else
-    iac = findIAC_zeroSkew( Hs );
+    if numel( principalPoint ) > 0
+      iac = findIAC_nonzeroSkew_wPP( Hs, principalPoint(1), principalPoint(2) );
+    else
+      iac = findIAC_nonzeroSkew( Hs );
+    end
   end
 
   [~, D] = eig( iac );
@@ -80,7 +94,7 @@ function [ K, Hs ] = calibrateCamFromSquares( squares, varargin )
 
   K = K ./ K(3,3);
 
-  if ~nonzeroSkew
+  if zeroSkew
     if abs( K(1,2) ) > tol
       warning( 'large skew suggests numerical issues' );
     end
@@ -133,6 +147,49 @@ function iac = findIAC_nonzeroSkew( Hs )
           iacVec(3) iacVec(5) iacVec(6); ];
 end
 
+
+function iac = findIAC_nonzeroSkew_wPP( Hs, px, py )
+  n = size(Hs, 3);
+  A = zeros(2*n + 2, 6);   % 2 constraints per square + 2 for principal point
+  b = zeros(2*n + 2, 1);
+
+  for i = 1:n
+      H = Hs(:,:,i);
+
+      % --- First constraint: h1^T ω h2 = 0 ---
+      A(i, :) = [ H(1,1)*H(1,2), ...
+                  H(1,1)*H(2,2) + H(2,1)*H(1,2), ...
+                  H(1,1)*H(3,2) + H(3,1)*H(1,2), ...
+                  H(2,1)*H(2,2), ...
+                  H(2,1)*H(3,2) + H(3,1)*H(2,2), ...
+                  H(3,1)*H(3,2) ];
+
+      % --- Second constraint: h1^T ω h1 = h2^T ω h2 ---
+      d = H(:,1) - H(:,2);   % difference
+      s = H(:,1) + H(:,2);   % sum
+      A(i+n, :) = [ d(1)*s(1), ...
+                    d(1)*s(2) + d(2)*s(1), ...
+                    d(1)*s(3) + d(3)*s(1), ...
+                    d(2)*s(2), ...
+                    d(2)*s(3) + d(3)*s(2), ...
+                    d(3)*s(3) ];
+  end
+
+  % --- Principal point constraints ---
+  % ω13 + px * ω11 = 0  →  px*ω11 + 1*ω13 = 0
+  % ω23 + py * ω22 = 0  →  py*ω22 + 1*ω23 = 0
+
+  A(2*n+1, :) = [ px,  0,  1,  0,  0,  0 ];   % px*ω11 + ω13 = 0
+  A(2*n+2, :) = [  0,  0,  0, py,  1,  0 ];   % py*ω22 + ω23 = 0
+
+  v = A \ b;   % 6×1 solution
+
+  iac = [ v(1)  v(2)  v(3); ...
+          v(2)  v(4)  v(5); ...
+          v(3)  v(5)  v(6) ];
+end
+
+
 function iac = findIAC_zeroSkew( Hs )
   nSquares = size( Hs, 3 );
   A = zeros( 2*nSquares, 5 );
@@ -158,4 +215,34 @@ function iac = findIAC_zeroSkew( Hs )
   iac = [ iacVec(1)     0       iacVec(2); ...
              0       iacVec(3)  iacVec(4); ...
           iacVec(2)  iacVec(4)  iacVec(5); ];
+end
+
+
+function iac = findIAC_zeroSkew_withPP(Hs, px, py)
+    n = size(Hs,3);
+    A = zeros(2*n + 2, 5);
+    b = zeros(2*n + 2, 1);
+
+    for i=1:n
+        H = Hs(:,:,i);
+        A(i,:) = [ H(1,1)*H(1,2), ...
+                   H(1,1)*H(3,2)+H(3,1)*H(1,2), ...
+                   H(2,1)*H(2,2), ...
+                   H(2,1)*H(3,2)+H(3,1)*H(2,2), ...
+                   H(3,1)*H(3,2) ];
+        d = H(:,1)-H(:,2); s = H(:,1)+H(:,2);
+        A(i+n,:) = [ d(1)*s(1), d(1)*s(3)+d(3)*s(1), ...
+                     d(2)*s(2), d(2)*s(3)+d(3)*s(2), d(3)*s(3) ];
+    end
+
+    % ---- principal-point constraints ----
+    % ω13 + px*ω11 = 0   →  row:  px  1  0  0  0
+    % ω23 + py*ω22 = 0   →  row:   0  0 py  1  0
+    A(2*n+1,:) = [ px  1  0  0  0 ];
+    A(2*n+2,:) = [  0  0 py  1  0 ];
+
+    v = A \ b;
+    iac = [ v(1)  0   v(2); ...
+            0    v(3) v(4); ...
+            v(2) v(4) v(5); ];
 end
