@@ -1,5 +1,5 @@
 
-function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin )
+function [xStar,objValues,metricValues,iterTimes] = pdhgWLS( x, proxf, proxgConj, varargin )
   % [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj [, ...
   %   'dsc', dsc, 'dscThresh', dscThresh, 'N', N, 'A', A, 'beta', beta, ...
   %   'f', f, 'g', g, 'mu', mu, 'P', P, 'tau', tau, 'theta', theta, 'y', y, 'verbose', verbose ] )
@@ -190,7 +190,9 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
   else
     metricValues = zeros( nMetrics, 1 );
   end
+  if nargout > 3, iterTimes = zeros(N,1); end
 
+  tic;
   for optIter = 1 : N
     if nargout > 1
       if numel( f ) > 0, fx = f( x ); end
@@ -289,6 +291,8 @@ function [xStar,objValues,metricValues] = pdhgWLS( x, proxf, proxgConj, varargin
       end
       tau = mu * tau;
     end
+
+    if nargout > 3, iterTimes( optIter ) = toc(); end
   end
 
   if numel( P ) > 0
