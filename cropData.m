@@ -45,7 +45,7 @@ function out = cropData( data, N, varargin )
   sData = size( data );
   if numel( C ) == 0
     halfS = sData / 2;
-    C = ceil( halfS + 1 );
+    C = floor( halfS + 1 );
   end
 
   subIndxs = cell(nD,1);

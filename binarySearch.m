@@ -44,7 +44,11 @@ function out = binarySearch( f, LB, UB, varargin )
     if verbose == true
       disp([ 'binarySearch: Working on iteration ', num2str(i), ' of ', num2str(nMax) ' possible.' ]);
     end
-    mid = 0.5 * ( thisUB + thisLB );
+
+    %mid = 0.5 * ( thisUB + thisLB );  % Clear but can lead to errors in VERY large arrays
+    mid = thisLB + ( 0.5 * ( thisUB - thisLB ) );  % Equivalent and still works on larger arrays.
+      % See here: https://x.com/TrisH0x2A/status/2069395841186509189?s=20
+
     if thisUB - thisLB < tol, break; end
 
     fMid = f( mid );
