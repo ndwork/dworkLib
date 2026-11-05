@@ -1,37 +1,38 @@
-
 function out = fan2Parallel( sinoFan, detSize, detPlaneDist, rotDist, varargin )
-  % out = fan2Parallel( sinoFan, focalLength, rotDist )
+  % out = fan2Parallel( sinoFan, detSize, detPlaneDist, rotDist, ...
+  %                     'dProjAngle', dProjAngle, 'detCenter', detCenter, ...
+  %                     'principalPoint', principalPoint, 'projAngles', projAngles )
   %
   % Inputs:
   % sinoFan - fan beam sinogram with one column per projection and one row per detector
-  % detPlaneDistb - the distance between the vertex and the detector
-  %   Note, for optical projection tomography, this is the focal length
-  % rotDist - the distance between the vertex and the center of rotation
+  % detPlaneDist - the distance between the source/vertex and the detector plane
+  %   Note, for optical projection tomography, this is the effective focal length
+  % rotDist - the distance between the source/vertex and the center of rotation
   %
   % Optional Inputs:
   % dProjAngle - the angle between adjacent rotation angles
-  %   Either dAngle or projAngles must be supplied
-  % detCenter - the location of the center detector (defaults to center of projection)
-  %   Note, for optical projection tomography, this is a component of the principal point
+  %   Either dProjAngle or projAngles must be supplied
+  % detCenter - detector coordinate whose ray passes through the center of rotation
+  %   Defaults to the center of the detector array
+  % principalPoint - detector coordinate where the principal ray intersects the detector
+  %   Defaults to detCenter
   % projAngles - the angle of the principal ray for each projection
-  %   Either dAngle or projAngles must be supplied
+  %   Either dProjAngle or projAngles must be supplied
   %
   % Written by Nicholas Dwork, Copyright 2025
-  %
-  % This software is offered under the GNU General Public License 3.0.  It
-  % is offered without any warranty expressed or implied, including the
-  % implied warranties of merchantability or fitness for a particular
-  % purpose.
+  % Modified to correctly handle principal-point offsets for real OPT data.
 
   p = inputParser;
   p.addParameter( 'dProjAngle', [], @ispositive );
   p.addParameter( 'detCenter', [], @isnumeric );
   p.addParameter( 'extrapolationMethod', 'none', @(x) true );
+  p.addParameter( 'principalPoint', [], @isnumeric );
   p.addParameter( 'projAngles', [], @isnumeric );
   p.parse( varargin{:} );
   dProjAngle = p.Results.dProjAngle;
   detCenter = p.Results.detCenter;
   extrapolationMethod = p.Results.extrapolationMethod;
+  principalPoint = p.Results.principalPoint;
   projAngles = p.Results.projAngles;
 
   if isempty(dProjAngle) && isempty(projAngles)
@@ -41,32 +42,48 @@ function out = fan2Parallel( sinoFan, detSize, detPlaneDist, rotDist, varargin )
   nDetectors = size( sinoFan, 1 );
   nProjections = size( sinoFan, 2 );
 
-  if numel( detCenter ) == 0
+  if isempty( detCenter )
     detCenter = ( nDetectors - 1 ) / 2;
   end
 
-  if numel( projAngles ) == 0
-    projAngles = dProjAngle * ( 0 : nProjections -1 );
+  if isempty( principalPoint )
+    principalPoint = detCenter;
   end
 
-  detLocs = -( ( 0 : nDetectors-1 ) - detCenter ) * detSize;
-  detAngles = atan2( detLocs, detPlaneDist );
-  lineDists = rotDist * sin( detAngles );   % Smallest distance from rotation center to projection line
+  if isempty( projAngles )
+    projAngles = dProjAngle * ( 0 : nProjections - 1 );
+  end
+  projAngles = projAngles(:);
 
-  lineDists = lineDists(:) * ones(1,nProjections );
-  lineAngles = detAngles(:) * ones(1,nProjections) + ones(nDetectors,1) * projAngles(:)';
+  % Detector coordinates measured from the principal point.
+  detCoords = ( principalPoint - ( 0 : nDetectors - 1 ) ) * detSize;
+  detCenterCoord = ( principalPoint - detCenter ) * detSize;
 
-  lineAngles_ext = [lineAngles(:) - 2*pi; lineAngles(:); lineAngles(:) + 2*pi ];
-  lineDists_ext = [lineDists(:); lineDists(:); lineDists(:)];
-  sinoFan_ext = [sinoFan(:); sinoFan(:); sinoFan(:)];
-  F = scatteredInterpolant(lineAngles_ext, lineDists_ext, sinoFan_ext, 'linear', extrapolationMethod );
+  % Fan angle of each detector ray relative to the optical axis.
+  detAngles = atan2( detCoords, detPlaneDist );
+  detCenterAngle = atan2( detCenterCoord, detPlaneDist );
+
+  % Ray angle relative to the ray that passes through the center of rotation.
+  rayAngles = detAngles - detCenterAngle;
+
+  % Smallest distance from the rotation center to each ray.
+  lineDists = rotDist * sin( rayAngles );
+
+  lineDists = lineDists(:) * ones( 1, nProjections );
+  lineAngles = rayAngles(:) * ones( 1, nProjections ) + ones( nDetectors, 1 ) * projAngles';
+
+  lineAngles_ext = [ lineAngles(:) - 2*pi; lineAngles(:); lineAngles(:) + 2*pi ];
+  lineDists_ext = [ lineDists(:); lineDists(:); lineDists(:) ];
+  sinoFan_ext = [ sinoFan(:); sinoFan(:); sinoFan(:) ];
+  F = scatteredInterpolant( lineAngles_ext, lineDists_ext, double(sinoFan_ext), 'linear', extrapolationMethod );
 
   maxLineDist = max( abs( lineDists(:) ) );
-  nOutLineDists = ceil( 2 * maxLineDist / detSize );
-  outLineDists = linspace( -maxLineDist, maxLineDist, nOutLineDists );
-  outLineDists = outLineDists(:) * ones(1, nProjections);
+  nHalf = ceil( maxLineDist / detSize );
+  outLineDists = ( -nHalf : nHalf ) * detSize;
+  nOutLineDists = numel( outLineDists );
+  outLineDists = outLineDists(:) * ones( 1, nProjections );
 
-  outAngles = ones(nOutLineDists,1) * projAngles(:)';
+  outAngles = ones( nOutLineDists, 1 ) * projAngles';
   out = F( outAngles(:), outLineDists(:) );
-  out = reshape( out, [ nOutLineDists nProjections ] );
+  out = reshape( out, [ nOutLineDists, nProjections ] );
 end

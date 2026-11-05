@@ -39,19 +39,31 @@ function [out,sMaps] = mri_reconRoemer( in, varargin )
 
   if numel( op ) == 0, op = 'notransp'; end
 
+  doDivision = true;
   if numel( sMaps ) == 0
     if strcmp( op, 'transp' ), error( 'Must supply sMaps for transpose operation' ); end
     ssqRecon = sqrt( sum( in .* conj( in ), 3 ) );
     sMaps = bsxfun( @times, in, 1 ./ ssqRecon );
     sMaps( ~isfinite( sMaps ) ) = 0;
+    doDivision = false;
   end
 
   if strcmp( op, 'notransp' )
-    out = sum( in .* conj( sMaps ), 3 );
+    out = sum( conj( sMaps ) .* in, 3 );
   elseif strcmp( op, 'transp' )
     out = bsxfun( @times, sMaps, in );
   else
     error( 'Incorrect value of op supplied' );
+  end
+
+  if doDivision == true
+    out = out ./ sum( abs( sMaps ).^2, 3 );
+  end
+
+  if ~ismatrix( out ) > 2
+    sOut = size( out );
+    sOutNew = [ sOut(1:2) sOut(4:end) ];    
+    out = reshape( out, sOutNew );
   end
 end
 

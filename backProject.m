@@ -3,7 +3,7 @@ function out = backProject( sino, projAngles, sImg )
   % out = backProject( sino, projAngles, sImg )
   %
   % Inputs:
-  % sino - parallel beam sinogram
+  % sino - parallel beam sinogram where each column represents a different projection angle.
   %
   % Written by Nicholas Dwork, Copyright 2025
   %
@@ -13,7 +13,8 @@ function out = backProject( sino, projAngles, sImg )
   % purpose.
 
   if size( sino, 1 ) ~= sImg(1)
-    error( 'The first dimension of sino must be the number of rows in the image' );
+    warning( 'The first dimension of sino must be the number of rows in the image' );
+    sImg(1) = size( sino, 1 );
   end
 
   if size( sino, 2 ) ~= numel( projAngles )
